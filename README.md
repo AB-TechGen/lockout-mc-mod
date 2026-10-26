@@ -10,6 +10,19 @@ first.
 No Minecraft or Microsoft account is involved. Players are known by a display name, so dev clients and offline
 setups work.
 
+OpenDraft is **completely free**. There are no paid features and no servers to rent, and the code is open source
+under the MIT license.
+
+## Features
+
+- **All 316 Draftout goals**, on a random or drafted board of 3 to 25 goals.
+- **Seed filtering**: pick what a random seed must have near spawn, and how near. The options are Village,
+  Shipwreck, Outpost, Witch Hut, Desert Temple, Jungle Temple, Igloo, Mansion, Ruined Portal, Trail Ruins,
+  Abandoned Camp, Ancient City, Trial Chambers and Pale Garden. See [Seed filter](#seed-filter).
+- **A lobby on the title screen** with the player list, chat and settings. Every match starts in a fresh world.
+- **Time limit and overtime**, a lookout from the air before the clock starts, and forfeit and draw votes.
+- **Shared advancement messages**, and your progress on each goal when you hover it.
+
 ## Installing
 
 1. Install [Fabric Loader](https://fabricmc.net/use/installer/) for Minecraft 26.3 (loader 0.19.3 or newer).
