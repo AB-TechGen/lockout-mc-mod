@@ -1,5 +1,6 @@
 package dev.opendraft;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
@@ -15,13 +16,17 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.LevelLoadingScreen;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.renderer.fog.FogData;
 import net.minecraft.core.SectionPos;
+import net.minecraft.world.level.Level;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.Identifier;
@@ -44,8 +49,15 @@ public final class OpenDraftClient implements ClientModInitializer {
 
     /** Opens the full-screen board (B by default; rebind it under Controls). */
     public static KeyMapping BOARD_KEY;
-    /** GLFW's key code for B (LWJGL isn't on the compile classpath). */
-    private static final int KEY_B = 66;
+    /** Hides or shows the small board. Unbound by default; the board is shown again each match. */
+    public static KeyMapping TOGGLE_BOARD_KEY;
+    /** Turns fullbright on or off. G by default (vanilla doesn't use it); key mappings can't include Alt. */
+    public static KeyMapping FULLBRIGHT_KEY;
+    /** Unbound, for a key mapping. 26.3 numbers keys by SDL scancode, so the game's own constants are used, not GLFW's. */
+    private static final int NO_KEY = InputConstants.UNKNOWN.getValue();
+    // What this game last told the synchronizer about where its player is, and in which session.
+    private static Session whereFor;
+    private static String whereSent;
 
     /** Chunks around the player, in each direction, that must have arrived before this game says it's ready. */
     private static final int NEARBY_CHUNKS = 4;
@@ -66,11 +78,18 @@ public final class OpenDraftClient implements ClientModInitializer {
         Goals.load();
         Settings.load();
         ServerHooks.register();
+        SharedRandom.register();
         HudElementRegistry.addFirst(Identifier.fromNamespaceAndPath("opendraft", "waiting"), BoardHud::waitingCover);
         HudElementRegistry.addLast(Identifier.fromNamespaceAndPath("opendraft", "board"), BoardHud::extractRenderState);
+        HudElementRegistry.replaceElement(VanillaHudElements.PLAYER_LIST, BoardHud::playerList);
         KeyMapping.Category category = KeyMapping.Category.register(Identifier.fromNamespaceAndPath("opendraft", "opendraft"));
-        BOARD_KEY = KeyMappingHelper.registerKeyMapping(new KeyMapping("key.opendraft.board", KEY_B, category));
+        BOARD_KEY = KeyMappingHelper.registerKeyMapping(new KeyMapping("key.opendraft.board", InputConstants.KEY_B, category));
+        TOGGLE_BOARD_KEY = KeyMappingHelper.registerKeyMapping(new KeyMapping("key.opendraft.toggle_board", NO_KEY, category));
+        FULLBRIGHT_KEY = KeyMappingHelper.registerKeyMapping(new KeyMapping("key.opendraft.fullbright", InputConstants.KEY_G, category));
         ClientTickEvents.END_CLIENT_TICK.register(mc -> {
+            while (TOGGLE_BOARD_KEY.consumeClick()) BoardHud.visible = !BoardHud.visible;
+            while (FULLBRIGHT_KEY.consumeClick()) toggleFullbright();
+            reportWhere(mc);
             while (BOARD_KEY.consumeClick()) {
                 if (mc.player == null || mc.gui.screen() != null) continue;
                 if (Session.current() == null) {
@@ -328,21 +347,44 @@ public final class OpenDraftClient implements ClientModInitializer {
         return true;
     }
 
+    /** Tells the synchronizer which dimension this player is in (or that they're in the lobby), for everyone's tab list. */
+    private static void reportWhere(Minecraft mc) {
+        Session s = Session.current();
+        if (s == null || !s.welcomed) return;
+        String where = mc.level == null ? "lobby" : mc.level.dimension() == Level.NETHER ? "nether"
+                : mc.level.dimension() == Level.END ? "end" : "overworld";
+        if (s == whereFor && where.equals(whereSent)) return;
+        whereFor = s;
+        whereSent = where;
+        s.send("WHERE " + where);
+    }
+
+    /** Fog in a match's Nether starts and ends much further out than vanilla's 10 to 96 blocks, so you can see far. */
+    public static void netherFog(FogData fog, ClientLevel level) {
+        MinecraftServer server = Minecraft.getInstance().getSingleplayerServer();
+        if (level.dimension() != Level.NETHER || server == null || !WorldMaker.isMatchWorld(server.overworld())) return;
+        fog.environmentalStart = Math.max(fog.environmentalStart, NETHER_FOG_START);
+        fog.environmentalEnd = Math.max(fog.environmentalEnd, NETHER_FOG_END);
+    }
+
+    private static final float NETHER_FOG_START = 96, NETHER_FOG_END = 512;
+
     /** The lobby's Start button: shares the settings and sends everyone into a new world. */
     static void startLobbyMatch() {
         Session s = Session.current();
         if (s == null || !s.isLeader() || SeedSearch.running()) return;
         s.send("SETTINGS " + Settings.encode());
         List<SeedSearch.Target> near = Settings.filterTargets();
-        boolean nether = Settings.nether;
-        if (!Settings.seed.isEmpty() || (near.isEmpty() && !nether)) {
+        if (!Settings.seed.isEmpty()) {
+            // A typed seed is used as it is, so it can't be held to the filter or the Nether rule.
             SeedSearch.lastProblem = null;
             s.send("MATCH " + Settings.matchSeed());
             return;
         }
+        // Every random seed has a bastion and a fortress near 0, 0 in the Nether, so there's always a search.
         int radius = Settings.radius;
-        sayInLobby(s, "Looking for a seed with " + SeedSearch.wanted(near, radius, nether) + "...");
-        SeedSearch.start(near, radius, nether, found -> {
+        sayInLobby(s, "Looking for a seed with " + SeedSearch.wanted(near, radius, true) + "...");
+        SeedSearch.start(near, radius, true, found -> {
             // Only start if nothing changed while searching.
             if (Session.current() != s || !s.isLeader() || s.matchOn()) return;
             sayInLobby(s, found.summary());
@@ -495,10 +537,10 @@ public final class OpenDraftClient implements ClientModInitializer {
 
     /** Gamma while fullbright is on: 1500%, past the Brightness slider's 100%. */
     public static final Double FULLBRIGHT_GAMMA = 15.0;
-    /** Toggled with Alt+2; read by the lightmap. Not saved, so it's off each time the game starts. */
+    /** Toggled with the fullbright key; read by the lightmap. Not saved, so it's off each time the game starts. */
     public static volatile boolean fullbright;
 
-    /** Alt+2 in a world with no screen open. Returns whether it was handled, so the 2 doesn't also pick a hotbar slot. */
+    /** The fullbright key, in a world with no screen open. Returns whether it toggled. */
     public static boolean toggleFullbright() {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || mc.gui.screen() != null) return false;
@@ -516,6 +558,12 @@ public final class OpenDraftClient implements ClientModInitializer {
         if (s == null || name == null || name.equals(s.me)) return ME;
         Integer c = s.colors.get(name);
         return OTHERS[Math.floorMod(c != null ? c : name.hashCode(), OTHERS.length)];
+    }
+
+    /** A line above the hotbar that fades after a few seconds, for things that shouldn't clog chat. */
+    public static void overlay(Component c) {
+        Minecraft mc = Minecraft.getInstance();
+        mc.execute(() -> mc.gui.hud.setOverlayMessage(c, false));
     }
 
     public static void chat(Component c) {

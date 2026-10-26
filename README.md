@@ -92,7 +92,6 @@ The leader's **Edit Settings** has two tabs. They're saved in `config/opendraft.
 | World | Seed (blank = random) | blank |
 | World | Structures and biomes a random seed must have near spawn | none |
 | World | How near (blocks from spawn) | 300 |
-| World | Nether: a bastion and a fortress within 250 blocks of 0, 0, with nether wart | on |
 
 ### Old match worlds
 
@@ -108,6 +107,42 @@ On the steppers, shift-click changes the time limit, lookout and turn length by 
 the leader wins. On a tie for the lead, overtime starts and whoever pulls ahead first wins. If overtime also runs
 out, or every goal is claimed while it's still tied, it's a draw.
 
+### Keybinds
+
+OpenDraft registers three keybinds of its own. A few more features reuse vanilla keybinds or use fixed keys.
+
+### OpenDraft's own keybinds
+
+*Controls → Key Binds → OpenDraft*
+
+| Keybind | Default | What it does | Customizable |
+|---|---|---|---|
+| Open the board | B | Opens the full-screen board. Pressing it again on the board closes it. | Yes |
+| Toggle the small board | Unbound | Hides or shows the small board in the corner. It comes back each match. | Yes (you have to set it first) |
+| Toggle fullbright | G | Turns fullbright on or off. | Yes |
+
+### Vanilla keybinds the mod also uses
+
+*Customizable, under their usual vanilla names*
+
+| Vanilla keybind | Default | What it does in OpenDraft |
+|---|---|---|
+| Use Item / Place Block | Right-click | Hold to zoom like a spyglass during the lookout. |
+| Sneak | Shift | During the lookout, drops you to the ground view. |
+| Jump | Space | During the lookout, takes you back up to the sky view. |
+| List Players | Tab | Shows the lobby list with dimension icons and scores. |
+
+The lookout keys follow your Sneak and Jump keybinds, since the game reads your actual movement input.
+
+### Fixed keys
+
+*Can't be changed*
+
+| Key | Where | What it does |
+|---|---|---|
+| Enter | Lobby screen | Sends a chat message, or joins when the invite-code box is selected. |
+| Shift + click | Lobby settings | Changes time limit, lookout and turn length by 1 instead of 5, and the distance by 10 instead of 50. |
+
 ### Seed filter
 
 On the World tab, turn on what a random seed must have near spawn: Village, Shipwreck, Outpost, Witch Hut,
@@ -117,10 +152,11 @@ seeds for up to a minute and then starts the match with the first one that has e
 each thing is from spawn. If no seed turns up, the lobby says how often each one appeared, so you can tell which to
 turn off. A typed seed is used as it is, without the filter.
 
-The **Nether** toggle (on by default) also asks for a bastion and a fortress within 250 blocks of 0, 0 in the
-Nether, with nether wart in one of them: either the bastion is a housing bastion (every one has wart in its centre)
-or the fortress has a nether wart room. The distance setting doesn't change the 250. With only the Nether toggle on,
-a seed turns up in about a second (roughly one seed in seven passes).
+Every random seed also has a bastion and a fortress within 250 blocks of 0, 0 in the Nether (always; it isn't a
+setting), with nether wart in one of them: either the bastion is a housing bastion (every one has wart in its
+centre) or the fortress has a nether wart room. The distance setting doesn't change the 250. A typed seed is used as
+it is, without this. With nothing else asked for, a seed turns up in about a second (roughly one seed in seven
+passes).
 
 The search doesn't generate any terrain. For each seed it works out where spawn is and where the game would try to
 place each structure, then checks the biome there, which is the same first test the game makes. That is quick and
@@ -138,6 +174,21 @@ same on every player's computer:
 - **Lava pools.** Surface lava pools are twice as common as in vanilla, and there are 3 pools 50 to 200 blocks from
   spawn. Natural pools in that ring count towards the 3, and the rest are added on dry land away from villages, as
   part of the terrain. Very occasionally water or cliffs leave no room for one, so it can be 2.
+- **Bartering.** The first 144 gold ingots (16 gold blocks) bartered with piglins give at least 4 ender pearl
+  trades of 2 to 4 pearls: if you're behind after each 36, that barter gives pearls. More can come; which ones
+  depends on the seed.
+- **Nether fog** starts and ends much further away, so you can see across the Nether.
+- **First Nether exit.** If leaving the Nether for the first time makes a new Overworld portal and you were standing
+  at y 55 or higher, the portal is made on the surface instead of in a cave.
+- **Same luck for everyone.** Random outcomes come from sequences seeded by the world seed, so players on the same
+  seed get the same results in the same order:
+  - each loot table has its own sequence (vanilla already does this), and each deepslate ore shares its stone ore's,
+    grass shares with fern, and tall grass with large fern;
+  - leather from cows, horses, donkeys and mules is one sequence, so killing the same number of them (in any order)
+    gives the same leather;
+  - piglin bartering, mob equipment drops (pillager crossbows, witch potions, piglin armour...), which naturally
+    spawned pillagers are captains (by spawn number, not time or place), food effects (hunger from rotten flesh and
+    raw chicken, poison from poisonous potatoes) and an iron golem's damage on players.
 - **Biome goals.** Goals that need something only a few biomes have are only dealt when one of those biomes is
   within 400 blocks of spawn: scaffolding and bamboo mosaic need a jungle, parrots a jungle, glow berries lush caves,
   powder snow a grove or snowy slopes, and so on. The list is the `biomes` field in
@@ -173,7 +224,8 @@ Nothing counts during the lookout.
 
 ### Fullbright
 
-Press **Alt+2** in a world to turn fullbright on or off. It sets the game's brightness to 1500%, so caves and nights
+Press **G** in a world to turn fullbright on or off (rebind it as **Toggle fullbright** under Controls, in the
+OpenDraft category). It sets the game's brightness to 1500%, so caves and nights
 are lit, without touching your Brightness setting. It's off again each time the game starts.
 
 ### Draft
@@ -199,6 +251,11 @@ The pictures show the goal's number where it has one. The goals with colour vari
 terracotta, harnesses, cushions, leather armour and sheep) show the item in that colour instead, with the number in
 the corner. The scores and the clock sit under the grid: time left when there's a
 limit, time played otherwise.
+
+**Toggle the small board** (unbound at first; set it under Controls, in the OpenDraft category) hides or shows the
+small board; it's shown again at the start of every match. Hold the player list key (**Tab**) to see everyone in the
+lobby, like on a server, with an icon for the dimension they're in and their score. Your progress on goals that count
+unique foods, unique breeds or mob kills shows above the hotbar for a few seconds as it goes up, without filling chat.
 
 Press **B** (rebind it under Controls, in the OpenDraft category) for the big board, a panel in the middle of the
 screen with Forfeit, Offer Draw and Close Board under it. Hover a goal to see its

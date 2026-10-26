@@ -55,6 +55,8 @@ public final class OpenDraftHost {
     private final Map<String, LineChannel> players = new LinkedHashMap<>();
     /** Each player's colour, kept while they own anything on the board so it never changes mid-game. */
     private final Map<String, Integer> colors = new HashMap<>();
+    /** Where each player is, as they last said (overworld, nether, end or lobby), for everyone's tab list. */
+    private final Map<String, String> where = new HashMap<>();
     private Long seed; // null until a player joins from a world or the lobby starts a match, unless fixed up front
 
     // The lobby: the leader's settings (shown to everyone) and the match being loaded.
@@ -348,6 +350,7 @@ public final class OpenDraftHost {
         broadcastExcept(ch, "INFO " + name + " joined.");
         // Catch the newcomer up on whatever is happening.
         if (!settings.isEmpty()) ch.send("SETTINGS " + settings);
+        where.forEach((who, place) -> ch.send("WHERE " + who + " " + place));
         boolean matchOn = loading || draft != null || (keys != null && !ended);
         if (matchId > 0 && matchOn) ch.send("MATCH " + matchId + " " + seed);
         if (draft != null) {
@@ -374,6 +377,7 @@ public final class OpenDraftHost {
         if (players.get(name) != ch) return;
         players.remove(name);
         roundTrip.remove(name);
+        where.remove(name);
         log.accept(name + " left");
         forgetColors();
         broadcast(playersLine());
@@ -473,6 +477,11 @@ public final class OpenDraftHost {
                 drawVotes.clear();
                 broadcast(drawLine());
                 broadcast("INFO " + name + " turned down the draw.");
+            }
+            case "WHERE" -> {
+                if (p.length != 2 || !Set.of("overworld", "nether", "end", "lobby").contains(p[1])) return;
+                where.put(name, p[1]);
+                broadcast("WHERE " + name + " " + p[1]);
             }
             case "CHAT" -> {
                 if (line.length() <= "CHAT ".length() || line.length() > 260) return;

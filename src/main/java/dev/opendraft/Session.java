@@ -45,6 +45,8 @@ public final class Session {
     public volatile List<String> players = List.of();
     /** Everyone's colour number from the synchronizer, kept for players who left so their claims keep it. */
     public volatile Map<String, Integer> colors = Map.of();
+    /** Where each player is ("overworld", "nether", "end" or "lobby"), for the tab list. */
+    public volatile Map<String, String> where = Map.of();
     /** The leader's settings as the synchronizer last relayed them. */
     public volatile Map<String, String> lobbySettings = Map.of();
     public final List<String> chatLines = new CopyOnWriteArrayList<>();
@@ -265,6 +267,14 @@ public final class Session {
                 if (isLeader() && !Settings.decode(Settings.encode()).equals(lobbySettings)) send("SETTINGS " + Settings.encode());
             }
             case "SETTINGS" -> lobbySettings = Settings.decode(rest);
+            case "WHERE" -> {
+                // WHERE <name> <overworld|nether|end|lobby>
+                String[] parts = rest.split(" ");
+                if (parts.length != 2) return;
+                Map<String, String> w = new java.util.HashMap<>(where);
+                w.put(parts[0], parts[1]);
+                where = Map.copyOf(w);
+            }
             case "INFO" -> {
                 addChatLine("* " + rest);
                 OpenDraftClient.chat(Component.literal("OpenDraft: " + rest).withStyle(ChatFormatting.GRAY));
@@ -360,6 +370,7 @@ public final class Session {
                 draftPool = null;
                 boardId = Integer.parseInt(parts[0]);
                 goals = list;
+                BoardHud.visible = true; // hidden with the toggle key only until the next board
             }
             case "START" -> {
                 // START <elapsedMillis> <limitSec> <overtimeSec>; elapsed is negative during the lookout.

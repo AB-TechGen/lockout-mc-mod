@@ -4,20 +4,28 @@
   "package": "dev.opendraft.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
+    "CaptainMixin",
     "ChunkMapSpawningMixin",
     "ContainerMenuMixin",
     "DifficultyMixin",
+    "ExitPortalMixin",
     "FeaturePlacerMixin",
+    "FoodEffectMixin",
+    "IronGolemMixin",
     "ItemStackMixin",
-    "NaturalSpawnerMixin"
+    "LootTableMixin",
+    "MobDropMixin",
+    "NaturalSpawnerMixin",
+    "PiglinBarterMixin",
+    "RandomSequenceMixin"
   ],
   "injectors": {
     "defaultRequire": 1
   },
   "client": [
     "ClientPlayerFovMixin",
-    "FullbrightKeyMixin",
     "LightmapGammaMixin",
+    "NetherFogMixin",
     "PlayerScopingMixin"
   ]
 }

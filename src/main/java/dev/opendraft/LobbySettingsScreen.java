@@ -6,7 +6,6 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
-import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
@@ -30,7 +29,6 @@ public final class LobbySettingsScreen extends Screen {
     // The working copy, kept while switching tabs.
     private static int size, minutes, overtime, lookout, turnSeconds, radius;
     private static String mode, seed;
-    private static boolean nether;
     private static final Set<String> filter = new LinkedHashSet<>();
 
     private final Screen parent;
@@ -56,7 +54,6 @@ public final class LobbySettingsScreen extends Screen {
         mode = Settings.mode;
         seed = Settings.seed;
         radius = Settings.radius;
-        nether = Settings.nether;
         filter.clear();
         for (SeedSearch.Target t : Settings.filterTargets()) filter.add(t.key());
         return new LobbySettingsScreen(parent, false);
@@ -116,11 +113,6 @@ public final class LobbySettingsScreen extends Screen {
                     y += 22;
                 }
             }
-            netherToggle = addRenderableWidget(Button.builder(Component.literal(""), b -> nether = !nether)
-                    .bounds(tx0 + col * (TOGGLE_W + 4), y, TOGGLE_W, 20).build());
-            netherToggle.setTooltip(Tooltip.create(Component.literal("A bastion and a fortress within " + SeedSearch.NETHER_RADIUS
-                    + " blocks of 0, 0 in the Nether, with nether wart in one of them (a housing bastion or the fortress's"
-                    + " wart room). The distance above doesn't change this.")));
             refreshToggles();
         }
 
@@ -133,11 +125,9 @@ public final class LobbySettingsScreen extends Screen {
     private Button[] boards;
     private static final int NEAR_Y = 106, TOGGLE_W = 102;
     private final Map<String, Button> toggles = new LinkedHashMap<>();
-    private Button netherToggle;
 
     private void refreshToggles() {
         toggles.forEach((key, b) -> b.setMessage(toggleLabel(SeedSearch.target(key).label(), filter.contains(key))));
-        if (netherToggle != null) netherToggle.setMessage(toggleLabel("Nether", nether));
     }
 
     private static Component toggleLabel(String label, boolean on) {
@@ -193,7 +183,6 @@ public final class LobbySettingsScreen extends Screen {
         Settings.mode = mode;
         Settings.seed = seed;
         Settings.radius = radius;
-        Settings.nether = nether;
         Settings.filter = Settings.cleanFilter(String.join(",", filter));
         Settings.save();
         Session s = Session.current();
@@ -220,7 +209,7 @@ public final class LobbySettingsScreen extends Screen {
             centered(g, font, Component.literal("Leave blank for a random seed. Everyone gets a new world with it.")
                     .withStyle(ChatFormatting.GRAY), 40 + 40);
             String near = !seed.isEmpty() ? "A typed seed is used as it is, so these are ignored."
-                    : filter.isEmpty() && !nether ? "Pick what a random seed must have near spawn."
+                    : filter.isEmpty() ? "Pick what a random seed must have near spawn."
                     : "Start searches for a seed with these for up to a minute.";
             centered(g, font, Component.literal(near).withStyle(ChatFormatting.GRAY), NEAR_Y - 12);
         }

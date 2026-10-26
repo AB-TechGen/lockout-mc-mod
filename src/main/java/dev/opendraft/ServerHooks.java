@@ -10,7 +10,9 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.player.AttackEntityCallback;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.fabricmc.fabric.api.event.player.UseEntityCallback;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -88,6 +90,7 @@ public final class ServerHooks {
             if (t != null && trackedPlayer != null) t.onEntityChangedWorld(trackedPlayer, moved);
         });
         ServerEntityLevelChangeEvents.AFTER_PLAYER_CHANGE_LEVEL.register((player, origin, dest) -> {
+            SharedRandom.changedDimension(player, origin);
             Tracker t = trackerFor(player);
             if (t != null) t.onPlayerChangedWorld(player, origin, dest);
         });
@@ -190,8 +193,20 @@ public final class ServerHooks {
                 s.send("CLAIM " + s.boardId + " " + i);
             }
         }
+        String[] before = progressBoard == s.boardId ? progress : null;
+        for (int i = 0; before != null && i < prog.length && i < before.length; i++) {
+            if (prog[i] != null && before[i] != null && !prog[i].equals(before[i]) && announced(goals.get(i))) {
+                OpenDraftClient.overlay(Component.literal(goals.get(i).name + ": " + prog[i]).withStyle(ChatFormatting.GRAY));
+            }
+        }
         progress = prog;
         progressBoard = s.boardId;
+    }
+
+    /** Goals whose progress is shown above the hotbar as it goes up: unique foods, unique breeds and mob kills. */
+    private static boolean announced(Goal g) {
+        return g.type.equals("set") && List.of("consumed", "bred", "hostile_kills").contains(g.str("set", ""))
+                || g.type.equals("counter_sum") || g.type.equals("stat") && g.list("keys").contains("minecraft:mob_kills");
     }
 
     private static void endLookout(MinecraftServer server) {

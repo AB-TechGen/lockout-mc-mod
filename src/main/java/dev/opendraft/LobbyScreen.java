@@ -1,5 +1,6 @@
 package dev.opendraft;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import dev.opendraft.net.Invite;
 import dev.opendraft.net.OpenDraftHost;
 import dev.opendraft.net.Protocol;
@@ -190,7 +191,7 @@ public final class LobbyScreen extends Screen {
 
     @Override
     public boolean keyPressed(KeyEvent event) {
-        boolean enter = event.key() == 257 || event.key() == 335;
+        boolean enter = event.key() == InputConstants.KEY_RETURN || event.key() == InputConstants.KEY_NUMPADENTER;
         Session s = Session.current();
         if (enter && s != null && chatBox.isFocused()) {
             String text = chatBox.getValue().trim();

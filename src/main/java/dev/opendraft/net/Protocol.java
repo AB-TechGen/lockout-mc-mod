@@ -11,6 +11,7 @@ package dev.opendraft.net;
  * client -> host   READY &lt;matchId&gt;             (my world for that match has loaded)
  * client -> host   FORFEIT
  * client -> host   DRAW | NODRAW               (vote for a draw, or turn it down)
+ * client -> host   WHERE &lt;overworld|nether|end|lobby&gt;   (where my player is, for the tab list)
  * client -> host   CHAT &lt;text...&gt;
  * client -> host   NEWBOARD &lt;limitSec&gt; &lt;overtimeSec&gt; &lt;lookoutSec&gt; &lt;key&gt;...
  * client -> host   DRAFT &lt;limitSec&gt; &lt;overtimeSec&gt; &lt;lookoutSec&gt; &lt;size&gt; &lt;turnSec&gt; &lt;poolKey&gt;...
@@ -26,6 +27,7 @@ package dev.opendraft.net;
  * host -> client   GO &lt;matchId&gt;                (everyone's world is ready; the leader deals the board)
  * host -> client   FORFEITED &lt;name&gt;
  * host -> client   DRAWVOTE &lt;name&gt;...          (who has voted for a draw; empty when it lapses)
+ * host -> client   WHERE &lt;name&gt; &lt;overworld|nether|end|lobby&gt;
  * host -> client   CHAT &lt;name&gt; &lt;text...&gt;
  * host -> client   DRAFTPOOL &lt;draftId&gt; &lt;key&gt;...
  * host -> client   TURN &lt;name&gt; &lt;picks&gt; &lt;millisLeft&gt;
@@ -41,7 +43,7 @@ package dev.opendraft.net;
  * </pre>
  */
 public final class Protocol {
-    public static final int VERSION = 7;
+    public static final int VERSION = 8;
     public static final int DEFAULT_PORT = 25570;
     public static final int MIN_BOARD = 3;
     public static final int MAX_BOARD = 25;

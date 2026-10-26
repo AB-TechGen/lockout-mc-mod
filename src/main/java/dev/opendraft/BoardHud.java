@@ -6,6 +6,7 @@ import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElement;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -142,6 +143,53 @@ public final class BoardHud {
         g.fill(0, 0, sw, sh, 0xFF101014);
         Component c = Component.literal(s.readySent == s.matchId ? "Waiting for other players..." : "Loading terrain...");
         g.text(mc.font, c, (sw - mc.font.width(c)) / 2, sh / 2 - mc.font.lineHeight / 2, 0xFFFFFFFF, true);
+    }
+
+    /** Vanilla's tab list, or in a lobby everyone in it, like a server's, with a small icon for where each one is. */
+    public static HudElement playerList(HudElement vanilla) {
+        return (g, delta) -> {
+            Minecraft mc = Minecraft.getInstance();
+            Session s = Session.current();
+            if (s == null || mc.player == null || !mc.options.keyPlayerList.isDown()) {
+                vanilla.extractRenderState(g, delta);
+                return;
+            }
+            Font font = mc.font;
+            List<String> players = s.participants();
+            boolean scores = s.goals != null;
+            int nameW = font.width("OpenDraft lobby");
+            for (String p : players) nameW = Math.max(nameW, font.width(label(s, p)) + 12 + (scores ? 18 : 0));
+            int w = nameW + PAD * 2, row = font.lineHeight + 2;
+            int x0 = (mc.getWindow().getGuiScaledWidth() - w) / 2, y0 = 10;
+            g.fill(x0, y0, x0 + w, y0 + PAD * 2 + row * (players.size() + 1), PANEL);
+            g.text(font, Component.literal("OpenDraft lobby").withStyle(ChatFormatting.GOLD), x0 + PAD, y0 + PAD, 0xFFFFFFFF, true);
+            int y = y0 + PAD + row;
+            for (String p : players) {
+                ItemStack icon = WHERE_ICONS.get(s.where.getOrDefault(p, "lobby"));
+                if (icon != null) {
+                    Matrix3x2fStack pose = g.pose();
+                    pose.pushMatrix();
+                    pose.translate(x0 + PAD, y);
+                    pose.scale(0.5f, 0.5f);
+                    g.fakeItem(icon, 0, 0);
+                    pose.popMatrix();
+                }
+                g.text(font, Component.literal(label(s, p)), x0 + PAD + 12, y, s.players.contains(p) ? OpenDraftClient.colorOf(p) : 0xFF888888, true);
+                if (scores) {
+                    String score = String.valueOf(s.score(p));
+                    g.text(font, Component.literal(score), x0 + w - PAD - font.width(score), y, 0xFFFFFFFF, true);
+                }
+                y += row;
+            }
+        };
+    }
+
+    /** Overworld, Nether and End; nothing for someone in the lobby screen. */
+    private static final Map<String, ItemStack> WHERE_ICONS = Map.of("overworld", new ItemStack(Items.GRASS_BLOCK),
+            "nether", new ItemStack(Items.NETHERRACK), "end", new ItemStack(Items.END_STONE));
+
+    private static String label(Session s, String name) {
+        return name + (name.equals(s.me) ? " (you)" : "") + (s.players.contains(name) ? "" : " (left)");
     }
 
     /** The lookout's last seconds, spent on the ground, as a big number in the middle of the screen, then "GO!". */

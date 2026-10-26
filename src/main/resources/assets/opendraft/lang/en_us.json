@@ -1,4 +1,6 @@
 {
   "key.category.opendraft.opendraft": "OpenDraft",
-  "key.opendraft.board": "Open the board"
+  "key.opendraft.board": "Open the board",
+  "key.opendraft.toggle_board": "Toggle the small board",
+  "key.opendraft.fullbright": "Toggle fullbright"
 }
