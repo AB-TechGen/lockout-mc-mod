@@ -19,7 +19,7 @@ package dev.opendraft.net;
  * client -> host   ADV &lt;task|goal|challenge&gt; &lt;title...&gt;
  * host -> client   WELCOME &lt;assignedName&gt;
  * host -> client   REJECT &lt;reason...&gt;
- * host -> client   PLAYERS &lt;name&gt;...           (join order, which sets colours; the first is the leader)
+ * host -> client   PLAYERS &lt;name&gt;:&lt;colour&gt;...  (join order; the first is the leader. Colours are 0, 1, 2... and stay put)
  * host -> client   SETTINGS &lt;key=value&gt;...
  * host -> client   MATCH &lt;matchId&gt; &lt;seed&gt;
  * host -> client   GO &lt;matchId&gt;                (everyone's world is ready; the leader deals the board)
@@ -39,7 +39,7 @@ package dev.opendraft.net;
  * </pre>
  */
 public final class Protocol {
-    public static final int VERSION = 5;
+    public static final int VERSION = 6;
     public static final int DEFAULT_PORT = 25570;
     public static final int MIN_BOARD = 3;
     public static final int MAX_BOARD = 25;

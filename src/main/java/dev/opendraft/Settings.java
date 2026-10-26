@@ -23,7 +23,7 @@ public final class Settings {
     public static int size = 25;
     /** Time limit in minutes; 0 means play until someone can't be caught. */
     public static int minutes = 0;
-    /** Extra minutes when the time limit ends in a tie; the next goal claimed wins. 0 means a tie is a draw. */
+    /** Extra minutes when the time limit ends in a tie; whoever pulls ahead first wins. 0 means a tie is a draw. */
     public static int overtime = 0;
     /** Seconds everyone spends looking around from the air before the clock starts. */
     public static int lookout = 30;

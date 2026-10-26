@@ -187,9 +187,12 @@ public final class BoardScreen extends Screen {
             for (String o : owners) if (o != null) picked++;
             centered(g, font, Component.literal(picked + " picked").withStyle(ChatFormatting.GRAY), footY, 0xFFFFFFFF);
         } else {
-            centered(g, font, BoardHud.scoreLine(s), footY, 0xFFFFFFFF);
+            for (Component line : BoardHud.scoreLines(s, font, width - 40)) {
+                centered(g, font, line, footY, 0xFFFFFFFF);
+                footY += 11;
+            }
             String result = BoardHud.result(s);
-            if (result != null) centered(g, font, Component.literal(result), footY + 11,
+            if (result != null) centered(g, font, Component.literal(result), footY,
                     s.winner.equals("-") ? 0xFFFFFFFF : OpenDraftClient.colorOf(s.winner));
         }
 

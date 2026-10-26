@@ -8,6 +8,7 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -28,6 +29,8 @@ public final class BoardHud {
     static final int PAD = 3;
     static final int UNCLAIMED = 0xFF5A5A5A;
     static final int PANEL = 0xA0101014;
+    /** Scores wider than this wrap onto another line, so four players don't stretch the panel across the screen. */
+    static final int SCORE_WIDTH = 150;
 
     private static final Map<String, ItemStack> ICON_ITEMS = new ConcurrentHashMap<>();
 
@@ -65,8 +68,10 @@ public final class BoardHud {
 
         List<Component> lines = new ArrayList<>();
         List<Integer> colors = new ArrayList<>();
-        lines.add(scoreLine(s));
-        colors.add(0xFFFFFFFF);
+        for (Component c : scoreLines(s, font, Math.max(gridW, SCORE_WIDTH))) {
+            lines.add(c);
+            colors.add(0xFFFFFFFF);
+        }
         lines.add(Component.literal(clock(s)));
         colors.add(clockColor(s));
         String result = result(s);
@@ -158,6 +163,7 @@ public final class BoardHud {
         int alpha = age < 6000 ? 0xFF : (int) (0xFF * (7000 - age) / 1000);
         color = (alpha << 24) | (color & 0xFFFFFF);
         String sub = draw ? "Nobody wins this one" : (won ? "You won " : s.winner + " won ") + scoreText(s);
+        if (!draw && !won && s.participants().size() > 2 && !s.iForfeited()) sub += ", " + yourPlace(s);
         g.fill(0, sh / 2 - 46, sw, sh / 2 + 10, (alpha * 0x90 / 0xFF) << 24);
         Matrix3x2fStack pose = g.pose();
         pose.pushMatrix();
@@ -170,11 +176,33 @@ public final class BoardHud {
         g.text(font, subC, (sw - font.width(subC)) / 2, sh / 2 - 6, (alpha << 24) | 0xDDDDDD, true);
     }
 
-    /** "13-9" style: the winner's score against the best of the rest. */
+    /** "13-9" style, or "9-6-4" with more players: the winner's score, then the rest, most first. */
     private static String scoreText(Session s) {
-        int best = s.score(s.winner), rest = 0;
-        for (String p : s.players) if (!p.equals(s.winner)) rest = Math.max(rest, s.score(p));
-        return best + "-" + rest;
+        List<Integer> rest = new ArrayList<>(), forfeits = new ArrayList<>();
+        for (String p : s.participants()) {
+            if (!p.equals(s.winner)) (s.forfeited.contains(p) ? forfeits : rest).add(s.score(p));
+        }
+        if (rest.isEmpty()) rest = forfeits; // won because everyone else forfeited
+        rest.sort((a, b) -> b - a);
+        StringBuilder b = new StringBuilder().append(s.score(s.winner));
+        for (int n : rest) b.append('-').append(n);
+        return b.toString();
+    }
+
+    /** "you came 2nd", or "you tied for 2nd". */
+    private static String yourPlace(Session s) {
+        int place = s.place(s.me);
+        boolean tied = false;
+        for (String p : s.participants()) {
+            if (!p.equals(s.me) && !s.forfeited.contains(p) && s.score(p) == s.score(s.me)) tied = true;
+        }
+        String suffix = place % 100 / 10 == 1 ? "th" : switch (place % 10) {
+            case 1 -> "st";
+            case 2 -> "nd";
+            case 3 -> "rd";
+            default -> "th";
+        };
+        return (tied ? "you tied for " : "you came ") + place + suffix;
     }
 
     // ---- shared with BoardScreen --------------------------------------------------------------------
@@ -183,15 +211,29 @@ public final class BoardHud {
         return Math.max(1, (int) Math.ceil(Math.sqrt(n)));
     }
 
-    static Component scoreLine(Session s) {
+    /** "You 3  Alex 2  Sam 4", you first, then in join order, wrapped onto more lines past maxWidth. */
+    static List<Component> scoreLines(Session s, Font font, int maxWidth) {
         String me = s.me;
-        var line = Component.literal("You " + s.score(me)).withColor(OpenDraftClient.colorOf(me) & 0xFFFFFF);
-        for (String name : s.players) {
-            if (name.equals(me)) continue;
-            line.append(Component.literal("  " + name + " " + s.score(name) + (s.forfeited.contains(name) ? " (forfeit)" : ""))
-                    .withColor(OpenDraftClient.colorOf(name) & 0xFFFFFF));
+        List<String> order = new ArrayList<>();
+        order.add(me);
+        for (String name : s.participants()) if (!name.equals(me)) order.add(name);
+        List<Component> lines = new ArrayList<>();
+        MutableComponent line = null;
+        for (String name : order) {
+            Component part = Component.literal((name.equals(me) ? "You" : name) + " " + s.score(name)
+                    + (s.forfeited.contains(name) ? " (forfeit)" : "")).withColor(OpenDraftClient.colorOf(name) & 0xFFFFFF);
+            if (line != null && font.width(line) + font.width("  ") + font.width(part) > maxWidth) {
+                lines.add(line);
+                line = null;
+            }
+            if (line == null) {
+                line = Component.literal("").append(part);
+            } else {
+                line.append(Component.literal("  ")).append(part);
+            }
         }
-        return line;
+        if (line != null) lines.add(line);
+        return lines;
     }
 
     /** Time left when there is a limit (counting overtime), otherwise time played. */

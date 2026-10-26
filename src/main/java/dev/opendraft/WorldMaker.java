@@ -106,22 +106,42 @@ public final class WorldMaker {
         }
     }
 
+    /**
+     * Puts the OpenDraft button in the menu, right under Multiplayer and the same size. To make room,
+     * the buttons above it move up half a row and the ones below move down half a row, so the menu
+     * stays centred and clear of the copyright line.
+     */
     private static void addTitleButton(Screen screen) {
         Minecraft mc = Minecraft.getInstance();
         List<AbstractWidget> widgets = Screens.getWidgets(screen);
-        String singleplayer = Component.translatable("menu.singleplayer").getString();
-        AbstractWidget anchor = null;
+        AbstractWidget singleplayer = labelled(widgets, "menu.singleplayer");
+        AbstractWidget multiplayer = labelled(widgets, "menu.multiplayer");
+        Button.OnPress open = b -> mc.gui.setScreen(new LobbyScreen());
+        if (multiplayer == null) {
+            widgets.add(Button.builder(Component.literal("OpenDraft"), open).bounds(4, 4, 98, 20).build());
+            return;
+        }
+        int step = singleplayer != null && multiplayer.getY() > singleplayer.getY()
+                ? multiplayer.getY() - singleplayer.getY() : multiplayer.getHeight() + 4;
+        int up = step / 2, down = step - up;
+        int left = multiplayer.getX() - 30, right = multiplayer.getX() + multiplayer.getWidth() + 30;
+        int row = multiplayer.getY();
         for (AbstractWidget w : widgets) {
-            if (w.getMessage().getString().equals(singleplayer)) anchor = w;
+            int middle = w.getX() + w.getWidth() / 2;
+            // Only the menu column (with the small buttons beside it), not corner buttons or the copyright line.
+            if (middle < left || middle > right || w.getY() >= screen.height - 20) continue;
+            w.setY(w.getY() > row ? w.getY() + down : w.getY() - up);
         }
-        int w = 98, h = 20, x = 4, y = 4;
-        if (anchor != null) {
-            x = anchor.getX() + anchor.getWidth() + 4;
-            y = anchor.getY();
-            if (x + w > screen.width - 4) x = anchor.getX() - w - 4;
+        widgets.add(Button.builder(Component.literal("OpenDraft"), open)
+                .bounds(multiplayer.getX(), multiplayer.getY() + step, multiplayer.getWidth(), multiplayer.getHeight()).build());
+    }
+
+    private static AbstractWidget labelled(List<AbstractWidget> widgets, String key) {
+        String label = Component.translatable(key).getString();
+        for (AbstractWidget w : widgets) {
+            if (w.getMessage().getString().equals(label)) return w;
         }
-        widgets.add(Button.builder(Component.literal("OpenDraft"), b -> mc.gui.setScreen(new LobbyScreen()))
-                .bounds(x, y, w, h).build());
+        return null;
     }
 
     /** CreateWorldScreen.openFresh(Minecraft, Runnable or Screen). Also the lobby's "Create match world" button. */
@@ -152,6 +172,7 @@ public final class WorldMaker {
         if (ui == null) return;
         call(ui, "setName", pendingName);
         call(ui, "setSeed", Long.toString(pendingSeed));
+        call(ui, "setAllowCommands", false);
         pressOn = screen;
         pressIn = 3; // give the screen a moment to settle
     }

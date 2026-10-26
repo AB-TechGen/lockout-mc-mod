@@ -28,12 +28,14 @@ public final class LobbyScreen extends Screen {
     private static final int GOLD = 0xFFFFD54F;
 
     // Not connected
-    private EditBox nameBox, portBox, addressBox;
+    private EditBox nameBox, addressBox;
     private Button createButton, joinButton;
     // Connected
     private EditBox chatBox;
-    private Button copyButton, editButton, startButton, joinMatchButton, leaveButton;
+    private Button showButton, copyButton, editButton, startButton, joinMatchButton, leaveButton;
     private Button backButton;
+    /** The host's invite code is hidden until they press Show, so it's safe on stream. */
+    private static boolean showCode;
 
     public LobbyScreen() {
         super(Component.literal("OpenDraft Lobby"));
@@ -49,23 +51,23 @@ public final class LobbyScreen extends Screen {
         nameBox.setMaxLength(16);
         nameBox.setValue(Settings.name.isEmpty() ? mc.getUser().getName() : Settings.name);
         addRenderableWidget(nameBox);
-        portBox = new EditBox(font, cx - 100, 92, 50, 18, Component.literal("Port"));
-        portBox.setMaxLength(5);
-        portBox.setValue(String.valueOf(Settings.port));
-        addRenderableWidget(portBox);
         createButton = addRenderableWidget(Button.builder(Component.literal("Create Lobby"), b -> create())
-                .bounds(cx - 46, 91, 146, 20).build());
-        addressBox = new EditBox(font, cx - 100, 134, 140, 18, Component.literal("Address"));
+                .bounds(cx - 100, 82, 200, 20).build());
+        addressBox = new EditBox(font, cx - 100, 124, 140, 18, Component.literal("Invite code"));
         addressBox.setMaxLength(128);
         addressBox.setValue(Settings.address);
         addRenderableWidget(addressBox);
         joinButton = addRenderableWidget(Button.builder(Component.literal("Join"), b -> join())
-                .bounds(cx + 44, 133, 56, 20).build());
+                .bounds(cx + 44, 123, 56, 20).build());
 
         int chatW = Math.max(120, Math.min(240, width - 230));
         chatBox = new EditBox(font, 8, height - 27, chatW, 18, Component.literal("Chat"));
         chatBox.setMaxLength(200);
         addRenderableWidget(chatBox);
+        showButton = addRenderableWidget(Button.builder(Component.literal(showCode ? "Hide" : "Show"), b -> {
+                    showCode = !showCode;
+                    b.setMessage(Component.literal(showCode ? "Hide" : "Show"));
+                }).bounds(8 + PANEL_W - 88, 10, 40, 16).build());
         copyButton = addRenderableWidget(Button.builder(Component.literal("Copy"), b -> copyInvite())
                 .bounds(8 + PANEL_W - 44, 10, 40, 16).build());
         editButton = addRenderableWidget(Button.builder(Component.literal("Edit Settings"), b ->
@@ -97,13 +99,14 @@ public final class LobbyScreen extends Screen {
     private void updateWidgets() {
         Session s = Session.current();
         boolean in = s != null;
-        for (var w : new net.minecraft.client.gui.components.AbstractWidget[]{nameBox, portBox, createButton, addressBox, joinButton}) {
+        for (var w : new net.minecraft.client.gui.components.AbstractWidget[]{nameBox, createButton, addressBox, joinButton}) {
             w.visible = !in;
         }
         backButton.visible = !in;
         chatBox.visible = in;
         leaveButton.visible = in;
         copyButton.visible = in && s.host != null && s.host.reach() != null && s.host.reach().code() != null;
+        showButton.visible = copyButton.visible;
         editButton.visible = in && s.isLeader();
         boolean matchOn = in && s.matchOn();
         startButton.visible = in && s.isLeader() && !matchOn;
@@ -119,23 +122,16 @@ public final class LobbyScreen extends Screen {
     }
 
     private void create() {
-        int port;
-        try {
-            port = Integer.parseInt(portBox.getValue().trim());
-        } catch (NumberFormatException e) {
-            Session.lastStatus = "The port must be a number.";
-            return;
-        }
         remember();
-        Settings.port = port;
-        OpenDraftHost host = new OpenDraftHost(port, OpenDraftClient.modVersion(), null, msg -> OpenDraftClient.LOG.info("[sync] {}", msg));
+        OpenDraftHost host = new OpenDraftHost(Settings.port, OpenDraftClient.modVersion(), null, msg -> OpenDraftClient.LOG.info("[sync] {}", msg));
         try {
-            host.open();
+            host.openAnyPort();
         } catch (Exception e) {
-            Session.lastStatus = "Could not open port " + port + ": " + e.getMessage();
+            Session.lastStatus = "Couldn't create the lobby: " + e.getMessage();
             return;
         }
-        Session.connect(host, "127.0.0.1:" + port, nameBox.getValue(), "-");
+        showCode = false;
+        Session.connect(host, "127.0.0.1:" + host.port(), nameBox.getValue(), "-");
         host.shareOnline(reach -> {
             Session s = Session.current();
             if (s != null && s.host == host && reach.code() != null) s.addChatLine("Press Copy to share the invite code.");
@@ -198,10 +194,9 @@ public final class LobbyScreen extends Screen {
             int cx = width / 2;
             centered(g, font, Component.literal("OpenDraft Lobby").withStyle(ChatFormatting.GOLD), 16, 0xFFFFFFFF);
             g.text(font, Component.literal("Your name"), cx - 100, 40, 0xFFAAAAAA, true);
-            g.text(font, Component.literal("Host a lobby (others join you on this port)"), cx - 100, 82, 0xFFAAAAAA, true);
-            g.text(font, Component.literal("Join a lobby (invite code or address)"), cx - 100, 124, 0xFFAAAAAA, true);
+            g.text(font, Component.literal("Join with an invite code"), cx - 100, 114, 0xFFAAAAAA, true);
             String status = Session.lastStatus;
-            if (status != null) wrapped(g, font, status, cx - 120, 162, 240, 0xFFEF5350);
+            if (status != null) wrapped(g, font, status, cx - 120, 152, 240, 0xFFEF5350);
             super.extractRenderState(g, mouseX, mouseY, delta);
             return;
         }
@@ -210,16 +205,17 @@ public final class LobbyScreen extends Screen {
         int x0 = 8, y0 = 8;
         List<String> players = s.players;
         int rows = Math.max(players.size(), 1);
-        int top = s.host != null ? 42 : 32; // the host has a second line, about who can join
+        OpenDraftHost.Reach reach = s.host != null ? s.host.reach() : null;
+        // Only when the relay couldn't be reached: a second line saying friends elsewhere can't join.
+        boolean nearbyOnly = reach != null && reach.code() != null && !reach.anywhere();
+        int top = nearbyOnly ? 42 : 32;
         g.fill(x0, y0, x0 + PANEL_W, y0 + top + 2 + rows * 14, PANEL);
         g.text(font, Component.literal("Lobby (" + players.size() + ")").withStyle(ChatFormatting.BOLD), x0 + 5, y0 + 5, 0xFFFFFFFF, true);
-        OpenDraftHost.Reach reach = s.host != null ? s.host.reach() : null;
         String where;
         if (s.host != null) {
-            where = reach == null ? "Getting your invite code..." : reach.code() == null ? "No invite code (no network found)" : "Code: " + reach.code();
-            String who = reach == null ? "Opening your router..." : reach.anywhere() ? "Works from any network" : "Same network only";
-            int whoColor = reach == null ? 0xFF888888 : reach.anywhere() ? 0xFF81C784 : 0xFFFFB74D;
-            g.text(font, Component.literal(who), x0 + 5, y0 + 28, whoColor, true);
+            where = reach == null ? "Getting your invite code..." : reach.code() == null ? "No invite code (no network found)"
+                    : "Code: " + (showCode ? reach.code() : reach.code().replaceAll("[^-]", "X"));
+            if (nearbyOnly) g.text(font, Component.literal("Only people on your network can join"), x0 + 5, y0 + 28, 0xFFFFB74D, true);
         } else if (!s.welcomed) {
             where = "Connecting...";
         } else {

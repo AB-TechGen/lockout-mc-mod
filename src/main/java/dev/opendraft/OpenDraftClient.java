@@ -70,8 +70,12 @@ public final class OpenDraftClient implements ClientModInitializer {
             }
             WorldMaker.tick();
         });
-        // The lobby button on the title screen, and filling in Create World for lobby matches.
-        ScreenEvents.AFTER_INIT.register((client, screen, w, h) -> WorldMaker.afterInit(screen));
+        // The lobby button on the title screen, filling in Create World for lobby matches, and no LAN or cheats mid-match.
+        ScreenEvents.AFTER_INIT.register((client, screen, w, h) -> {
+            WorldMaker.afterInit(screen);
+            MatchLock.lockScreen(screen);
+            ScreenEvents.afterTick(screen).register(MatchLock::lockScreen);
+        });
         // Leaving a world keeps you in the lobby; the title screen takes you back to it.
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
             if (Session.current() != null) WorldMaker.returnToLobby = true;
@@ -80,7 +84,7 @@ public final class OpenDraftClient implements ClientModInitializer {
                 literal("opendraft")
                         .executes(ctx -> help(ctx.getSource()))
                         .then(literal("host")
-                                .executes(ctx -> host(ctx.getSource(), Protocol.DEFAULT_PORT))
+                                .executes(ctx -> host(ctx.getSource(), 0))
                                 .then(argument("port", IntegerArgumentType.integer(1, 65535))
                                         .executes(ctx -> host(ctx.getSource(), IntegerArgumentType.getInteger(ctx, "port")))))
                         .then(literal("join")
@@ -179,21 +183,22 @@ public final class OpenDraftClient implements ClientModInitializer {
         return server;
     }
 
+    /** @param port the port to use, or 0 to pick one */
     private static int host(FabricClientCommandSource src, int port) {
         MinecraftServer server = world(src);
         if (server == null) return 0;
         Session.end(); // frees the port if this game was already hosting
         long seed = server.overworld().getSeed();
-        OpenDraftHost host = new OpenDraftHost(port, modVersion(), seed, msg -> LOG.info("[sync] {}", msg));
+        OpenDraftHost host = new OpenDraftHost(port == 0 ? Settings.port : port, modVersion(), seed, msg -> LOG.info("[sync] {}", msg));
         try {
-            host.open();
+            if (port == 0) host.openAnyPort();
+            else host.open();
         } catch (Exception e) {
-            src.sendError(Component.literal("Could not open port " + port + ": " + e.getMessage()));
+            src.sendError(Component.literal((port == 0 ? "Couldn't create the lobby: " : "Could not open port " + port + ": ") + e.getMessage()));
             return 0;
         }
-        src.sendFeedback(Component.literal("Synchronizer running on port " + port + " with seed " + seed
-                + ". Getting your invite code...").withStyle(ChatFormatting.GREEN));
-        connect(src, host, "127.0.0.1:" + port, null);
+        src.sendFeedback(Component.literal("Lobby created for this world. Getting your invite code...").withStyle(ChatFormatting.GREEN));
+        connect(src, host, "127.0.0.1:" + host.port(), null);
         host.shareOnline(reach -> chat(Component.literal(reach.code() == null ? "OpenDraft: no invite code, since this computer isn't on a network."
                 : "OpenDraft: others join with /opendraft join " + reach.code() + ". " + reach.note())
                 .withStyle(reach.anywhere() ? ChatFormatting.GREEN : ChatFormatting.GOLD)));
@@ -422,18 +427,15 @@ public final class OpenDraftClient implements ClientModInitializer {
         return s.inLookout() || s.waitingForStart;
     }
 
-    /** You are always cyan; everyone else gets red, yellow, green... in join order. */
+    /**
+     * You are always cyan. Everyone else gets red, yellow, green... by when they joined, and keeps it, so a
+     * player has the same colour on every other player's screen.
+     */
     public static int colorOf(String name) {
         Session s = Session.current();
         if (s == null || name == null || name.equals(s.me)) return ME;
-        int i = 0;
-        for (String p : s.players) {
-            if (p.equals(s.me)) continue;
-            if (p.equals(name)) return OTHERS[i % OTHERS.length];
-            i++;
-        }
-        // Someone who left: a stable colour from their name.
-        return OTHERS[Math.floorMod(name.hashCode(), OTHERS.length)];
+        Integer c = s.colors.get(name);
+        return OTHERS[Math.floorMod(c != null ? c : name.hashCode(), OTHERS.length)];
     }
 
     public static void chat(Component c) {

@@ -117,6 +117,7 @@ public final class ServerHooks {
         if (server != Minecraft.getInstance().getSingleplayerServer()) return;
         Session s = Session.current();
         long worldSeed = server.overworld().getSeed();
+        if (MatchLock.on(s, worldSeed)) MatchLock.enforce(server);
         boolean hold = s != null && s.holding(worldSeed);
         if (lookout != null && !hold) endLookout(server);
         ServerPlayer p = s == null ? null : localPlayer(server);

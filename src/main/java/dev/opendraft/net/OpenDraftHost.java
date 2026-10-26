@@ -7,6 +7,7 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -27,7 +28,7 @@ import java.util.function.Consumer;
  * its own ({@link SyncServerMain}).
  */
 public final class OpenDraftHost {
-    private final int port;
+    private volatile int port;
     private final String modVersion;
     private final Consumer<String> log;
     private final Random random = new Random();
@@ -41,6 +42,8 @@ public final class OpenDraftHost {
 
     // Everything below is guarded by this.
     private final Map<String, LineChannel> players = new LinkedHashMap<>();
+    /** Each player's colour, kept while they own anything on the board so it never changes mid-game. */
+    private final Map<String, Integer> colors = new HashMap<>();
     private Long seed; // null until a player joins from a world or the lobby starts a match, unless fixed up front
 
     // The lobby: the leader's settings (shown to everyone) and the match being loaded.
@@ -79,9 +82,16 @@ public final class OpenDraftHost {
     }
 
     public void open() throws IOException {
-        server = new ServerSocket();
-        server.setReuseAddress(true);
-        server.bind(new InetSocketAddress(port));
+        ServerSocket s = new ServerSocket();
+        try {
+            s.setReuseAddress(true);
+            s.bind(new InetSocketAddress(port));
+        } catch (IOException e) {
+            s.close();
+            throw e;
+        }
+        server = s;
+        port = s.getLocalPort();
         Thread accept = new Thread(this::acceptLoop, "OpenDraft host accept");
         accept.setDaemon(true);
         accept.start();
@@ -91,6 +101,16 @@ public final class OpenDraftHost {
             return t;
         });
         clock.scheduleAtFixedRate(this::tick, 200, 200, TimeUnit.MILLISECONDS);
+    }
+
+    /** Opens on the port given, or on any free one if that's taken. Players join with a code, so the number doesn't matter. */
+    public void openAnyPort() throws IOException {
+        try {
+            open();
+        } catch (IOException e) {
+            port = 0;
+            open();
+        }
     }
 
     /**
@@ -235,8 +255,18 @@ public final class OpenDraftHost {
                 ch.send("REJECT Not an OpenDraft client.");
                 return;
             }
-            if (!p[1].equals(String.valueOf(Protocol.VERSION)) || !p[2].equals(modVersion)) {
-                ch.send("REJECT Mod version mismatch: host has " + modVersion + ", you have " + p[2] + ".");
+            if (!p[2].equals(modVersion)) {
+                int age = compareVersions(p[2], modVersion);
+                ch.send(age < 0 ? "REJECT This lobby needs OpenDraft " + modVersion + " and you have " + p[2]
+                        + ". Download the latest from the Releases page."
+                        : age > 0 ? "REJECT The host has an older OpenDraft (" + modVersion + ") than you (" + p[2]
+                        + "). They need to update."
+                        : "REJECT Mod version mismatch: host has " + modVersion + ", you have " + p[2] + ".");
+                return;
+            }
+            if (!p[1].equals(String.valueOf(Protocol.VERSION))) {
+                ch.send("REJECT Your OpenDraft download doesn't match the host's, though both say " + modVersion
+                        + ". Everyone needs the same one.");
                 return;
             }
             Long theirSeed;
@@ -281,9 +311,14 @@ public final class OpenDraftHost {
             name = wanted.substring(0, Math.min(wanted.length(), 16 - suffix.length())) + suffix;
         }
         players.put(name, ch);
+        if (!colors.containsKey(name)) {
+            int c = 0;
+            while (colors.containsValue(c)) c++;
+            colors.put(name, c);
+        }
         log.accept(name + " joined from " + ch.remote());
         ch.send("WELCOME " + name);
-        broadcast("PLAYERS " + String.join(" ", players.keySet()));
+        broadcast(playersLine());
         broadcastExcept(ch, "INFO " + name + " joined.");
         // Catch the newcomer up on whatever is happening.
         if (!settings.isEmpty()) ch.send("SETTINGS " + settings);
@@ -313,7 +348,8 @@ public final class OpenDraftHost {
         if (players.get(name) != ch) return;
         players.remove(name);
         log.accept(name + " left");
-        broadcast("PLAYERS " + String.join(" ", players.keySet()));
+        forgetColors();
+        broadcast(playersLine());
         broadcast("INFO " + name + " left.");
         if (draft != null && name.equals(draft.current())) draft.nextTurn();
         ready.remove(name);
@@ -347,6 +383,7 @@ public final class OpenDraftHost {
                     return;
                 }
                 keys = null;
+                forgetColors();
                 draftId++;
                 draft = new Draft(pool, size, Integer.parseInt(p[5]), Integer.parseInt(p[1]), Integer.parseInt(p[2]),
                         Integer.parseInt(p[3]), new ArrayList<>(players.keySet()));
@@ -372,6 +409,7 @@ public final class OpenDraftHost {
                 matchId++;
                 draft = null;
                 keys = null;
+                forgetColors();
                 ended = false;
                 overtime = false;
                 forfeited.clear();
@@ -439,6 +477,24 @@ public final class OpenDraftHost {
         }
     }
 
+    /** Compares versions like 0.7.0 and 0.8.0 number by number; parts that aren't numbers count as 0. */
+    static int compareVersions(String a, String b) {
+        String[] x = a.split("\\."), y = b.split("\\.");
+        for (int i = 0; i < Math.max(x.length, y.length); i++) {
+            int c = Integer.compare(number(x, i), number(y, i));
+            if (c != 0) return c;
+        }
+        return 0;
+    }
+
+    private static int number(String[] parts, int i) {
+        try {
+            return i < parts.length ? Integer.parseInt(parts[i].replaceAll("[^0-9].*", "")) : 0;
+        } catch (NumberFormatException e) {
+            return 0;
+        }
+    }
+
     /** Anyone may start when nothing is running; during a game or draft only the lobby leader may restart. */
     private boolean mayStart(String from) {
         boolean running = loading || draft != null || (keys != null && !ended);
@@ -448,6 +504,21 @@ public final class OpenDraftHost {
             return false;
         }
         return true;
+    }
+
+    /** PLAYERS &lt;name&gt;:&lt;colour&gt;... in join order. */
+    private String playersLine() {
+        StringBuilder b = new StringBuilder("PLAYERS");
+        for (String p : players.keySet()) b.append(' ').append(p).append(':').append(colors.get(p));
+        return b.toString();
+    }
+
+    /** Frees the colours of players who left and own nothing on the board or in the draft any more. */
+    private void forgetColors() {
+        Set<String> keep = new HashSet<>(players.keySet());
+        if (keys != null && owners != null) for (String o : owners) if (o != null) keep.add(o);
+        if (draft != null) for (String o : draft.pickedBy) if (o != null) keep.add(o);
+        colors.keySet().retainAll(keep);
     }
 
     /** The first player in the lobby (join order) runs it: settings, starting and restarting. */
@@ -496,6 +567,7 @@ public final class OpenDraftHost {
         boardId++;
         keys = boardKeys.toArray(new String[0]);
         owners = new String[keys.length];
+        forgetColors();
         limitSec = Math.max(0, limit);
         overtimeSec = Math.max(0, overtimeLength);
         startedAt = System.currentTimeMillis() + Math.max(0, lookout) * 1000L;
@@ -554,9 +626,11 @@ public final class OpenDraftHost {
 
     private void checkEnd() {
         if (overtime) {
-            // Sudden death: the first claim that breaks the tie wins.
+            // Sudden death: the first claim that puts someone ahead wins. With every goal gone, the tie stands.
             String w = winnerOrDash();
-            if (!w.equals("-")) end(w);
+            boolean anyLeft = false;
+            for (String o : owners) anyLeft |= o == null;
+            if (!w.equals("-") || !anyLeft) end(w);
             return;
         }
         Map<String, Integer> score = new LinkedHashMap<>();
@@ -611,9 +685,10 @@ public final class OpenDraftHost {
     // ---- the draft -------------------------------------------------------------------------------
 
     /**
-     * Players take turns choosing goals from a pool: the first turn picks 1, every turn after
-     * picks 2 (so the first player's head start is small). A goal can only be picked once.
-     * When a turn runs out of time the remaining picks are made at random.
+     * Players take turns choosing goals from a pool in snake order (A B C, C B A, A B C...), so
+     * the players at either end of the order pick twice in a row and nobody gets ahead. With two
+     * players that's 1, 2, 2, 2... picks a turn. A goal can only be picked once. When a turn runs
+     * out of time the remaining picks are made at random.
      */
     private final class Draft {
         final List<String> pool;
@@ -621,7 +696,7 @@ public final class OpenDraftHost {
         final List<Integer> order = new ArrayList<>();
         final int size, turnSec, limit, overtimeLength, lookout;
         final List<String> turnOrder;
-        int turn = -1;
+        String turnPlayer;
         int picksLeft;
         long deadline = Long.MAX_VALUE;
 
@@ -637,7 +712,13 @@ public final class OpenDraftHost {
         }
 
         String current() {
-            return turnOrder.isEmpty() ? null : turnOrder.get(Math.floorMod(turn, turnOrder.size()));
+            return turnPlayer;
+        }
+
+        /** Whose pick the k-th pick is, as a position in the turn order: forwards, then backwards, and so on. */
+        int snake(int k, int n) {
+            int pos = k % n;
+            return (k / n) % 2 == 0 ? pos : n - 1 - pos;
         }
 
         void startTurn() {
@@ -650,8 +731,12 @@ public final class OpenDraftHost {
                 draft = null;
                 return;
             }
-            turn++;
-            picksLeft = Math.min(turn == 0 ? 1 : 2, size - order.size());
+            int k = order.size(), n = turnOrder.size();
+            int who = snake(k, n);
+            int run = 1;
+            while (k > 0 && run < 2 && snake(k + run, n) == who) run++; // a lone player still picks 1, then 2s
+            turnPlayer = turnOrder.get(who);
+            picksLeft = Math.min(run, size - k);
             deadline = System.currentTimeMillis() + turnSec * 1000L;
             broadcast(turnLine());
         }

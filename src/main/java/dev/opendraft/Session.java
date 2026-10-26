@@ -41,6 +41,8 @@ public final class Session {
     public volatile String me;
     public volatile boolean welcomed;
     public volatile List<String> players = List.of();
+    /** Everyone's colour number from the synchronizer, kept for players who left so their claims keep it. */
+    public volatile Map<String, Integer> colors = Map.of();
     /** The leader's settings as the synchronizer last relayed them. */
     public volatile Map<String, String> lobbySettings = Map.of();
     public final List<String> chatLines = new CopyOnWriteArrayList<>();
@@ -199,6 +201,20 @@ public final class Session {
         return n;
     }
 
+    /** Everyone in this game: the lobby in join order, then anyone who left but still has claims. */
+    public List<String> participants() {
+        List<String> all = new ArrayList<>(players);
+        for (String o : owners) if (o != null && !all.contains(o)) all.add(o);
+        return all;
+    }
+
+    /** 1 for the most goals, 2 for the next and so on; tied players share a place. Forfeits don't count. */
+    public int place(String name) {
+        int mine = score(name), place = 1;
+        for (String p : participants()) if (!forfeited.contains(p) && score(p) > mine) place++;
+        return place;
+    }
+
     /** Called on the network thread for each line from the synchronizer. */
     void onLine(String line) {
         String[] p = line.split(" ", 2);
@@ -215,7 +231,17 @@ public final class Session {
                 OpenDraftClient.chat(Component.literal("OpenDraft: " + rest).withStyle(ChatFormatting.RED));
             }
             case "PLAYERS" -> {
-                players = rest.isEmpty() ? List.of() : List.of(rest.split(" "));
+                // PLAYERS <name>:<colour>...
+                List<String> names = new ArrayList<>();
+                Map<String, Integer> c = new java.util.HashMap<>(colors);
+                for (String entry : rest.isEmpty() ? new String[0] : rest.split(" ")) {
+                    int colon = entry.lastIndexOf(':');
+                    String name = colon < 0 ? entry : entry.substring(0, colon);
+                    names.add(name);
+                    if (colon >= 0) c.put(name, Integer.parseInt(entry.substring(colon + 1)));
+                }
+                colors = Map.copyOf(c);
+                players = List.copyOf(names);
                 // The leader's settings are what everyone sees; a new leader shares theirs.
                 if (isLeader() && !Settings.decode(Settings.encode()).equals(lobbySettings)) send("SETTINGS " + Settings.encode());
             }
@@ -337,7 +363,7 @@ public final class Session {
             }
             case "OVERTIME" -> {
                 overtime = true;
-                OpenDraftClient.chat(Component.literal("Time's up and it's a tie! Overtime: the next goal wins.")
+                OpenDraftClient.chat(Component.literal("Time's up and it's a tie! Overtime: whoever pulls ahead first wins.")
                         .withStyle(ChatFormatting.RED, ChatFormatting.BOLD));
             }
             case "CLAIMED" -> {
@@ -381,6 +407,7 @@ public final class Session {
                 winner = rest;
                 OpenDraftClient.chat(Component.literal(rest.equals("-") ? "Game over: it's a draw!"
                         : rest.equals(me) ? "Game over: you win!" : "Game over: " + rest + " wins!").withStyle(ChatFormatting.GOLD));
+                if (goals != null && participants().size() > 2) OpenDraftClient.chat(standings());
             }
             case "ADV" -> {
                 // ADV <name> <task|goal|challenge> <title...>: shown like the vanilla advancement message.
@@ -398,6 +425,20 @@ public final class Session {
             default -> {
             }
         }
+    }
+
+    /** "Final scores: Alex 9, You 6, Sam 4 (forfeit)", most goals first. */
+    private Component standings() {
+        List<String> order = new ArrayList<>(participants());
+        order.sort((a, b) -> Integer.compare(score(b), score(a)));
+        MutableComponent line = Component.literal("Final scores: ").withStyle(ChatFormatting.GRAY);
+        for (int i = 0; i < order.size(); i++) {
+            String p = order.get(i);
+            if (i > 0) line.append(Component.literal(", ").withStyle(ChatFormatting.GRAY));
+            line.append(Component.literal((p.equals(me) ? "You" : p) + " " + score(p) + (forfeited.contains(p) ? " (forfeit)" : ""))
+                    .withColor(OpenDraftClient.colorOf(p) & 0xFFFFFF));
+        }
+        return line;
     }
 
     void addChatLine(String text) {

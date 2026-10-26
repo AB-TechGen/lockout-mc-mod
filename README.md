@@ -16,6 +16,7 @@ under the MIT license.
 ## Features
 
 - **All 316 Draftout goals**, on a random or drafted board of 3 to 25 goals.
+- **1v1 or a free-for-all** with 3, 4 or more players.
 - **Seed filtering**: pick what a random seed must have near spawn, and how near. The options are Village,
   Shipwreck, Outpost, Witch Hut, Desert Temple, Jungle Temple, Igloo, Mansion, Ruined Portal, Trail Ruins,
   Abandoned Camp, Ancient City, Trial Chambers and Pale Garden. See [Seed filter](#seed-filter).
@@ -36,14 +37,16 @@ under the MIT license.
    - Linux: `~/.minecraft/mods`
 5. Start Minecraft with the Fabric profile.
 
-Everyone in a game needs the **same OpenDraft version**. To build the jar yourself instead, see
+Everyone in a game needs the **same OpenDraft version**. A lobby turns away other versions and says who needs to
+update. To build the jar yourself instead, see
 [Building from source](#building-from-source).
 
 ## Playing
 
-1. On the title screen, press **OpenDraft** (next to Singleplayer). This opens the lobby screen.
-2. One player types a name and presses **Create Lobby**. Their game runs the synchronizer, and after a few seconds
-   the lobby shows an **invite code** with a **Copy** button. Send it to your friends.
+1. On the title screen, press **OpenDraft** (under Multiplayer). This opens the lobby screen.
+2. One player types a name and presses **Create Lobby**. After a few seconds the lobby shows an **invite code**,
+   hidden as `XXXX-XXXX` so it's safe on stream. **Copy** copies it even while it's hidden, and **Show** reveals it.
+   Send it to your friends.
 3. Everyone else types their name, pastes the code and presses **Join**. Names don't need a Minecraft account, and
    duplicate names get a number added.
 4. The lobby lists everyone who has joined, the settings and a chat. The first player in the lobby is the leader
@@ -55,7 +58,8 @@ Everyone in a game needs the **same OpenDraft version**. To build the jar yourse
 
 The first claim to reach the synchronizer wins the goal. The game ends once the leader can't be caught, when every
 goal is claimed, when the time limit runs out, or when everyone else has forfeited. The winner sees **VICTORY**
-and everyone else sees **DEFEAT** (or **DRAW**).
+and everyone else sees **DEFEAT** (or **DRAW**). With three or more players, everyone also sees where they placed
+and the final scores.
 
 If the game can't create the world or leave a world by itself, it tells you to do that step by hand: create a
 world with the seed shown in the lobby, or use Save and Quit to Title.
@@ -77,7 +81,8 @@ The leader's **Edit Settings** has two tabs. They're saved in `config/opendraft.
 | World | How near (blocks from spawn) | 300 |
 
 On the steppers, shift-click changes the time limit, lookout and turn length by 1 instead of 5. When time runs out
-the leader wins; on a tie, overtime starts and the next goal claimed wins. If overtime also runs out, it's a draw.
+the leader wins. On a tie for the lead, overtime starts and whoever pulls ahead first wins. If overtime also runs
+out, or every goal is claimed while it's still tied, it's a draw.
 
 ### Seed filter
 
@@ -97,12 +102,18 @@ spawn and each structure are) with `/locate structure`.
 
 Open the full-screen board during a match:
 
-- **Forfeit** (press it twice to confirm) gives up. Your claims stay on the board, but you can't claim more. When
-  only one player is left, they win.
+- **Forfeit** (press it twice to confirm) gives up. Your claims stay on the board, but you can't claim more and they
+  stop counting. When only one player is left, they win; with more players left, the game goes on without you.
 - **Offer Draw** asks everyone else. When every player still in the game has accepted, the game ends in a draw.
   Any goal claimed cancels the offer.
 
 `/opendraft forfeit`, `/opendraft draw` and `/opendraft draw decline` do the same from chat.
+
+### Fair play
+
+Match worlds are created with commands off. During a match, **Open to LAN**, **Allow Commands**, the game mode
+buttons and **Edit Game Rules** are greyed out, in the pause menu and in World Options. If your world gets opened to
+other players or commands get turned on some other way, OpenDraft turns them straight back off.
 
 ### Lookout
 
@@ -113,10 +124,12 @@ you're put back where you were in your old game mode and the clock starts. Nothi
 
 ### Draft
 
-With the board set to Drafted, the synchronizer deals a pool of twice as many goals as the board needs. Players take
-turns in join order: the first turn picks 1 goal and every turn after picks 2. The board opens on your turn; click a
-goal to pick it, or use `/opendraft pick <n>` with the numbers from `/opendraft board`. A goal can only be picked once,
-and when a turn runs out of time the remaining picks are made at random. The board is shuffled once it's full.
+With the board set to Drafted, the synchronizer deals a pool of twice as many goals as the board needs. Players pick
+in join order and then back the other way (A B C, C B A, A B C...), so whoever ends a round picks twice in a row
+and nobody gets ahead. With two players, that's 1 goal on the first turn and 2 on every turn after. The board opens
+on your turn; click a goal to pick it, or use `/opendraft pick <n>` with the numbers from `/opendraft board`. A goal
+can only be picked once, and when a turn runs out of time the remaining picks are made at random. The board is
+shuffled once it's full.
 
 ### Chat
 
@@ -126,7 +139,8 @@ your own world. The lobby has its own chat.
 ### The board
 
 A small icon grid sits in the top-right corner (it moves down while you have status effects, so it doesn't cover
-them). Your claims are cyan; other players get red, yellow, green and so on in join order. Unclaimed goals are grey.
+them). Your claims are always cyan on your screen. Everyone else gets red, yellow, green and so on in the order they
+joined, and keeps that colour for the whole game on every other player's screen too. Unclaimed goals are grey.
 Goals with a number show it on the icon. The scores and the clock sit under the grid: time left when there's a
 limit, time played otherwise.
 
@@ -138,8 +152,8 @@ The game keeps running while it's open.
 
 The lobby screen covers everything, and these commands also work inside a world:
 
-- `/opendraft host [port]` and `/opendraft join <invite code or address> [name]` start or join a game for the world
-  you're in.
+- `/opendraft host` and `/opendraft join <invite code or address> [name]` start or join a game for the world
+  you're in. `/opendraft host <port>` uses that port instead of picking one.
 - `/opendraft start [size] [minutes] [overtime]` deals a board and `/opendraft draft` starts a draft.
 - `/opendraft settings` shows the settings, and `/opendraft settings size|time|overtime|lookout|turn|mode ...` changes
   them.
@@ -156,19 +170,17 @@ When you create a lobby, your game gets a short code like `K7QM-2D9X` from the O
 that passes the game's messages between players (see [`relay/README.md`](relay/README.md)). Friends anywhere join
 with it, and nobody opens any ports. The synchronizer still runs in your game.
 
-If the relay can't be reached, your game asks your router to open the port instead (TCP 25570 by default), using
-UPnP the way game consoles do. The code is longer then: it holds your home-network address and your internet
+If the relay can't be reached, your game asks your router to open the port instead (TCP 25570, or another free port
+if that one is taken), using UPnP the way game consoles do. The code is longer then: it holds your home-network address and your internet
 address, and joining tries both, so friends in the same house and friends elsewhere use the same code. The port is
 closed again when you leave the lobby.
 
-Under the code, the lobby says who can join:
-
-- **Works from any network**: you're done.
-- **Same network only**: the router didn't open the port. Either turn on UPnP in your router's settings, or forward
-  the port by hand: open the router's page (often `192.168.1.1` or `192.168.0.1`), find Port Forwarding, and forward
-  TCP port 25570 to this computer. The code already includes your internet address, so it works once the port is open.
-  If your connection is behind your internet provider's network (common on phone hotspots, dorms and some providers),
-  forwarding won't help; use a tunnel such as playit.gg, Tailscale or ZeroTier instead.
+If the router doesn't open the port either, the lobby says **Only people on your network can join** under the code,
+and names the port. Either turn on UPnP in your router's settings, or forward that port by hand: open the router's
+page (often `192.168.1.1` or `192.168.0.1`), find Port Forwarding, and forward the TCP port to this computer. The code
+already includes your internet address, so it works once the port is open. If your connection is behind your internet
+provider's network (common on phone hotspots, dorms and some providers), forwarding won't help; use a tunnel such as
+playit.gg, Tailscale or ZeroTier instead.
 
 On macOS, allow Minecraft to find devices on your local network if it asks, so it can reach the router. When the
 router doesn't answer, the game looks up your internet address with `api.ipify.org`.

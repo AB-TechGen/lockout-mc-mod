@@ -202,7 +202,7 @@ public final class LobbySettingsScreen extends Screen {
         if (!worldTab) {
             centered(g, font, Component.literal("Board").withStyle(ChatFormatting.GRAY), 30);
             String hint = minutes == 0 ? "With no time limit the game ends when the leader can't be caught."
-                    : overtime == 0 ? "A tie when time runs out is a draw." : "A tie when time runs out goes to overtime: the next goal wins.";
+                    : overtime == 0 ? "A tie when time runs out is a draw." : "A tie when time runs out goes to overtime: whoever pulls ahead first wins.";
             centered(g, font, Component.literal(hint).withStyle(ChatFormatting.GRAY), 40 + ROW * 6 + 8);
         } else {
             centered(g, font, Component.literal("World seed").withStyle(ChatFormatting.GRAY), 40);
