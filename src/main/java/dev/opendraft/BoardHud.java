@@ -128,8 +128,9 @@ public final class BoardHud {
     }
 
     /**
-     * Covers the whole view while this world is loaded but someone else's isn't, so nobody gets to
-     * look around longer than the others. Drawn before the rest of the HUD, so chat still shows.
+     * Covers the whole view from when this match world opens until everyone's has loaded, so nobody gets
+     * to look around longer than the others. It says whether this game is still loading the terrain or
+     * is waiting for someone else's. Drawn before the rest of the HUD, so chat still shows.
      */
     public static void waitingCover(GuiGraphicsExtractor g, DeltaTracker delta) {
         Minecraft mc = Minecraft.getInstance();
@@ -139,7 +140,7 @@ public final class BoardHud {
         int sw = mc.getWindow().getGuiScaledWidth();
         int sh = mc.getWindow().getGuiScaledHeight();
         g.fill(0, 0, sw, sh, 0xFF101014);
-        Component c = Component.literal("Waiting for other players...");
+        Component c = Component.literal(s.readySent == s.matchId ? "Waiting for other players..." : "Loading terrain...");
         g.text(mc.font, c, (sw - mc.font.width(c)) / 2, sh / 2 - mc.font.lineHeight / 2, 0xFFFFFFFF, true);
     }
 

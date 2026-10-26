@@ -56,10 +56,10 @@ update. To build the jar yourself instead, see
    duplicate names get a number added.
 4. The lobby lists everyone who has joined, the settings and a chat. The first player in the lobby is the leader
    (marked with a star). Only the leader can press **Edit Settings** and **Start**.
-5. **Start** makes everyone's game create a new singleplayer world with the same seed. Until the slowest computer
-   has finished loading and drawing the terrain, everyone who is already in sees a "Waiting for other players..."
-   screen instead of the world, so nobody gets extra time to look around. Then the board is dealt (or drafted) and
-   the lookout begins.
+5. **Start** makes everyone's game create a new singleplayer world with the same seed. Each game covers the world
+   with "Loading terrain..." until the land around you has loaded (30 seconds at most), then with "Waiting for
+   other players..." until the slowest computer has caught up, so nobody gets extra time to look around. Then the
+   board is dealt (or drafted) and the lookout begins.
 6. After the game, press **Back to Lobby** on the full-screen board to leave the world and return to the lobby for
    the next match.
 

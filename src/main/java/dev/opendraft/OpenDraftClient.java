@@ -21,6 +21,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.LevelLoadingScreen;
+import net.minecraft.core.SectionPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.Identifier;
@@ -46,10 +47,12 @@ public final class OpenDraftClient implements ClientModInitializer {
     /** GLFW's key code for B (LWJGL isn't on the compile classpath). */
     private static final int KEY_B = 66;
 
-    /** Ticks the terrain must stay fully drawn before this game says it's ready, so a lull between chunks doesn't count. */
-    private static final int SETTLE_TICKS = 40;
-    /** Ticks in the match world after which it's ready anyway, in case the terrain never settles. */
-    private static final int READY_ANYWAY_TICKS = 60 * 20;
+    /** Chunks around the player, in each direction, that must have arrived before this game says it's ready. */
+    private static final int NEARBY_CHUNKS = 4;
+    /** Ticks those chunks must have been there before this game says it's ready, so they've been drawn too. */
+    private static final int SETTLE_TICKS = 20;
+    /** Ticks in the match world after which it's ready anyway, like vanilla's own loading screen gives up after 30s. */
+    private static final int READY_ANYWAY_TICKS = 30 * 20;
     private static int settledTicks;
     private static int inWorldTicks;
 
@@ -283,8 +286,10 @@ public final class OpenDraftClient implements ClientModInitializer {
 
     /**
      * Tells the synchronizer this game's match world has loaded. That's once the loading screen is gone,
-     * the player is up in the air and the terrain around them has been drawn, not when the world opens:
-     * a slower computer can take a while longer to get there, and the board waits for everyone.
+     * the player is up in the air and the chunks around them have arrived and been drawn, not when the
+     * world opens: a slower computer can take a while longer to get there, and the board waits for
+     * everyone. It doesn't wait for the whole render distance, which can take minutes to generate and
+     * keeps the renderer busy all that time.
      */
     private static void reportReady(Minecraft mc) {
         Session s = Session.current();
@@ -297,12 +302,30 @@ public final class OpenDraftClient implements ClientModInitializer {
             return;
         }
         inWorldTicks++;
-        boolean drawn = !(mc.gui.screen() instanceof LevelLoadingScreen) && ServerHooks.holdingPlayer()
-                && mc.levelRenderer.hasRenderedAllSections();
-        settledTicks = drawn ? settledTicks + 1 : 0;
+        boolean loaded = !(mc.gui.screen() instanceof LevelLoadingScreen) && ServerHooks.holdingPlayer() && nearbyChunksArrived(mc);
+        settledTicks = loaded ? settledTicks + 1 : 0;
         if (settledTicks < SETTLE_TICKS && inWorldTicks < READY_ANYWAY_TICKS) return;
         s.readySent = s.matchId;
         s.send("READY " + s.matchId);
+    }
+
+    /**
+     * Whether every chunk within {@link #NEARBY_CHUNKS} of the player has arrived. At a short render distance
+     * it's fewer, since the server never sends the corners of a square as wide as the render distance.
+     */
+    private static boolean nearbyChunksArrived(Minecraft mc) {
+        var player = mc.player;
+        var level = mc.level;
+        if (player == null || level == null) return false;
+        int r = Math.min(NEARBY_CHUNKS, mc.options.getEffectiveRenderDistance() - 1);
+        int cx = SectionPos.blockToSectionCoord(player.getBlockX());
+        int cz = SectionPos.blockToSectionCoord(player.getBlockZ());
+        for (int x = cx - r; x <= cx + r; x++) {
+            for (int z = cz - r; z <= cz + r; z++) {
+                if (!level.getChunkSource().hasChunk(x, z)) return false;
+            }
+        }
+        return true;
     }
 
     /** The lobby's Start button: shares the settings and sends everyone into a new world. */
