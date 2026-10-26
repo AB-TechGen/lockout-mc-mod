@@ -1,0 +1,49 @@
+plugins {
+    // Minecraft 26.x ships unobfuscated, so this is the non-remapping Loom plugin and there is no mappings line.
+    id 'net.fabricmc.fabric-loom' version "${loom_version}"
+}
+
+version = project.mod_version
+group = project.maven_group
+
+base {
+    archivesName = project.archives_base_name
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+}
+
+processResources {
+    inputs.property 'version', project.version
+    filesMatching('fabric.mod.json') {
+        expand 'version': project.version
+    }
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    it.options.release = 25
+    it.options.encoding = 'UTF-8'
+}
+
+jar {
+    inputs.property 'archivesName', project.base.archivesName
+    // The same jar runs the standalone synchronizer: java -jar opendraft-<version>.jar
+    manifest {
+        attributes 'Main-Class': 'dev.opendraft.net.SyncServerMain',
+                'Implementation-Version': project.version
+    }
+    from('LICENSE') {
+        rename { "${it}_${inputs.properties.archivesName}" }
+    }
+    // Credits for the panorama and the Draftout goals, which aren't under the MIT license.
+    from('NOTICE.md')
+}

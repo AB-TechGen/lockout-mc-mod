@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "id": "opendraft",
+  "version": "${version}",
+  "name": "OpenDraft",
+  "description": "Lockout bingo with Draftout goals. Every player plays their own singleplayer world on the same seed, and a small synchronizer decides who claimed each goal first.",
+  "authors": ["Aarav"],
+  "license": ["MIT", "CC-BY-NC-4.0"],
+  "icon": "assets/opendraft/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "client": ["dev.opendraft.OpenDraftClient"]
+  },
+  "mixins": ["opendraft.mixins.json"],
+  "depends": {
+    "fabricloader": ">=0.19.3",
+    "minecraft": "~26.3",
+    "java": ">=25",
+    "fabric-api": "*"
+  }
+}

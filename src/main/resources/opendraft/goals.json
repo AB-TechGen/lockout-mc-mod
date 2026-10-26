@@ -1,0 +1,3643 @@
+{
+ "goals": [
+  {
+   "id": "get_10_advancements",
+   "name": "Get 10 Advancements",
+   "type": "advancement_count",
+   "icon": "minecraft:experience_bottle",
+   "group": "advancement_count",
+   "count": 10
+  },
+  {
+   "id": "get_20_advancements",
+   "name": "Get 20 Advancements",
+   "type": "advancement_count",
+   "icon": "minecraft:experience_bottle",
+   "group": "advancement_count",
+   "count": 20
+  },
+  {
+   "id": "get_30_advancements",
+   "name": "Get 30 Advancements",
+   "type": "advancement_count",
+   "icon": "minecraft:experience_bottle",
+   "group": "advancement_count",
+   "count": 30
+  },
+  {
+   "id": "get_hired_help_advancement",
+   "name": "Construct an Iron Golem",
+   "type": "advancement",
+   "icon": "minecraft:carved_pumpkin",
+   "advancements": [
+    "minecraft:adventure/summon_iron_golem"
+   ]
+  },
+  {
+   "id": "get_eye_spy_advancement",
+   "name": "Find a Stronghold",
+   "type": "advancement",
+   "icon": "minecraft:ender_eye",
+   "advancements": [
+    "minecraft:story/follow_ender_eye"
+   ]
+  },
+  {
+   "id": "get_not_quite_nine_lives_advancement",
+   "name": "Fully charge a Respawn Anchor",
+   "type": "advancement",
+   "icon": "minecraft:respawn_anchor",
+   "advancements": [
+    "minecraft:nether/charge_respawn_anchor"
+   ]
+  },
+  {
+   "id": "get_bullseye_advancement",
+   "name": "Obtain \"Bullseye\" Advancement",
+   "type": "advancement",
+   "icon": "minecraft:target",
+   "advancements": [
+    "minecraft:adventure/bullseye"
+   ]
+  },
+  {
+   "id": "get_mob_kabob_advancement",
+   "name": "Obtain \"Mob Kabob\" Advancement",
+   "type": "advancement",
+   "icon": "minecraft:iron_spear",
+   "advancements": [
+    "minecraft:adventure/spear_many_mobs"
+   ],
+   "title": "Mob Kabob"
+  },
+  {
+   "id": "get_oh_shiny_advancement",
+   "name": "Obtain \"Oh Shiny\" Advancement",
+   "type": "advancement",
+   "icon": "minecraft:gold_ingot",
+   "advancements": [
+    "minecraft:nether/distract_piglin"
+   ]
+  },
+  {
+   "id": "get_sniper_duel_advancement",
+   "name": "Obtain \"Sniper Duel\" Advancement",
+   "type": "advancement",
+   "icon": "minecraft:arrow",
+   "advancements": [
+    "minecraft:adventure/sniper_duel"
+   ]
+  },
+  {
+   "id": "get_this_boat_has_legs_advancement",
+   "name": "Obtain \"This boat has legs\" Advancement",
+   "type": "advancement",
+   "icon": "minecraft:warped_fungus_on_a_stick",
+   "advancements": [
+    "minecraft:nether/ride_strider_in_overworld_lava"
+   ],
+   "title": "This Boat Has Legs"
+  },
+  {
+   "id": "get_wax_off_advancement",
+   "name": "Scrape wax off of Copper Block",
+   "type": "advancement",
+   "icon": "minecraft:stone_axe",
+   "advancements": [
+    "minecraft:husbandry/wax_off"
+   ]
+  },
+  {
+   "id": "get_what_a_deal_advancement",
+   "name": "Trade with a Villager",
+   "type": "advancement",
+   "icon": "minecraft:emerald",
+   "advancements": [
+    "minecraft:adventure/trade"
+   ]
+  },
+  {
+   "id": "get_wax_on_advancement",
+   "name": "Wax a Copper Block",
+   "type": "advancement",
+   "icon": "minecraft:honeycomb",
+   "advancements": [
+    "minecraft:husbandry/wax_on"
+   ]
+  },
+  {
+   "id": "get_a_terrible_fortress_advancement",
+   "name": "Find a Fortress",
+   "type": "advancement",
+   "icon": "minecraft:nether_bricks",
+   "advancements": [
+    "minecraft:nether/find_fortress"
+   ]
+  },
+  {
+   "id": "get_power_of_books_advancement",
+   "name": "Obtain \"The Power of Books\" Advancement",
+   "type": "advancement",
+   "icon": "minecraft:chiseled_bookshelf",
+   "advancements": [
+    "minecraft:adventure/read_power_of_chiseled_bookshelf"
+   ],
+   "title": "The Power of Books"
+  },
+  {
+   "id": "get_stay_hydrated_advancement",
+   "name": "Obtain \"Stay Hydrated!\" Advancement",
+   "type": "advancement",
+   "icon": "minecraft:dried_ghast",
+   "advancements": [
+    "minecraft:husbandry/place_dried_ghast_in_water"
+   ],
+   "title": "Stay Hydrated!"
+  },
+  {
+   "id": "get_the_city_at_the_end_of_the_game_advancement",
+   "name": "Find an End City",
+   "type": "advancement",
+   "icon": "minecraft:purpur_block",
+   "advancements": [
+    "minecraft:end/find_end_city"
+   ]
+  },
+  {
+   "id": "get_those_were_the_days_advancement",
+   "name": "Find a Bastion",
+   "type": "advancement",
+   "icon": "minecraft:polished_blackstone_bricks",
+   "advancements": [
+    "minecraft:nether/find_bastion"
+   ]
+  },
+  {
+   "id": "get_postmortal_advancement",
+   "name": "Obtain \"Postmortal\" Advancement",
+   "type": "advancement",
+   "icon": "minecraft:totem_of_undying",
+   "advancements": [
+    "minecraft:adventure/totem_of_undying"
+   ]
+  },
+  {
+   "id": "get_it_spreads_advancement",
+   "name": "Obtain \"It Spreads\" Advancement",
+   "type": "advancement",
+   "icon": "minecraft:sculk_catalyst",
+   "advancements": [
+    "minecraft:adventure/kill_mob_near_sculk_catalyst"
+   ]
+  },
+  {
+   "id": "ignite_tnt_sulfur_cube",
+   "name": "Obtain \"Uh Oh\" Advancement",
+   "type": "advancement",
+   "icon": "minecraft:tnt",
+   "advancements": [
+    "minecraft:adventure/uh_oh"
+   ],
+   "title": "Uh Oh"
+  },
+  {
+   "id": "get_any_spyglass_advancement",
+   "name": "Get any Spyglass Advancement",
+   "type": "advancement",
+   "icon": "minecraft:spyglass",
+   "advancements": [
+    "minecraft:adventure/spyglass_at_parrot",
+    "minecraft:adventure/spyglass_at_ghast",
+    "minecraft:adventure/spyglass_at_dragon"
+   ]
+  },
+  {
+   "id": "fill_decorated_pot",
+   "name": "Fill a Decorated Pot",
+   "type": "flag",
+   "icon": "minecraft:decorated_pot",
+   "any": [
+    "pot_filled"
+   ]
+  },
+  {
+   "id": "fill_armor_stand",
+   "name": "Fill an Armor Stand",
+   "type": "flag",
+   "icon": "minecraft:armor_stand",
+   "any": [
+    "armor_stand_filled"
+   ]
+  },
+  {
+   "id": "fill_campfire",
+   "name": "Fill Campfire with 4 Food Items",
+   "type": "flag",
+   "icon": "minecraft:campfire",
+   "any": [
+    "campfire_filled"
+   ]
+  },
+  {
+   "id": "fill_chiseled_bookshelf",
+   "name": "Fill Chiseled Bookshelf",
+   "type": "flag",
+   "icon": "minecraft:chiseled_bookshelf",
+   "any": [
+    "bookshelf_filled"
+   ]
+  },
+  {
+   "id": "use_composter",
+   "name": "Fill Composter and get Bone Meal",
+   "type": "flag",
+   "icon": "minecraft:bone_meal",
+   "any": [
+    "composter_bonemeal"
+   ]
+  },
+  {
+   "id": "fill_inventory_unique_items",
+   "name": "Fill Inventory with unique items",
+   "type": "inventory_full",
+   "icon": "minecraft:chest",
+   "mode": "unique"
+  },
+  {
+   "id": "fill_inventory_mushroom_stew",
+   "name": "Fill Inventory with Mushroom Stew",
+   "type": "inventory_full",
+   "icon": "minecraft:mushroom_stew",
+   "item": "minecraft:mushroom_stew"
+  },
+  {
+   "id": "mine_crafter",
+   "name": "Mine Crafter",
+   "type": "stat",
+   "icon": "minecraft:crafter",
+   "stat": "mined",
+   "keys": [
+    "minecraft:crafter"
+   ],
+   "min": 1
+  },
+  {
+   "id": "mine_diamond_ore",
+   "name": "Mine Diamond Ore",
+   "type": "stat",
+   "icon": "minecraft:diamond_ore",
+   "stat": "mined",
+   "keys": [
+    "minecraft:diamond_ore",
+    "minecraft:deepslate_diamond_ore"
+   ],
+   "min": 1
+  },
+  {
+   "id": "mine_emerald_ore",
+   "name": "Mine Emerald Ore",
+   "type": "stat",
+   "icon": "minecraft:emerald_ore",
+   "stat": "mined",
+   "keys": [
+    "minecraft:emerald_ore",
+    "minecraft:deepslate_emerald_ore"
+   ],
+   "min": 1
+  },
+  {
+   "id": "mine_mob_spawner",
+   "name": "Mine Mob Spawner",
+   "type": "stat",
+   "icon": "minecraft:spawner",
+   "stat": "mined",
+   "keys": [
+    "minecraft:spawner"
+   ],
+   "min": 1
+  },
+  {
+   "id": "mine_turtle_egg",
+   "name": "Mine Turtle Egg",
+   "type": "stat",
+   "icon": "minecraft:turtle_egg",
+   "stat": "mined",
+   "keys": [
+    "minecraft:turtle_egg"
+   ],
+   "min": 1
+  },
+  {
+   "id": "mine_3_types_of_ice",
+   "name": "Mine 3 types of Ice",
+   "type": "stat_unique",
+   "icon": "minecraft:blue_ice",
+   "stat": "mined",
+   "keys": [
+    "minecraft:ice",
+    "minecraft:packed_ice",
+    "minecraft:blue_ice",
+    "minecraft:frosted_ice"
+   ],
+   "count": 3
+  },
+  {
+   "id": "mine_obsidian",
+   "name": "Mine Obsidian",
+   "type": "stat",
+   "icon": "minecraft:obsidian",
+   "stat": "mined",
+   "keys": [
+    "minecraft:obsidian"
+   ],
+   "min": 1
+  },
+  {
+   "id": "mine_sea_lantern",
+   "name": "Mine Sea Lantern",
+   "type": "stat",
+   "icon": "minecraft:sea_lantern",
+   "stat": "mined",
+   "keys": [
+    "minecraft:sea_lantern"
+   ],
+   "min": 1
+  },
+  {
+   "id": "use_anvil",
+   "name": "Use Anvil",
+   "type": "flag",
+   "icon": "minecraft:anvil",
+   "any": [
+    "took:anvil"
+   ]
+  },
+  {
+   "id": "use_brewing_stand",
+   "name": "Use Brewing Stand",
+   "type": "advancement",
+   "icon": "minecraft:brewing_stand",
+   "advancements": [
+    "minecraft:nether/brew_potion"
+   ]
+  },
+  {
+   "id": "use_cauldron",
+   "name": "Use Cauldron to wash something",
+   "type": "stat",
+   "icon": "minecraft:cauldron",
+   "stat": "custom",
+   "keys": [
+    "minecraft:clean_armor",
+    "minecraft:clean_banner",
+    "minecraft:clean_shulker_box"
+   ],
+   "min": 1
+  },
+  {
+   "id": "use_enchanting_table",
+   "name": "Use Enchanting Table",
+   "type": "stat",
+   "icon": "minecraft:enchanting_table",
+   "stat": "custom",
+   "keys": [
+    "minecraft:enchant_item"
+   ],
+   "min": 1
+  },
+  {
+   "id": "use_grindstone",
+   "name": "Use Grindstone",
+   "type": "flag",
+   "icon": "minecraft:grindstone",
+   "any": [
+    "took:grindstone"
+   ]
+  },
+  {
+   "id": "use_loom",
+   "name": "Use Loom to design a Banner",
+   "type": "flag",
+   "icon": "minecraft:loom",
+   "any": [
+    "took:loom"
+   ]
+  },
+  {
+   "id": "use_smithing_table",
+   "name": "Use Smithing Table",
+   "type": "flag",
+   "icon": "minecraft:smithing_table",
+   "any": [
+    "took:smithing"
+   ]
+  },
+  {
+   "id": "use_stonecutter",
+   "name": "Use Stonecutter",
+   "type": "flag",
+   "icon": "minecraft:stonecutter",
+   "any": [
+    "took:stonecutter"
+   ]
+  },
+  {
+   "id": "lock_map",
+   "name": "Lock a Map using Cartography Table",
+   "type": "item_check",
+   "icon": "minecraft:filled_map",
+   "check": "locked_map"
+  },
+  {
+   "id": "use_cartography_table",
+   "name": "Use Cartography Table",
+   "type": "flag",
+   "icon": "minecraft:cartography_table",
+   "any": [
+    "took:cartography"
+   ]
+  },
+  {
+   "id": "brew_lingering_potion",
+   "name": "Brew a Lingering Potion",
+   "type": "flag",
+   "icon": "minecraft:lingering_potion",
+   "any": [
+    "brewed_item:minecraft:lingering_potion"
+   ]
+  },
+  {
+   "id": "brew_healing_potion",
+   "name": "Brew a Potion of Healing",
+   "type": "flag",
+   "icon": "minecraft:potion",
+   "any": [
+    "brewed:minecraft:healing",
+    "brewed:minecraft:strong_healing"
+   ]
+  },
+  {
+   "id": "brew_invisibility_potion",
+   "name": "Brew a Potion of Invisibility",
+   "type": "flag",
+   "icon": "minecraft:potion",
+   "any": [
+    "brewed:minecraft:invisibility",
+    "brewed:minecraft:long_invisibility"
+   ]
+  },
+  {
+   "id": "brew_poison_potion",
+   "name": "Brew a Potion of Poison",
+   "type": "flag",
+   "icon": "minecraft:potion",
+   "any": [
+    "brewed:minecraft:poison",
+    "brewed:minecraft:long_poison",
+    "brewed:minecraft:strong_poison"
+   ]
+  },
+  {
+   "id": "brew_swiftness_potion",
+   "name": "Brew a Potion of Swiftness",
+   "type": "flag",
+   "icon": "minecraft:potion",
+   "any": [
+    "brewed:minecraft:swiftness",
+    "brewed:minecraft:long_swiftness",
+    "brewed:minecraft:strong_swiftness"
+   ]
+  },
+  {
+   "id": "brew_water_breathing_potion",
+   "name": "Brew a Potion of Water Breathing",
+   "type": "flag",
+   "icon": "minecraft:potion",
+   "any": [
+    "brewed:minecraft:water_breathing",
+    "brewed:minecraft:long_water_breathing"
+   ]
+  },
+  {
+   "id": "brew_weakness_potion",
+   "name": "Brew a Potion of Weakness",
+   "type": "flag",
+   "icon": "minecraft:potion",
+   "any": [
+    "brewed:minecraft:weakness",
+    "brewed:minecraft:long_weakness"
+   ]
+  },
+  {
+   "id": "compost_3_unique_foods",
+   "name": "Compost 3 Unique Foods",
+   "type": "set",
+   "icon": "minecraft:composter",
+   "group": "compost_unique",
+   "set": "composted",
+   "count": 3
+  },
+  {
+   "id": "compost_5_unique_foods",
+   "name": "Compost 5 Unique Foods",
+   "type": "set",
+   "icon": "minecraft:composter",
+   "group": "compost_unique",
+   "set": "composted",
+   "count": 5
+  },
+  {
+   "id": "compost_7_unique_foods",
+   "name": "Compost 7 Unique Foods",
+   "type": "set",
+   "icon": "minecraft:composter",
+   "group": "compost_unique",
+   "set": "composted",
+   "count": 7
+  },
+  {
+   "id": "eat_glow_berry",
+   "name": "Eat a Glow Berry",
+   "type": "flag",
+   "icon": "minecraft:glow_berries",
+   "any": [
+    "ate:minecraft:glow_berries"
+   ]
+  },
+  {
+   "id": "eat_poisonous_potato",
+   "name": "Eat a Poisonous Potato",
+   "type": "flag",
+   "icon": "minecraft:poisonous_potato",
+   "any": [
+    "ate:minecraft:poisonous_potato"
+   ]
+  },
+  {
+   "id": "eat_beetroot_soup",
+   "name": "Eat Beetroot Soup",
+   "type": "flag",
+   "icon": "minecraft:beetroot_soup",
+   "any": [
+    "ate:minecraft:beetroot_soup"
+   ]
+  },
+  {
+   "id": "eat_chorus_fruit",
+   "name": "Eat Chorus Fruit",
+   "type": "flag",
+   "icon": "minecraft:chorus_fruit",
+   "any": [
+    "ate:minecraft:chorus_fruit"
+   ]
+  },
+  {
+   "id": "eat_cookie",
+   "name": "Eat Cookie",
+   "type": "flag",
+   "icon": "minecraft:cookie",
+   "any": [
+    "ate:minecraft:cookie"
+   ]
+  },
+  {
+   "id": "eat_pumpkin_pie",
+   "name": "Eat Pumpkin Pie",
+   "type": "flag",
+   "icon": "minecraft:pumpkin_pie",
+   "any": [
+    "ate:minecraft:pumpkin_pie"
+   ]
+  },
+  {
+   "id": "eat_rabbit_stew",
+   "name": "Eat Rabbit Stew",
+   "type": "flag",
+   "icon": "minecraft:rabbit_stew",
+   "any": [
+    "ate:minecraft:rabbit_stew"
+   ]
+  },
+  {
+   "id": "eat_suspicious_stew",
+   "name": "Eat Suspicious Stew",
+   "type": "flag",
+   "icon": "minecraft:suspicious_stew",
+   "any": [
+    "ate:minecraft:suspicious_stew"
+   ]
+  },
+  {
+   "id": "drink_honey_bottle",
+   "name": "Drink Honey Bottle",
+   "type": "flag",
+   "icon": "minecraft:honey_bottle",
+   "any": [
+    "ate:minecraft:honey_bottle"
+   ]
+  },
+  {
+   "id": "eat_cake",
+   "name": "Eat a slice of Cake",
+   "type": "stat",
+   "icon": "minecraft:cake",
+   "stat": "custom",
+   "keys": [
+    "minecraft:eat_cake_slice"
+   ],
+   "min": 1
+  },
+  {
+   "id": "eat_all_soups",
+   "name": "Eat every type of Soup",
+   "type": "flag",
+   "icon": "minecraft:mushroom_stew",
+   "all": [
+    "ate:minecraft:suspicious_stew",
+    "ate:minecraft:mushroom_stew",
+    "ate:minecraft:rabbit_stew",
+    "ate:minecraft:beetroot_soup"
+   ]
+  },
+  {
+   "id": "drink_water_bottle",
+   "name": "Drink Water Bottle",
+   "type": "flag",
+   "icon": "minecraft:potion",
+   "any": [
+    "drank:water"
+   ]
+  },
+  {
+   "id": "eat_5_unique_food",
+   "name": "Eat 5 Unique Food",
+   "type": "set",
+   "icon": "minecraft:cooked_beef",
+   "group": "eat_unique",
+   "set": "consumed",
+   "count": 5
+  },
+  {
+   "id": "eat_10_unique_food",
+   "name": "Eat 10 Unique Food",
+   "type": "set",
+   "icon": "minecraft:cooked_beef",
+   "group": "eat_unique",
+   "set": "consumed",
+   "count": 10
+  },
+  {
+   "id": "eat_15_unique_food",
+   "name": "Eat 15 Unique Food",
+   "type": "set",
+   "icon": "minecraft:cooked_beef",
+   "group": "eat_unique",
+   "set": "consumed",
+   "count": 15
+  },
+  {
+   "id": "eat_20_unique_food",
+   "name": "Eat 20 Unique Food",
+   "type": "set",
+   "icon": "minecraft:cooked_beef",
+   "group": "eat_unique",
+   "set": "consumed",
+   "count": 20
+  },
+  {
+   "id": "eat_25_unique_food",
+   "name": "Eat 25 Unique Food",
+   "type": "set",
+   "icon": "minecraft:cooked_beef",
+   "group": "eat_unique",
+   "set": "consumed",
+   "count": 25
+  },
+  {
+   "id": "die_by_magic",
+   "name": "Die by Magic",
+   "type": "flag",
+   "icon": "minecraft:splash_potion",
+   "any": [
+    "death_type:minecraft:magic",
+    "death_type:minecraft:indirect_magic"
+   ]
+  },
+  {
+   "id": "die_by_bee_sting",
+   "name": "Die to Bee Sting",
+   "type": "flag",
+   "icon": "minecraft:bee_spawn_egg",
+   "any": [
+    "death_type:minecraft:sting"
+   ]
+  },
+  {
+   "id": "die_by_iron_golem",
+   "name": "Die to Iron Golem",
+   "type": "flag",
+   "icon": "minecraft:iron_ingot",
+   "any": [
+    "death_by:minecraft:iron_golem"
+   ],
+   "requires": {
+    "entities": [
+     "minecraft:iron_golem"
+    ]
+   }
+  },
+  {
+   "id": "die_to_polar_bear",
+   "name": "Die to Polar Bear",
+   "type": "flag",
+   "icon": "minecraft:polar_bear_spawn_egg",
+   "any": [
+    "death_by:minecraft:polar_bear"
+   ],
+   "requires": {
+    "entities": [
+     "minecraft:polar_bear"
+    ]
+   }
+  },
+  {
+   "id": "die_to_pufferfish",
+   "name": "Die to Pufferfish",
+   "type": "flag",
+   "icon": "minecraft:pufferfish",
+   "any": [
+    "death_by:minecraft:pufferfish"
+   ],
+   "requires": {
+    "entities": [
+     "minecraft:pufferfish"
+    ]
+   }
+  },
+  {
+   "id": "die_to_trident",
+   "name": "Die to Trident",
+   "type": "flag",
+   "icon": "minecraft:trident",
+   "any": [
+    "death_type:minecraft:trident"
+   ]
+  },
+  {
+   "id": "die_to_warden",
+   "name": "Die to Warden",
+   "type": "flag",
+   "icon": "minecraft:sculk_shrieker",
+   "any": [
+    "death_by:minecraft:warden"
+   ],
+   "requires": {
+    "entities": [
+     "minecraft:warden"
+    ]
+   }
+  },
+  {
+   "id": "die_to_sulfur_cube",
+   "name": "Die to Sulfur Cube",
+   "type": "flag",
+   "icon": "minecraft:tnt",
+   "any": [
+    "death_by:minecraft:sulfur_cube"
+   ],
+   "requires": {
+    "entities": [
+     "minecraft:sulfur_cube"
+    ]
+   }
+  },
+  {
+   "id": "die_by_drowning",
+   "name": "Die by Drowning",
+   "type": "flag",
+   "icon": "minecraft:water_bucket",
+   "any": [
+    "death_type:minecraft:drown"
+   ]
+  },
+  {
+   "id": "die_to_void",
+   "name": "Die by falling in Void",
+   "type": "flag",
+   "icon": "minecraft:end_portal_frame",
+   "any": [
+    "death_type:minecraft:out_of_world"
+   ]
+  },
+  {
+   "id": "die_by_falling_off_vine",
+   "name": "Die by falling off Vines",
+   "type": "flag",
+   "icon": "minecraft:vine",
+   "any": [
+    "death:fell_off_vines"
+   ]
+  },
+  {
+   "id": "freeze_to_death",
+   "name": "Die by Freezing",
+   "type": "flag",
+   "icon": "minecraft:powder_snow_bucket",
+   "any": [
+    "death_type:minecraft:freeze"
+   ]
+  },
+  {
+   "id": "die_by_intentional_game_design",
+   "name": "Die to [Intentional Game Design]",
+   "type": "flag",
+   "icon": "minecraft:red_bed",
+   "any": [
+    "death_type:minecraft:bad_respawn_point"
+   ]
+  },
+  {
+   "id": "die_by_berry_bush",
+   "name": "Die to Berry Bush",
+   "type": "flag",
+   "icon": "minecraft:sweet_berries",
+   "any": [
+    "death_type:minecraft:sweet_berry_bush"
+   ]
+  },
+  {
+   "id": "die_by_cactus",
+   "name": "Die to Cactus",
+   "type": "flag",
+   "icon": "minecraft:cactus",
+   "any": [
+    "death_type:minecraft:cactus"
+   ]
+  },
+  {
+   "id": "die_by_anvil",
+   "name": "Die to falling Anvil",
+   "type": "flag",
+   "icon": "minecraft:anvil",
+   "any": [
+    "death_type:minecraft:falling_anvil"
+   ]
+  },
+  {
+   "id": "die_by_falling_stalactite",
+   "name": "Die to Falling Stalactite",
+   "type": "flag",
+   "icon": "minecraft:pointed_dripstone",
+   "any": [
+    "death_type:minecraft:falling_stalactite"
+   ]
+  },
+  {
+   "id": "die_by_firework",
+   "name": "Die to Firework Rocket",
+   "type": "flag",
+   "icon": "minecraft:firework_rocket",
+   "any": [
+    "death_type:minecraft:fireworks"
+   ]
+  },
+  {
+   "id": "die_by_tnt_minecart",
+   "name": "Die to TNT Minecart",
+   "type": "flag",
+   "icon": "minecraft:tnt_minecart",
+   "any": [
+    "death_direct:minecraft:tnt_minecart"
+   ],
+   "requires": {
+    "entities": [
+     "minecraft:tnt_minecart"
+    ]
+   }
+  },
+  {
+   "id": "enter_nether",
+   "name": "Enter Nether",
+   "type": "dimension",
+   "icon": "minecraft:netherrack",
+   "dimension": "nether"
+  },
+  {
+   "id": "enter_end",
+   "name": "Enter The End",
+   "type": "dimension",
+   "icon": "minecraft:end_stone",
+   "dimension": "end"
+  },
+  {
+   "id": "visit_all_nether_biomes",
+   "name": "Visit All Nether Biomes",
+   "type": "set",
+   "icon": "minecraft:crimson_nylium",
+   "set": "biomes",
+   "only": [
+    "minecraft:nether_wastes",
+    "minecraft:crimson_forest",
+    "minecraft:warped_forest",
+    "minecraft:soul_sand_valley",
+    "minecraft:basalt_deltas"
+   ],
+   "count": 5
+  },
+  {
+   "id": "pearl_through_nether_portal",
+   "name": "Teleport through Nether Portal using Ender Pearl",
+   "type": "flag",
+   "icon": "minecraft:ender_pearl",
+   "any": [
+    "pearl_portal"
+   ]
+  },
+  {
+   "id": "visit_all_cave_biomes",
+   "name": "Visit all Cave Biomes",
+   "type": "set",
+   "icon": "minecraft:pointed_dripstone",
+   "set": "biomes",
+   "only": [
+    "minecraft:lush_caves",
+    "minecraft:dripstone_caves",
+    "minecraft:deep_dark"
+   ],
+   "count": 3
+  },
+  {
+   "id": "reach_nether_roof",
+   "name": "Get on Nether Roof",
+   "type": "position",
+   "icon": "minecraft:netherrack",
+   "where": "nether_roof"
+  },
+  {
+   "id": "reach_bedrock",
+   "name": "Reach Bedrock",
+   "type": "position",
+   "icon": "minecraft:bedrock",
+   "where": "bedrock"
+  },
+  {
+   "id": "reach_height_limit",
+   "name": "Reach height limit in Overworld",
+   "type": "position",
+   "icon": "minecraft:feather",
+   "where": "height_limit"
+  },
+  {
+   "id": "kill_100_mobs",
+   "name": "Kill 100 mobs",
+   "type": "stat",
+   "icon": "minecraft:iron_sword",
+   "stat": "custom",
+   "keys": [
+    "minecraft:mob_kills"
+   ],
+   "min": 100
+  },
+  {
+   "id": "kill_20_arthropod_mobs",
+   "name": "Kill 20 Arthropods",
+   "type": "counter_sum",
+   "icon": "minecraft:spider_eye",
+   "counters": [
+    "kills:minecraft:bee",
+    "kills:minecraft:cave_spider",
+    "kills:minecraft:spider",
+    "kills:minecraft:endermite",
+    "kills:minecraft:silverfish"
+   ],
+   "min": 20
+  },
+  {
+   "id": "kill_30_undead_mobs",
+   "name": "Kill 30 Undead Mobs",
+   "type": "counter_sum",
+   "icon": "minecraft:rotten_flesh",
+   "counters": [
+    "kills:minecraft:bogged",
+    "kills:minecraft:camel_husk",
+    "kills:minecraft:drowned",
+    "kills:minecraft:husk",
+    "kills:minecraft:parched",
+    "kills:minecraft:phantom",
+    "kills:minecraft:skeleton",
+    "kills:minecraft:skeleton_horse",
+    "kills:minecraft:stray",
+    "kills:minecraft:wither",
+    "kills:minecraft:wither_skeleton",
+    "kills:minecraft:zoglin",
+    "kills:minecraft:zombie",
+    "kills:minecraft:zombie_horse",
+    "kills:minecraft:zombie_nautilus",
+    "kills:minecraft:zombie_villager",
+    "kills:minecraft:zombified_piglin"
+   ],
+   "min": 30
+  },
+  {
+   "id": "kill_all_raid_mobs",
+   "name": "Kill all Raid Mobs",
+   "type": "flag",
+   "icon": "minecraft:ominous_banner",
+   "all": [
+    "kill:minecraft:pillager",
+    "kill:minecraft:vindicator",
+    "kill:minecraft:ravager",
+    "kill:minecraft:witch",
+    "kill:minecraft:vex",
+    "kill:minecraft:evoker"
+   ]
+  },
+  {
+   "id": "kill_7_unique_hostile_mobs",
+   "name": "Kill 7 Unique Hostile Mobs",
+   "type": "set",
+   "icon": "minecraft:bone",
+   "group": "kill_unique",
+   "set": "hostile_kills",
+   "count": 7
+  },
+  {
+   "id": "kill_10_unique_hostile_mobs",
+   "name": "Kill 10 Unique Hostile Mobs",
+   "type": "set",
+   "icon": "minecraft:bone",
+   "group": "kill_unique",
+   "set": "hostile_kills",
+   "count": 10
+  },
+  {
+   "id": "kill_13_unique_hostile_mobs",
+   "name": "Kill 13 Unique Hostile Mobs",
+   "type": "set",
+   "icon": "minecraft:bone",
+   "group": "kill_unique",
+   "set": "hostile_kills",
+   "count": 13
+  },
+  {
+   "id": "kill_15_unique_hostile_mobs",
+   "name": "Kill 15 Unique Hostile Mobs",
+   "type": "set",
+   "icon": "minecraft:bone",
+   "group": "kill_unique",
+   "set": "hostile_kills",
+   "count": 15
+  },
+  {
+   "id": "kill_bat",
+   "name": "Kill Bat",
+   "type": "flag",
+   "icon": "minecraft:bat_spawn_egg",
+   "any": [
+    "kill:minecraft:bat"
+   ],
+   "requires": {
+    "entities": [
+     "minecraft:bat"
+    ]
+   }
+  },
+  {
+   "id": "kill_bogged",
+   "name": "Kill Bogged",
+   "type": "flag",
+   "icon": "minecraft:bogged_spawn_egg",
+   "any": [
+    "kill:minecraft:bogged"
+   ],
+   "requires": {
+    "entities": [
+     "minecraft:bogged"
+    ]
+   }
+  },
+  {
+   "id": "kill_elder_guardian",
+   "name": "Kill Elder Guardian",
+   "type": "flag",
+   "icon": "minecraft:elder_guardian_spawn_egg",
+   "any": [
+    "kill:minecraft:elder_guardian"
+   ],
+   "requires": {
+    "entities": [
+     "minecraft:elder_guardian"
+    ]
+   }
+  },
+  {
+   "id": "kill_guardian",
+   "name": "Kill Guardian",
+   "type": "flag",
+   "icon": "minecraft:guardian_spawn_egg",
+   "any": [
+    "kill:minecraft:guardian"
+   ],
+   "requires": {
+    "entities": [
+     "minecraft:guardian"
+    ]
+   }
+  },
+  {
+   "id": "kill_parched",
+   "name": "Kill Parched",
+   "type": "flag",
+   "icon": "minecraft:parched_spawn_egg",
+   "any": [
+    "kill:minecraft:parched"
+   ],
+   "requires": {
+    "entities": [
+     "minecraft:parched"
+    ]
+   }
+  },
+  {
+   "id": "kill_silverfish",
+   "name": "Kill Silverfish",
+   "type": "flag",
+   "icon": "minecraft:silverfish_spawn_egg",
+   "any": [
+    "kill:minecraft:silverfish"
+   ],
+   "requires": {
+    "entities": [
+     "minecraft:silverfish"
+    ]
+   }
+  },
+  {
+   "id": "kill_snow_golem",
+   "name": "Kill Snow Golem",
+   "type": "flag",
+   "icon": "minecraft:snowball",
+   "any": [
+    "kill:minecraft:snow_golem"
+   ],
+   "requires": {
+    "entities": [
+     "minecraft:snow_golem"
+    ]
+   }
+  },
+  {
+   "id": "kill_stray",
+   "name": "Kill Stray",
+   "type": "flag",
+   "icon": "minecraft:stray_spawn_egg",
+   "any": [
+    "kill:minecraft:stray"
+   ],
+   "requires": {
+    "entities": [
+     "minecraft:stray"
+    ]
+   }
+  },
+  {
+   "id": "kill_warden",
+   "name": "Kill Warden",
+   "type": "flag",
+   "icon": "minecraft:warden_spawn_egg",
+   "any": [
+    "kill:minecraft:warden"
+   ],
+   "requires": {
+    "entities": [
+     "minecraft:warden"
+    ]
+   }
+  },
+  {
+   "id": "kill_witch",
+   "name": "Kill Witch",
+   "type": "flag",
+   "icon": "minecraft:witch_spawn_egg",
+   "any": [
+    "kill:minecraft:witch"
+   ],
+   "requires": {
+    "entities": [
+     "minecraft:witch"
+    ]
+   }
+  },
+  {
+   "id": "kill_zoglin",
+   "name": "Kill Zoglin",
+   "type": "flag",
+   "icon": "minecraft:zoglin_spawn_egg",
+   "any": [
+    "kill:minecraft:zoglin"
+   ],
+   "requires": {
+    "entities": [
+     "minecraft:zoglin"
+    ]
+   }
+  },
+  {
+   "id": "kill_zombie_villager",
+   "name": "Kill Zombie Villager",
+   "type": "flag",
+   "icon": "minecraft:zombie_villager_spawn_egg",
+   "any": [
+    "kill:minecraft:zombie_villager"
+   ],
+   "requires": {
+    "entities": [
+     "minecraft:zombie_villager"
+    ]
+   }
+  },
+  {
+   "id": "kill_ghast",
+   "name": "Kill Ghast",
+   "type": "flag",
+   "icon": "minecraft:ghast_spawn_egg",
+   "any": [
+    "kill:minecraft:ghast"
+   ],
+   "requires": {
+    "entities": [
+     "minecraft:ghast"
+    ]
+   }
+  },
+  {
+   "id": "kill_husk",
+   "name": "Kill Husk",
+   "type": "flag",
+   "icon": "minecraft:husk_spawn_egg",
+   "any": [
+    "kill:minecraft:husk"
+   ],
+   "requires": {
+    "entities": [
+     "minecraft:husk"
+    ]
+   }
+  },
+  {
+   "id": "kill_colored_sheep",
+   "name": "Kill Colored Sheep",
+   "type": "flag",
+   "icon": "minecraft:{v}_wool",
+   "variants": [
+    "blue",
+    "light_blue",
+    "orange",
+    "red",
+    "yellow",
+    "magenta",
+    "purple",
+    "green",
+    "lime",
+    "cyan"
+   ],
+   "any": [
+    "kill_sheep:{v}"
+   ],
+   "variant_names": [
+    "Kill Blue Sheep",
+    "Kill Light Blue Sheep",
+    "Kill Orange Sheep",
+    "Kill Red Sheep",
+    "Kill Yellow Sheep",
+    "Kill Magenta Sheep",
+    "Kill Purple Sheep",
+    "Kill Green Sheep",
+    "Kill Lime Sheep",
+    "Kill Cyan Sheep"
+   ]
+  },
+  {
+   "id": "kill_breeze_using_wind_charge",
+   "name": "Kill Breeze using Wind Charge",
+   "type": "flag",
+   "icon": "minecraft:wind_charge",
+   "any": [
+    "kill:minecraft:breeze#minecraft:wind_charge"
+   ]
+  },
+  {
+   "id": "kill_pillager_using_crossbow",
+   "name": "Kill Pillager using Crossbow",
+   "type": "advancement",
+   "icon": "minecraft:crossbow",
+   "advancements": [
+    "minecraft:adventure/whos_the_pillager_now"
+   ]
+  },
+  {
+   "id": "kill_snow_golem_in_nether",
+   "name": "Kill Snow Golem in The Nether",
+   "type": "flag",
+   "icon": "minecraft:snow_block",
+   "any": [
+    "kill:minecraft:snow_golem@nether"
+   ]
+  },
+  {
+   "id": "construct_copper_golem",
+   "name": "Construct a Copper Golem",
+   "type": "flag",
+   "icon": "minecraft:copper_block",
+   "any": [
+    "constructed:minecraft:copper_golem"
+   ],
+   "requires": {
+    "entities": [
+     "minecraft:copper_golem"
+    ]
+   }
+  },
+  {
+   "id": "craft_20_unique_items",
+   "name": "Craft 20 Unique Items",
+   "type": "stat_unique",
+   "icon": "minecraft:crafting_table",
+   "group": "craft_unique",
+   "stat": "crafted",
+   "keys": [
+    "*"
+   ],
+   "count": 20
+  },
+  {
+   "id": "craft_50_unique_items",
+   "name": "Craft 50 Unique Items",
+   "type": "stat_unique",
+   "icon": "minecraft:crafting_table",
+   "group": "craft_unique",
+   "stat": "crafted",
+   "keys": [
+    "*"
+   ],
+   "count": 50
+  },
+  {
+   "id": "craft_100_unique_items",
+   "name": "Craft 100 Unique Items",
+   "type": "stat_unique",
+   "icon": "minecraft:crafting_table",
+   "group": "craft_unique",
+   "stat": "crafted",
+   "keys": [
+    "*"
+   ],
+   "count": 100
+  },
+  {
+   "id": "put_banner_on_shield",
+   "name": "Decorate Shield with Banner",
+   "type": "item_check",
+   "icon": "minecraft:shield",
+   "check": "banner_shield"
+  },
+  {
+   "id": "light_candle",
+   "name": "Light a Candle",
+   "type": "flag",
+   "icon": "minecraft:candle",
+   "any": [
+    "light_candle"
+   ]
+  },
+  {
+   "id": "put_flower_in_pot",
+   "name": "Pot any plant in Flower Pot",
+   "type": "stat",
+   "icon": "minecraft:flower_pot",
+   "stat": "custom",
+   "keys": [
+    "minecraft:pot_flower"
+   ],
+   "min": 1
+  },
+  {
+   "id": "item_frame_in_item_frame",
+   "name": "Put Item Frame in an Item Frame",
+   "type": "flag",
+   "icon": "minecraft:item_frame",
+   "any": [
+    "frame_in_frame"
+   ]
+  },
+  {
+   "id": "use_glow_ink_nether",
+   "name": "Use Glow Ink on Crimson or Warped Sign",
+   "type": "flag",
+   "icon": "minecraft:glow_ink_sac",
+   "any": [
+    "glow_ink:crimson",
+    "glow_ink:warped"
+   ]
+  },
+  {
+   "id": "use_glow_ink_crimson",
+   "name": "Use Glow Ink on Crimson Sign",
+   "type": "flag",
+   "icon": "minecraft:crimson_sign",
+   "any": [
+    "glow_ink:crimson"
+   ]
+  },
+  {
+   "id": "use_glow_ink_warped",
+   "name": "Use Glow Ink on Warped Sign",
+   "type": "flag",
+   "icon": "minecraft:warped_sign",
+   "any": [
+    "glow_ink:warped"
+   ]
+  },
+  {
+   "id": "craft_armor_trim",
+   "name": "Duplicate any Armor Trim",
+   "type": "stat",
+   "icon": "minecraft:coast_armor_trim_smithing_template",
+   "stat": "crafted",
+   "keys": [
+    "*_armor_trim_smithing_template"
+   ],
+   "min": 1
+  },
+  {
+   "id": "place_hanging_sign",
+   "name": "Place a Hanging Sign",
+   "type": "stat",
+   "icon": "minecraft:oak_hanging_sign",
+   "stat": "used",
+   "keys": [
+    "*_hanging_sign"
+   ],
+   "min": 1
+  },
+  {
+   "id": "place_painting",
+   "name": "Place Painting",
+   "type": "stat",
+   "icon": "minecraft:painting",
+   "stat": "used",
+   "keys": [
+    "minecraft:painting"
+   ],
+   "min": 1
+  },
+  {
+   "id": "bundle_in_bundle",
+   "name": "Put a Bundle in a Bundle",
+   "type": "item_check",
+   "icon": "minecraft:bundle",
+   "check": "bundle_in_bundle"
+  },
+  {
+   "id": "enrage_enderman",
+   "name": "Enrage Enderman",
+   "type": "flag",
+   "icon": "minecraft:ender_pearl",
+   "any": [
+    "target:minecraft:enderman"
+   ]
+  },
+  {
+   "id": "enrage_zombified_piglin",
+   "name": "Enrage Zombified Piglin",
+   "type": "flag",
+   "icon": "minecraft:golden_sword",
+   "any": [
+    "target:minecraft:zombified_piglin"
+   ]
+  },
+  {
+   "id": "turn_ghast_upside_down",
+   "name": "Name a Ghast 'Dinnerbone'",
+   "type": "flag",
+   "icon": "minecraft:name_tag",
+   "any": [
+    "named:minecraft:ghast:Dinnerbone",
+    "named:minecraft:ghast:Grumm"
+   ]
+  },
+  {
+   "id": "turn_iron_golem_upside_down",
+   "name": "Name an Iron Golem 'Dinnerbone'",
+   "type": "flag",
+   "icon": "minecraft:name_tag",
+   "any": [
+    "named:minecraft:iron_golem:Dinnerbone",
+    "named:minecraft:iron_golem:Grumm"
+   ]
+  },
+  {
+   "id": "name_sheep_jeb",
+   "name": "Name a Sheep 'jeb_'",
+   "type": "flag",
+   "icon": "minecraft:name_tag",
+   "any": [
+    "named:minecraft:sheep:jeb_"
+   ]
+  },
+  {
+   "id": "duplicate_allay",
+   "name": "Duplicate Allay",
+   "type": "flag",
+   "icon": "minecraft:amethyst_shard",
+   "any": [
+    "allay_dup"
+   ]
+  },
+  {
+   "id": "give_diamond_to_fox",
+   "name": "Give a Diamond to a Fox",
+   "type": "flag",
+   "icon": "minecraft:diamond",
+   "any": [
+    "fox_diamond"
+   ]
+  },
+  {
+   "id": "break_any_armor",
+   "name": "Break any Armor Piece",
+   "type": "stat",
+   "icon": "minecraft:leather_chestplate",
+   "stat": "broken",
+   "keys": [
+    "leather_helmet",
+    "leather_chestplate",
+    "leather_leggings",
+    "leather_boots",
+    "copper_helmet",
+    "copper_chestplate",
+    "copper_leggings",
+    "copper_boots",
+    "golden_helmet",
+    "golden_chestplate",
+    "golden_leggings",
+    "golden_boots",
+    "chainmail_helmet",
+    "chainmail_chestplate",
+    "chainmail_leggings",
+    "chainmail_boots",
+    "iron_helmet",
+    "iron_chestplate",
+    "iron_leggings",
+    "iron_boots",
+    "diamond_helmet",
+    "diamond_chestplate",
+    "diamond_leggings",
+    "diamond_boots"
+   ],
+   "min": 1
+  },
+  {
+   "id": "empty_hunger_bar",
+   "name": "Empty Hunger Bar",
+   "type": "hunger_empty",
+   "icon": "minecraft:rotten_flesh"
+  },
+  {
+   "id": "explode_end_crystal",
+   "name": "Explode End Crystal",
+   "type": "flag",
+   "icon": "minecraft:end_crystal",
+   "any": [
+    "end_crystal"
+   ]
+  },
+  {
+   "id": "ride_geyser",
+   "name": "Ride a Geyser",
+   "type": "flag",
+   "icon": "minecraft:magma_block",
+   "any": [
+    "geyser"
+   ]
+  },
+  {
+   "id": "sit_on_colored_cushion",
+   "name": "Sit on Colored Cushion",
+   "type": "flag",
+   "icon": "minecraft:{v}_wool",
+   "variants": [
+    "black",
+    "white",
+    "gray",
+    "light_gray",
+    "blue",
+    "light_blue",
+    "orange",
+    "red",
+    "yellow",
+    "magenta",
+    "pink",
+    "purple",
+    "green",
+    "lime",
+    "cyan",
+    "brown"
+   ],
+   "any": [
+    "cushion:{v}"
+   ],
+   "variant_names": [
+    "Sit on Black Cushion",
+    "Sit on White Cushion",
+    "Sit on Gray Cushion",
+    "Sit on Light Gray Cushion",
+    "Sit on Blue Cushion",
+    "Sit on Light Blue Cushion",
+    "Sit on Orange Cushion",
+    "Sit on Red Cushion",
+    "Sit on Yellow Cushion",
+    "Sit on Magenta Cushion",
+    "Sit on Pink Cushion",
+    "Sit on Purple Cushion",
+    "Sit on Green Cushion",
+    "Sit on Lime Cushion",
+    "Sit on Cyan Cushion",
+    "Sit on Brown Cushion"
+   ]
+  },
+  {
+   "id": "use_jukebox",
+   "name": "Play a Music Disc in Jukebox",
+   "type": "stat",
+   "icon": "minecraft:jukebox",
+   "stat": "custom",
+   "keys": [
+    "minecraft:play_record"
+   ],
+   "min": 1
+  },
+  {
+   "id": "toot_goat_horn",
+   "name": "Toot a Goat Horn",
+   "type": "stat",
+   "icon": "minecraft:goat_horn",
+   "stat": "used",
+   "keys": [
+    "minecraft:goat_horn"
+   ],
+   "min": 1
+  },
+  {
+   "id": "tune_noteblock",
+   "name": "Tune a Note Block",
+   "type": "stat",
+   "icon": "minecraft:note_block",
+   "stat": "custom",
+   "keys": [
+    "minecraft:tune_noteblock",
+    "minecraft:play_noteblock"
+   ],
+   "min": 1
+  },
+  {
+   "id": "breed_armadillo",
+   "name": "Breed Armadillos",
+   "type": "flag",
+   "icon": "minecraft:armadillo_scute",
+   "any": [
+    "bred:minecraft:armadillo"
+   ]
+  },
+  {
+   "id": "breed_camel",
+   "name": "Breed Camels",
+   "type": "flag",
+   "icon": "minecraft:cactus",
+   "any": [
+    "bred:minecraft:camel"
+   ]
+  },
+  {
+   "id": "breed_chicken",
+   "name": "Breed Chickens",
+   "type": "flag",
+   "icon": "minecraft:wheat_seeds",
+   "any": [
+    "bred:minecraft:chicken"
+   ]
+  },
+  {
+   "id": "breed_cow",
+   "name": "Breed Cows",
+   "type": "flag",
+   "icon": "minecraft:wheat",
+   "any": [
+    "bred:minecraft:cow"
+   ]
+  },
+  {
+   "id": "breed_fox",
+   "name": "Breed Foxes",
+   "type": "flag",
+   "icon": "minecraft:sweet_berries",
+   "any": [
+    "bred:minecraft:fox"
+   ]
+  },
+  {
+   "id": "breed_frogs",
+   "name": "Breed Frogs",
+   "type": "flag",
+   "icon": "minecraft:slime_ball",
+   "any": [
+    "bred:minecraft:frog"
+   ]
+  },
+  {
+   "id": "breed_goat",
+   "name": "Breed Goats",
+   "type": "flag",
+   "icon": "minecraft:goat_horn",
+   "any": [
+    "bred:minecraft:goat"
+   ]
+  },
+  {
+   "id": "breed_hoglin",
+   "name": "Breed Hoglins",
+   "type": "flag",
+   "icon": "minecraft:crimson_fungus",
+   "any": [
+    "bred:minecraft:hoglin"
+   ]
+  },
+  {
+   "id": "breed_pig",
+   "name": "Breed Pigs",
+   "type": "flag",
+   "icon": "minecraft:carrot",
+   "any": [
+    "bred:minecraft:pig"
+   ]
+  },
+  {
+   "id": "breed_rabbit",
+   "name": "Breed Rabbits",
+   "type": "flag",
+   "icon": "minecraft:dandelion",
+   "any": [
+    "bred:minecraft:rabbit"
+   ]
+  },
+  {
+   "id": "breed_sheep",
+   "name": "Breed Sheep",
+   "type": "flag",
+   "icon": "minecraft:white_wool",
+   "any": [
+    "bred:minecraft:sheep"
+   ]
+  },
+  {
+   "id": "breed_strider",
+   "name": "Breed Striders",
+   "type": "flag",
+   "icon": "minecraft:warped_fungus",
+   "any": [
+    "bred:minecraft:strider"
+   ]
+  },
+  {
+   "id": "use_golden_dandelion",
+   "name": "Feed Golden Dandelion to any Baby Mob",
+   "type": "stat",
+   "icon": "minecraft:golden_dandelion",
+   "stat": "used",
+   "keys": [
+    "minecraft:golden_dandelion"
+   ],
+   "min": 1
+  },
+  {
+   "id": "breed_4_unique_animals",
+   "name": "Breed 4 Unique Animals",
+   "type": "set",
+   "icon": "minecraft:wheat",
+   "group": "breed_unique",
+   "set": "bred",
+   "count": 4
+  },
+  {
+   "id": "breed_6_unique_animals",
+   "name": "Breed 6 Unique Animals",
+   "type": "set",
+   "icon": "minecraft:wheat",
+   "group": "breed_unique",
+   "set": "bred",
+   "count": 6
+  },
+  {
+   "id": "breed_8_unique_animals",
+   "name": "Breed 8 Unique Animals",
+   "type": "set",
+   "icon": "minecraft:wheat",
+   "group": "breed_unique",
+   "set": "bred",
+   "count": 8
+  },
+  {
+   "id": "leash_4_unique_mobs",
+   "name": "Leash 4 unique Mobs at once",
+   "type": "counter",
+   "icon": "minecraft:lead",
+   "group": "leash_unique",
+   "counter": "leashed_unique",
+   "min": 4
+  },
+  {
+   "id": "leash_6_unique_mobs",
+   "name": "Leash 6 unique Mobs at once",
+   "type": "counter",
+   "icon": "minecraft:lead",
+   "group": "leash_unique",
+   "counter": "leashed_unique",
+   "min": 6
+  },
+  {
+   "id": "leash_8_unique_mobs",
+   "name": "Leash 8 unique Mobs at once",
+   "type": "counter",
+   "icon": "minecraft:lead",
+   "group": "leash_unique",
+   "counter": "leashed_unique",
+   "min": 8
+  },
+  {
+   "id": "leash_iron_golem",
+   "name": "Leash an Iron Golem",
+   "type": "flag",
+   "icon": "minecraft:lead",
+   "any": [
+    "leashed:minecraft:iron_golem"
+   ]
+  },
+  {
+   "id": "ride_minecart",
+   "name": "Ride a Minecart",
+   "type": "flag",
+   "icon": "minecraft:minecart",
+   "any": [
+    "riding:minecraft:minecart"
+   ]
+  },
+  {
+   "id": "ride_pig",
+   "name": "Ride Pig with Carrot on a Stick",
+   "type": "stat",
+   "icon": "minecraft:carrot_on_a_stick",
+   "stat": "used",
+   "keys": [
+    "minecraft:carrot_on_a_stick"
+   ],
+   "min": 1
+  },
+  {
+   "id": "ride_horse",
+   "name": "Ride a Horse",
+   "type": "flag",
+   "icon": "minecraft:saddle",
+   "any": [
+    "riding:minecraft:horse"
+   ]
+  },
+  {
+   "id": "tame_cat",
+   "name": "Tame a Cat",
+   "type": "flag",
+   "icon": "minecraft:cod",
+   "any": [
+    "tamed:minecraft:cat"
+   ]
+  },
+  {
+   "id": "tame_horse",
+   "name": "Tame a Horse",
+   "type": "flag",
+   "icon": "minecraft:saddle",
+   "any": [
+    "tamed:minecraft:horse",
+    "tamed:minecraft:zombie_horse"
+   ]
+  },
+  {
+   "id": "tame_nautilus",
+   "name": "Tame a Nautilus",
+   "type": "flag",
+   "icon": "minecraft:nautilus_shell",
+   "any": [
+    "tamed:minecraft:nautilus"
+   ],
+   "requires": {
+    "entities": [
+     "minecraft:nautilus"
+    ]
+   }
+  },
+  {
+   "id": "tame_parrot",
+   "name": "Tame a Parrot",
+   "type": "flag",
+   "icon": "minecraft:wheat_seeds",
+   "any": [
+    "tamed:minecraft:parrot"
+   ]
+  },
+  {
+   "id": "tame_wolf",
+   "name": "Tame a Wolf",
+   "type": "flag",
+   "icon": "minecraft:bone",
+   "any": [
+    "tamed:minecraft:wolf"
+   ]
+  },
+  {
+   "id": "obtain_brick_wall",
+   "name": "Obtain Brick Wall",
+   "type": "item",
+   "icon": "minecraft:brick_wall",
+   "items": [
+    "minecraft:brick_wall"
+   ],
+   "count": 1
+  },
+  {
+   "id": "obtain_mossy_stone_brick_wall",
+   "name": "Obtain Mossy Stone Brick Wall",
+   "type": "item",
+   "icon": "minecraft:mossy_stone_brick_wall",
+   "items": [
+    "minecraft:mossy_stone_brick_wall"
+   ],
+   "count": 1
+  },
+  {
+   "id": "obtain_mud_brick_wall",
+   "name": "Obtain Mud Brick Wall",
+   "type": "item",
+   "icon": "minecraft:mud_brick_wall",
+   "items": [
+    "minecraft:mud_brick_wall"
+   ],
+   "count": 1
+  },
+  {
+   "id": "obtain_red_nether_brick_stairs",
+   "name": "Obtain Red Nether Brick Stairs",
+   "type": "item",
+   "icon": "minecraft:red_nether_brick_stairs",
+   "items": [
+    "minecraft:red_nether_brick_stairs"
+   ],
+   "count": 1
+  },
+  {
+   "id": "obtain_scaffolding",
+   "name": "Obtain Scaffolding",
+   "type": "item",
+   "icon": "minecraft:scaffolding",
+   "items": [
+    "minecraft:scaffolding"
+   ],
+   "count": 1
+  },
+  {
+   "id": "obtain_tinted_glass",
+   "name": "Obtain Tinted Glass",
+   "type": "item",
+   "icon": "minecraft:tinted_glass",
+   "items": [
+    "minecraft:tinted_glass"
+   ],
+   "count": 1
+  },
+  {
+   "id": "obtain_bone_block",
+   "name": "Obtain Bone Block",
+   "type": "item",
+   "icon": "minecraft:bone_block",
+   "items": [
+    "minecraft:bone_block"
+   ],
+   "count": 1
+  },
+  {
+   "id": "obtain_resin_block",
+   "name": "Obtain Block of Resin",
+   "type": "item",
+   "icon": "minecraft:resin_block",
+   "items": [
+    "minecraft:resin_block"
+   ],
+   "count": 1
+  },
+  {
+   "id": "obtain_resin_brick_wall",
+   "name": "Obtain Resin Brick Wall",
+   "type": "item",
+   "icon": "minecraft:resin_brick_wall",
+   "items": [
+    "minecraft:resin_brick_wall"
+   ],
+   "count": 1
+  },
+  {
+   "id": "obtain_smooth_basalt",
+   "name": "Obtain Smooth Basalt",
+   "type": "item",
+   "icon": "minecraft:smooth_basalt",
+   "items": [
+    "minecraft:smooth_basalt"
+   ],
+   "count": 1
+  },
+  {
+   "id": "obtain_smooth_quartz_stairs",
+   "name": "Obtain Smooth Quartz Stairs",
+   "type": "item",
+   "icon": "minecraft:smooth_quartz_stairs",
+   "items": [
+    "minecraft:smooth_quartz_stairs"
+   ],
+   "count": 1
+  },
+  {
+   "id": "obtain_bamboo_mosaic_stairs",
+   "name": "Obtain Bamboo Mosaic Stairs",
+   "type": "item",
+   "icon": "minecraft:bamboo_mosaic_stairs",
+   "items": [
+    "minecraft:bamboo_mosaic_stairs"
+   ],
+   "count": 1
+  },
+  {
+   "id": "obtain_bell",
+   "name": "Obtain Bell",
+   "type": "item",
+   "icon": "minecraft:bell",
+   "items": [
+    "minecraft:bell"
+   ],
+   "count": 1
+  },
+  {
+   "id": "obtain_bookshelf",
+   "name": "Obtain Bookshelf",
+   "type": "item",
+   "icon": "minecraft:bookshelf",
+   "items": [
+    "minecraft:bookshelf"
+   ],
+   "count": 1
+  },
+  {
+   "id": "obtain_clock",
+   "name": "Obtain Clock",
+   "type": "item",
+   "icon": "minecraft:clock",
+   "items": [
+    "minecraft:clock"
+   ],
+   "count": 1
+  },
+  {
+   "id": "obtain_dead_bush",
+   "name": "Obtain Dead Bush",
+   "type": "item",
+   "icon": "minecraft:dead_bush",
+   "items": [
+    "minecraft:dead_bush"
+   ],
+   "count": 1
+  },
+  {
+   "id": "obtain_end_rod",
+   "name": "Obtain End Rod",
+   "type": "item",
+   "icon": "minecraft:end_rod",
+   "items": [
+    "minecraft:end_rod"
+   ],
+   "count": 1
+  },
+  {
+   "id": "obtain_flowering_azalea",
+   "name": "Obtain Flowering Azalea",
+   "type": "item",
+   "icon": "minecraft:flowering_azalea",
+   "items": [
+    "minecraft:flowering_azalea"
+   ],
+   "count": 1
+  },
+  {
+   "id": "obtain_soul_campfire",
+   "name": "Obtain Soul Campfire",
+   "type": "item",
+   "icon": "minecraft:soul_campfire",
+   "items": [
+    "minecraft:soul_campfire"
+   ],
+   "count": 1
+  },
+  {
+   "id": "obtain_soul_lantern",
+   "name": "Obtain Soul Lantern",
+   "type": "item",
+   "icon": "minecraft:soul_lantern",
+   "items": [
+    "minecraft:soul_lantern"
+   ],
+   "count": 1
+  },
+  {
+   "id": "obtain_tropical_fish_bucket",
+   "name": "Obtain Bucket of Tropical Fish",
+   "type": "item",
+   "icon": "minecraft:tropical_fish_bucket",
+   "items": [
+    "minecraft:tropical_fish_bucket"
+   ],
+   "count": 1
+  },
+  {
+   "id": "obtain_cobweb",
+   "name": "Obtain Cobweb",
+   "type": "item",
+   "icon": "minecraft:cobweb",
+   "items": [
+    "minecraft:cobweb"
+   ],
+   "count": 1
+  },
+  {
+   "id": "obtain_dried_kelp_block",
+   "name": "Obtain Dried Kelp Block",
+   "type": "item",
+   "icon": "minecraft:dried_kelp_block",
+   "items": [
+    "minecraft:dried_kelp_block"
+   ],
+   "count": 1
+  },
+  {
+   "id": "obtain_powder_snow_bucket",
+   "name": "Obtain Powder Snow Bucket",
+   "type": "item",
+   "icon": "minecraft:powder_snow_bucket",
+   "items": [
+    "minecraft:powder_snow_bucket"
+   ],
+   "count": 1
+  },
+  {
+   "id": "obtain_sponge",
+   "name": "Obtain Sponge",
+   "type": "item",
+   "icon": "minecraft:sponge",
+   "items": [
+    "minecraft:sponge"
+   ],
+   "count": 1
+  },
+  {
+   "id": "obtain_written_book",
+   "name": "Write a Book",
+   "type": "item",
+   "icon": "minecraft:written_book",
+   "items": [
+    "minecraft:written_book"
+   ],
+   "count": 1
+  },
+  {
+   "id": "obtain_sulfur_cube_bucket",
+   "name": "Obtain Bucket of Sulfur Cube",
+   "type": "item",
+   "icon": "minecraft:sulfur_cube_bucket",
+   "items": [
+    "minecraft:sulfur_cube_bucket"
+   ],
+   "count": 1
+  },
+  {
+   "id": "obtain_straw_bed",
+   "name": "Obtain Straw Bed",
+   "type": "item",
+   "icon": "minecraft:straw_bed",
+   "items": [
+    "minecraft:straw_bed"
+   ],
+   "count": 1
+  },
+  {
+   "id": "obtain_coal_block",
+   "name": "Obtain Coal Block",
+   "type": "item",
+   "icon": "minecraft:coal_block",
+   "items": [
+    "minecraft:coal_block"
+   ],
+   "count": 1
+  },
+  {
+   "id": "obtain_activator_rail",
+   "name": "Obtain Activator Rail",
+   "type": "item",
+   "icon": "minecraft:activator_rail",
+   "items": [
+    "minecraft:activator_rail"
+   ],
+   "count": 1
+  },
+  {
+   "id": "obtain_detector_rail",
+   "name": "Obtain Detector Rail",
+   "type": "item",
+   "icon": "minecraft:detector_rail",
+   "items": [
+    "minecraft:detector_rail"
+   ],
+   "count": 1
+  },
+  {
+   "id": "obtain_powered_rail",
+   "name": "Obtain Powered Rail",
+   "type": "item",
+   "icon": "minecraft:powered_rail",
+   "items": [
+    "minecraft:powered_rail"
+   ],
+   "count": 1
+  },
+  {
+   "id": "obtain_amethyst_block",
+   "name": "Obtain Amethyst Block",
+   "type": "item",
+   "icon": "minecraft:amethyst_block",
+   "items": [
+    "minecraft:amethyst_block"
+   ],
+   "count": 1
+  },
+  {
+   "id": "obtain_ancient_debris",
+   "name": "Obtain Ancient Debris",
+   "type": "item",
+   "icon": "minecraft:ancient_debris",
+   "items": [
+    "minecraft:ancient_debris"
+   ],
+   "count": 1
+  },
+  {
+   "id": "obtain_dragon_egg",
+   "name": "Obtain Dragon Egg",
+   "type": "item",
+   "icon": "minecraft:dragon_egg",
+   "items": [
+    "minecraft:dragon_egg"
+   ],
+   "count": 1
+  },
+  {
+   "id": "obtain_emerald_block",
+   "name": "Obtain Emerald Block",
+   "type": "item",
+   "icon": "minecraft:emerald_block",
+   "items": [
+    "minecraft:emerald_block"
+   ],
+   "count": 1
+  },
+  {
+   "id": "obtain_ender_chest",
+   "name": "Obtain Ender Chest",
+   "type": "item",
+   "icon": "minecraft:ender_chest",
+   "items": [
+    "minecraft:ender_chest"
+   ],
+   "count": 1
+  },
+  {
+   "id": "obtain_enchant_bottle",
+   "name": "Obtain Experience Bottle",
+   "type": "item",
+   "icon": "minecraft:experience_bottle",
+   "items": [
+    "minecraft:experience_bottle"
+   ],
+   "count": 1
+  },
+  {
+   "id": "obtain_gilded_blackstone",
+   "name": "Obtain Gilded Blackstone",
+   "type": "item",
+   "icon": "minecraft:gilded_blackstone",
+   "items": [
+    "minecraft:gilded_blackstone"
+   ],
+   "count": 1
+  },
+  {
+   "id": "obtain_heart_of_the_sea",
+   "name": "Obtain Heart Of The Sea",
+   "type": "item",
+   "icon": "minecraft:heart_of_the_sea",
+   "items": [
+    "minecraft:heart_of_the_sea"
+   ],
+   "count": 1
+  },
+  {
+   "id": "obtain_lodestone",
+   "name": "Obtain Lodestone",
+   "type": "item",
+   "icon": "minecraft:lodestone",
+   "items": [
+    "minecraft:lodestone"
+   ],
+   "count": 1
+  },
+  {
+   "id": "obtain_netherite_scrap",
+   "name": "Obtain Netherite Scrap",
+   "type": "item",
+   "icon": "minecraft:netherite_scrap",
+   "items": [
+    "minecraft:netherite_scrap"
+   ],
+   "count": 1
+  },
+  {
+   "id": "obtain_wither_skeleton_skull",
+   "name": "Obtain Wither Skeleton Skull",
+   "type": "item",
+   "icon": "minecraft:wither_skeleton_skull",
+   "items": [
+    "minecraft:wither_skeleton_skull"
+   ],
+   "count": 1
+  },
+  {
+   "id": "obtain_daylight_detector",
+   "name": "Obtain Daylight Detector",
+   "type": "item",
+   "icon": "minecraft:daylight_detector",
+   "items": [
+    "minecraft:daylight_detector"
+   ],
+   "count": 1
+  },
+  {
+   "id": "obtain_dispenser",
+   "name": "Obtain Dispenser",
+   "type": "item",
+   "icon": "minecraft:dispenser",
+   "items": [
+    "minecraft:dispenser"
+   ],
+   "count": 1
+  },
+  {
+   "id": "obtain_observer",
+   "name": "Obtain Observer",
+   "type": "item",
+   "icon": "minecraft:observer",
+   "items": [
+    "minecraft:observer"
+   ],
+   "count": 1
+  },
+  {
+   "id": "obtain_piston",
+   "name": "Obtain Piston",
+   "type": "item",
+   "icon": "minecraft:piston",
+   "items": [
+    "minecraft:piston"
+   ],
+   "count": 1
+  },
+  {
+   "id": "obtain_redstone_comparator",
+   "name": "Obtain Redstone Comparator",
+   "type": "item",
+   "icon": "minecraft:comparator",
+   "items": [
+    "minecraft:comparator"
+   ],
+   "count": 1
+  },
+  {
+   "id": "obtain_redstone_lamp",
+   "name": "Obtain Redstone Lamp",
+   "type": "item",
+   "icon": "minecraft:redstone_lamp",
+   "items": [
+    "minecraft:redstone_lamp"
+   ],
+   "count": 1
+  },
+  {
+   "id": "obtain_redstone_repeater",
+   "name": "Obtain Redstone Repeater",
+   "type": "item",
+   "icon": "minecraft:repeater",
+   "items": [
+    "minecraft:repeater"
+   ],
+   "count": 1
+  },
+  {
+   "id": "obtain_tnt",
+   "name": "Obtain TNT",
+   "type": "item",
+   "icon": "minecraft:tnt",
+   "items": [
+    "minecraft:tnt"
+   ],
+   "count": 1
+  },
+  {
+   "id": "obtain_16_glow_lichen",
+   "name": "Obtain 16 Glow Lichen",
+   "type": "item",
+   "icon": "minecraft:glow_lichen",
+   "items": [
+    "minecraft:glow_lichen"
+   ],
+   "count": 16
+  },
+  {
+   "id": "obtain_pottery_sherd",
+   "name": "Obtain Pottery Sherd",
+   "type": "item",
+   "icon": "minecraft:angler_pottery_sherd",
+   "items": [
+    "*_pottery_sherd"
+   ],
+   "count": 1
+  },
+  {
+   "id": "obtain_suspicious_block",
+   "name": "Obtain Suspicious Block",
+   "type": "item",
+   "icon": "minecraft:suspicious_sand",
+   "items": [
+    "minecraft:suspicious_sand",
+    "minecraft:suspicious_gravel"
+   ],
+   "count": 1
+  },
+  {
+   "id": "obtain_copper_chest",
+   "name": "Obtain Copper Chest",
+   "type": "item",
+   "icon": "minecraft:copper_chest",
+   "items": [
+    "*copper_chest"
+   ],
+   "count": 1
+  },
+  {
+   "id": "obtain_colored_glazed_terracotta",
+   "name": "Obtain Colored Glazed Terracotta",
+   "type": "item",
+   "icon": "minecraft:{v}_glazed_terracotta",
+   "variants": [
+    "black",
+    "white",
+    "gray",
+    "light_gray",
+    "blue",
+    "light_blue",
+    "orange",
+    "red",
+    "yellow",
+    "magenta",
+    "pink",
+    "purple",
+    "green",
+    "lime",
+    "cyan",
+    "brown"
+   ],
+   "items": [
+    "minecraft:{v}_glazed_terracotta"
+   ],
+   "count": 1,
+   "variant_names": [
+    "Obtain Black Glazed Terracotta",
+    "Obtain White Glazed Terracotta",
+    "Obtain Gray Glazed Terracotta",
+    "Obtain Light Gray Glazed Terracotta",
+    "Obtain Blue Glazed Terracotta",
+    "Obtain Light Blue Glazed Terracotta",
+    "Obtain Orange Glazed Terracotta",
+    "Obtain Red Glazed Terracotta",
+    "Obtain Yellow Glazed Terracotta",
+    "Obtain Magenta Glazed Terracotta",
+    "Obtain Pink Glazed Terracotta",
+    "Obtain Purple Glazed Terracotta",
+    "Obtain Green Glazed Terracotta",
+    "Obtain Lime Glazed Terracotta",
+    "Obtain Cyan Glazed Terracotta",
+    "Obtain Brown Glazed Terracotta"
+   ]
+  },
+  {
+   "id": "obtain_colored_harness",
+   "name": "Obtain Colored Harness",
+   "type": "item",
+   "icon": "minecraft:{v}_harness",
+   "variants": [
+    "black",
+    "white",
+    "gray",
+    "light_gray",
+    "blue",
+    "light_blue",
+    "orange",
+    "red",
+    "yellow",
+    "magenta",
+    "pink",
+    "purple",
+    "green",
+    "lime",
+    "cyan",
+    "brown"
+   ],
+   "items": [
+    "minecraft:{v}_harness"
+   ],
+   "count": 1,
+   "variant_names": [
+    "Obtain Black Harness",
+    "Obtain White Harness",
+    "Obtain Gray Harness",
+    "Obtain Light Gray Harness",
+    "Obtain Blue Harness",
+    "Obtain Light Blue Harness",
+    "Obtain Orange Harness",
+    "Obtain Red Harness",
+    "Obtain Yellow Harness",
+    "Obtain Magenta Harness",
+    "Obtain Pink Harness",
+    "Obtain Purple Harness",
+    "Obtain Green Harness",
+    "Obtain Lime Harness",
+    "Obtain Cyan Harness",
+    "Obtain Brown Harness"
+   ]
+  },
+  {
+   "id": "obtain_64_colored_concrete",
+   "name": "Obtain 64 Colored Concrete",
+   "type": "item",
+   "icon": "minecraft:{v}_concrete",
+   "variants": [
+    "black",
+    "white",
+    "gray",
+    "light_gray",
+    "blue",
+    "light_blue",
+    "orange",
+    "red",
+    "yellow",
+    "magenta",
+    "pink",
+    "purple",
+    "green",
+    "lime",
+    "cyan",
+    "brown"
+   ],
+   "items": [
+    "minecraft:{v}_concrete"
+   ],
+   "count": 64,
+   "variant_names": [
+    "Obtain 64 Black Concrete",
+    "Obtain 64 White Concrete",
+    "Obtain 64 Gray Concrete",
+    "Obtain 64 Light Gray Concrete",
+    "Obtain 64 Blue Concrete",
+    "Obtain 64 Light Blue Concrete",
+    "Obtain 64 Orange Concrete",
+    "Obtain 64 Red Concrete",
+    "Obtain 64 Yellow Concrete",
+    "Obtain 64 Magenta Concrete",
+    "Obtain 64 Pink Concrete",
+    "Obtain 64 Purple Concrete",
+    "Obtain 64 Green Concrete",
+    "Obtain 64 Lime Concrete",
+    "Obtain 64 Cyan Concrete",
+    "Obtain 64 Brown Concrete"
+   ]
+  },
+  {
+   "id": "obtain_64_colored_wool",
+   "name": "Obtain 64 Colored Wool",
+   "type": "item",
+   "icon": "minecraft:{v}_wool",
+   "variants": [
+    "black",
+    "white",
+    "gray",
+    "light_gray",
+    "blue",
+    "light_blue",
+    "orange",
+    "red",
+    "yellow",
+    "magenta",
+    "pink",
+    "purple",
+    "green",
+    "lime",
+    "cyan",
+    "brown"
+   ],
+   "items": [
+    "minecraft:{v}_wool"
+   ],
+   "count": 64,
+   "variant_names": [
+    "Obtain 64 Black Wool",
+    "Obtain 64 White Wool",
+    "Obtain 64 Gray Wool",
+    "Obtain 64 Light Gray Wool",
+    "Obtain 64 Blue Wool",
+    "Obtain 64 Light Blue Wool",
+    "Obtain 64 Orange Wool",
+    "Obtain 64 Red Wool",
+    "Obtain 64 Yellow Wool",
+    "Obtain 64 Magenta Wool",
+    "Obtain 64 Pink Wool",
+    "Obtain 64 Purple Wool",
+    "Obtain 64 Green Wool",
+    "Obtain 64 Lime Wool",
+    "Obtain 64 Cyan Wool",
+    "Obtain 64 Brown Wool"
+   ]
+  },
+  {
+   "id": "obtain_64_arrows",
+   "name": "Obtain 64 Arrows",
+   "type": "item",
+   "icon": "minecraft:arrow",
+   "group": "arrows",
+   "items": [
+    "minecraft:arrow"
+   ],
+   "count": 64
+  },
+  {
+   "id": "obtain_32_arrows",
+   "name": "Obtain 32 Arrows",
+   "type": "item",
+   "icon": "minecraft:arrow",
+   "group": "arrows",
+   "items": [
+    "minecraft:arrow",
+    "minecraft:spectral_arrow"
+   ],
+   "count": 32
+  },
+  {
+   "id": "obtain_64_coarse_dirt",
+   "name": "Obtain 64 Coarse Dirt",
+   "type": "item",
+   "icon": "minecraft:coarse_dirt",
+   "items": [
+    "minecraft:coarse_dirt"
+   ],
+   "count": 64
+  },
+  {
+   "id": "obtain_64_name_tags",
+   "name": "Obtain 64 Name Tags",
+   "type": "item",
+   "icon": "minecraft:name_tag",
+   "items": [
+    "minecraft:name_tag"
+   ],
+   "count": 64
+  },
+  {
+   "id": "obtain_64_of_any_flower",
+   "name": "Obtain 64 of any Flower",
+   "type": "item",
+   "icon": "minecraft:poppy",
+   "items": [
+    "#minecraft:flowers"
+   ],
+   "count": 64
+  },
+  {
+   "id": "obtain_stack_of_64",
+   "name": "Obtain a stack of any Item",
+   "type": "stack_any",
+   "icon": "minecraft:cobblestone",
+   "count": 64
+  },
+  {
+   "id": "obtain_all_furnaces",
+   "name": "Obtain every type of Furnace",
+   "type": "items_all",
+   "icon": "minecraft:blast_furnace",
+   "items": [
+    "minecraft:furnace",
+    "minecraft:blast_furnace",
+    "minecraft:smoker"
+   ]
+  },
+  {
+   "id": "obtain_all_pumpkins",
+   "name": "Obtain every type of Pumpkin",
+   "type": "items_all",
+   "icon": "minecraft:jack_o_lantern",
+   "items": [
+    "minecraft:pumpkin",
+    "minecraft:carved_pumpkin",
+    "minecraft:jack_o_lantern"
+   ]
+  },
+  {
+   "id": "obtain_all_raw_ore_blocks",
+   "name": "Obtain every type of Raw Ore Block",
+   "type": "items_all",
+   "icon": "minecraft:raw_gold_block",
+   "items": [
+    "minecraft:raw_copper_block",
+    "minecraft:raw_gold_block",
+    "minecraft:raw_iron_block"
+   ]
+  },
+  {
+   "id": "obtain_all_torches",
+   "name": "Obtain every type of Torch",
+   "type": "items_all",
+   "icon": "minecraft:torch",
+   "items": [
+    "minecraft:torch",
+    "minecraft:redstone_torch",
+    "minecraft:soul_torch",
+    "minecraft:copper_torch"
+   ]
+  },
+  {
+   "id": "obtain_all_minecarts",
+   "name": "Obtain every type of Minecart",
+   "type": "items_all",
+   "icon": "minecraft:minecart",
+   "items": [
+    "minecraft:minecart",
+    "minecraft:chest_minecart",
+    "minecraft:furnace_minecart",
+    "minecraft:hopper_minecart",
+    "minecraft:tnt_minecart"
+   ]
+  },
+  {
+   "id": "obtain_3_horse_armors",
+   "name": "Obtain 3 types of Horse Armor",
+   "type": "items_unique",
+   "icon": "minecraft:iron_horse_armor",
+   "items": [
+    "*_horse_armor"
+   ],
+   "count": 3
+  },
+  {
+   "id": "obtain_3_banner_patterns",
+   "name": "Obtain 3 Unique Banner Patterns",
+   "type": "items_unique",
+   "icon": "minecraft:flower_banner_pattern",
+   "items": [
+    "*_banner_pattern"
+   ],
+   "count": 3
+  },
+  {
+   "id": "obtain_all_mushrooms",
+   "name": "Obtain 4 Unique Mushrooms",
+   "type": "items_unique",
+   "icon": "minecraft:red_mushroom",
+   "items": [
+    "minecraft:red_mushroom",
+    "minecraft:brown_mushroom",
+    "minecraft:crimson_fungus",
+    "minecraft:warped_fungus",
+    "minecraft:shelf_mushroom"
+   ],
+   "count": 4
+  },
+  {
+   "id": "obtain_4_unique_saplings",
+   "name": "Obtain 4 Unique Saplings",
+   "type": "items_unique",
+   "icon": "minecraft:oak_sapling",
+   "items": [
+    "#minecraft:saplings",
+    "minecraft:azalea",
+    "minecraft:flowering_azalea",
+    "minecraft:mangrove_propagule"
+   ],
+   "count": 4
+  },
+  {
+   "id": "obtain_4_unique_seeds",
+   "name": "Obtain 4 Unique Seeds",
+   "type": "items_unique",
+   "icon": "minecraft:wheat_seeds",
+   "items": [
+    "minecraft:wheat_seeds",
+    "minecraft:pumpkin_seeds",
+    "minecraft:melon_seeds",
+    "minecraft:beetroot_seeds",
+    "minecraft:torchflower_seeds",
+    "minecraft:pitcher_pod"
+   ],
+   "count": 4
+  },
+  {
+   "id": "obtain_6_unique_buckets",
+   "name": "Obtain 6 Unique Buckets",
+   "type": "items_unique",
+   "icon": "minecraft:bucket",
+   "items": [
+    "*bucket"
+   ],
+   "count": 6
+  },
+  {
+   "id": "obtain_6_unique_flowers",
+   "name": "Obtain 6 Unique Flowers",
+   "type": "items_unique",
+   "icon": "minecraft:poppy",
+   "items": [
+    "#minecraft:flowers"
+   ],
+   "count": 6
+  },
+  {
+   "id": "obtain_7_unique_workstations",
+   "name": "Obtain 7 Unique Workstations",
+   "type": "items_unique",
+   "icon": "minecraft:barrel",
+   "items": [
+    "minecraft:blast_furnace",
+    "minecraft:smoker",
+    "minecraft:cartography_table",
+    "minecraft:brewing_stand",
+    "minecraft:composter",
+    "minecraft:barrel",
+    "minecraft:fletching_table",
+    "minecraft:cauldron",
+    "minecraft:lectern",
+    "minecraft:stonecutter",
+    "minecraft:loom",
+    "minecraft:smithing_table",
+    "minecraft:grindstone"
+   ],
+   "count": 7
+  },
+  {
+   "id": "obtain_2_armor_trims",
+   "name": "Obtain 2 Unique Armor Trims",
+   "type": "items_unique",
+   "icon": "minecraft:coast_armor_trim_smithing_template",
+   "items": [
+    "*_armor_trim_smithing_template"
+   ],
+   "count": 2
+  },
+  {
+   "id": "obtain_12_unique_dyes",
+   "name": "Obtain 12 Unique Dyes",
+   "type": "items_unique",
+   "icon": "minecraft:red_dye",
+   "items": [
+    "*_dye"
+   ],
+   "count": 12
+  },
+  {
+   "id": "obtain_3_unique_music_discs",
+   "name": "Obtain 3 Unique Music Discs",
+   "type": "items_unique",
+   "icon": "minecraft:music_disc_cat",
+   "items": [
+    "music_disc_*"
+   ],
+   "count": 3
+  },
+  {
+   "id": "reach_exp_level_10",
+   "name": "Reach XP level 10",
+   "type": "xp_level",
+   "icon": "minecraft:experience_bottle",
+   "group": "xp",
+   "level": 10
+  },
+  {
+   "id": "reach_exp_level_20",
+   "name": "Reach XP level 20",
+   "type": "xp_level",
+   "icon": "minecraft:experience_bottle",
+   "group": "xp",
+   "level": 20
+  },
+  {
+   "id": "deal_400_damage",
+   "name": "Deal 400 damage",
+   "type": "stat",
+   "icon": "minecraft:diamond_sword",
+   "stat": "custom",
+   "keys": [
+    "minecraft:damage_dealt"
+   ],
+   "min": 4000
+  },
+  {
+   "id": "sprint_1_km",
+   "name": "Sprint 1km",
+   "type": "stat",
+   "icon": "minecraft:leather_boots",
+   "stat": "custom",
+   "keys": [
+    "minecraft:sprint_one_cm"
+   ],
+   "min": 100000
+  },
+  {
+   "id": "take_200_damage",
+   "name": "Take 200 damage",
+   "type": "stat",
+   "icon": "minecraft:shield",
+   "stat": "custom",
+   "keys": [
+    "minecraft:damage_taken"
+   ],
+   "min": 2000
+  },
+  {
+   "id": "spy_enderman",
+   "name": "Spy on Enderman",
+   "type": "flag",
+   "icon": "minecraft:spyglass",
+   "any": [
+    "spied:minecraft:enderman"
+   ]
+  },
+  {
+   "id": "spy_iron_golem",
+   "name": "Spy on Iron Golem",
+   "type": "flag",
+   "icon": "minecraft:spyglass",
+   "any": [
+    "spied:minecraft:iron_golem"
+   ]
+  },
+  {
+   "id": "spy_piglin_brute",
+   "name": "Spy on Piglin Brute",
+   "type": "flag",
+   "icon": "minecraft:spyglass",
+   "any": [
+    "spied:minecraft:piglin_brute"
+   ]
+  },
+  {
+   "id": "spy_10_unique_mobs",
+   "name": "Spy on 10 Unique Mobs",
+   "type": "set",
+   "icon": "minecraft:spyglass",
+   "group": "spy_unique",
+   "set": "spied",
+   "count": 10
+  },
+  {
+   "id": "spy_15_unique_mobs",
+   "name": "Spy on 15 Unique Mobs",
+   "type": "set",
+   "icon": "minecraft:spyglass",
+   "group": "spy_unique",
+   "set": "spied",
+   "count": 15
+  },
+  {
+   "id": "spy_20_unique_mobs",
+   "name": "Spy on 20 Unique Mobs",
+   "type": "set",
+   "icon": "minecraft:spyglass",
+   "group": "spy_unique",
+   "set": "spied",
+   "count": 20
+  },
+  {
+   "id": "spy_25_unique_mobs",
+   "name": "Spy on 25 Unique Mobs",
+   "type": "set",
+   "icon": "minecraft:spyglass",
+   "group": "spy_unique",
+   "set": "spied",
+   "count": 25
+  },
+  {
+   "id": "get_absorption_status_effect",
+   "name": "Get Absorption",
+   "type": "flag",
+   "icon": "minecraft:golden_apple",
+   "any": [
+    "effect:minecraft:absorption"
+   ]
+  },
+  {
+   "id": "get_bad_omen_status_effect",
+   "name": "Get Bad Omen",
+   "type": "flag",
+   "icon": "minecraft:ominous_bottle",
+   "any": [
+    "effect:minecraft:bad_omen"
+   ]
+  },
+  {
+   "id": "get_glowing_status_effect",
+   "name": "Get Glowing",
+   "type": "flag",
+   "icon": "minecraft:spectral_arrow",
+   "any": [
+    "effect:minecraft:glowing"
+   ]
+  },
+  {
+   "id": "get_jump_boost_status_effect",
+   "name": "Get Jump Boost",
+   "type": "flag",
+   "icon": "minecraft:rabbit_foot",
+   "any": [
+    "effect:minecraft:jump_boost"
+   ]
+  },
+  {
+   "id": "get_mining_fatigue_status_effect",
+   "name": "Get Mining Fatigue",
+   "type": "flag",
+   "icon": "minecraft:prismarine_shard",
+   "any": [
+    "effect:minecraft:mining_fatigue"
+   ]
+  },
+  {
+   "id": "get_nausea_status_effect",
+   "name": "Get Nausea",
+   "type": "flag",
+   "icon": "minecraft:pufferfish",
+   "any": [
+    "effect:minecraft:nausea"
+   ]
+  },
+  {
+   "id": "get_poison_status_effect",
+   "name": "Get Poison",
+   "type": "flag",
+   "icon": "minecraft:spider_eye",
+   "any": [
+    "effect:minecraft:poison"
+   ]
+  },
+  {
+   "id": "get_weakness_status_effect",
+   "name": "Get Weakness",
+   "type": "flag",
+   "icon": "minecraft:fermented_spider_eye",
+   "any": [
+    "effect:minecraft:weakness"
+   ]
+  },
+  {
+   "id": "get_levitation_status_effect",
+   "name": "Get Levitation",
+   "type": "flag",
+   "icon": "minecraft:shulker_shell",
+   "any": [
+    "effect:minecraft:levitation"
+   ]
+  },
+  {
+   "id": "remove_status_effect_using_milk",
+   "name": "Remove Effect using Milk Bucket",
+   "type": "flag",
+   "icon": "minecraft:milk_bucket",
+   "any": [
+    "milk_cleared"
+   ]
+  },
+  {
+   "id": "get_3_status_effects_at_once",
+   "name": "Get 3 Status Effects at once",
+   "type": "counter",
+   "icon": "minecraft:brewing_stand",
+   "group": "effects_at_once",
+   "counter": "effects_on_gain",
+   "min": 3
+  },
+  {
+   "id": "get_4_status_effects_at_once",
+   "name": "Get 4 Status Effects at once",
+   "type": "counter",
+   "icon": "minecraft:brewing_stand",
+   "group": "effects_at_once",
+   "counter": "effects_on_gain",
+   "min": 4
+  },
+  {
+   "id": "get_6_status_effects_at_once",
+   "name": "Get 6 Status Effects at once",
+   "type": "counter",
+   "icon": "minecraft:brewing_stand",
+   "group": "effects_at_once",
+   "counter": "effects_on_gain",
+   "min": 6
+  },
+  {
+   "id": "obtain_copper_tools",
+   "name": "Obtain all Copper Tools",
+   "type": "items_all",
+   "icon": "minecraft:copper_pickaxe",
+   "items": [
+    "minecraft:copper_axe",
+    "minecraft:copper_hoe",
+    "minecraft:copper_pickaxe",
+    "minecraft:copper_sword",
+    "minecraft:copper_shovel"
+   ]
+  },
+  {
+   "id": "obtain_diamond_tools",
+   "name": "Obtain all Diamond Tools",
+   "type": "items_all",
+   "icon": "minecraft:diamond_pickaxe",
+   "items": [
+    "minecraft:diamond_axe",
+    "minecraft:diamond_hoe",
+    "minecraft:diamond_pickaxe",
+    "minecraft:diamond_sword",
+    "minecraft:diamond_shovel"
+   ]
+  },
+  {
+   "id": "obtain_golden_tools",
+   "name": "Obtain all Golden Tools",
+   "type": "items_all",
+   "icon": "minecraft:golden_pickaxe",
+   "items": [
+    "minecraft:golden_axe",
+    "minecraft:golden_hoe",
+    "minecraft:golden_pickaxe",
+    "minecraft:golden_sword",
+    "minecraft:golden_shovel"
+   ]
+  },
+  {
+   "id": "obtain_iron_tools",
+   "name": "Obtain all Iron Tools",
+   "type": "items_all",
+   "icon": "minecraft:iron_pickaxe",
+   "items": [
+    "minecraft:iron_axe",
+    "minecraft:iron_hoe",
+    "minecraft:iron_pickaxe",
+    "minecraft:iron_sword",
+    "minecraft:iron_shovel"
+   ]
+  },
+  {
+   "id": "obtain_stone_tools",
+   "name": "Obtain all Stone Tools",
+   "type": "items_all",
+   "icon": "minecraft:stone_pickaxe",
+   "items": [
+    "minecraft:stone_axe",
+    "minecraft:stone_hoe",
+    "minecraft:stone_pickaxe",
+    "minecraft:stone_sword",
+    "minecraft:stone_shovel"
+   ]
+  },
+  {
+   "id": "obtain_wooden_tools",
+   "name": "Obtain all Wooden Tools",
+   "type": "items_all",
+   "icon": "minecraft:wooden_pickaxe",
+   "items": [
+    "minecraft:wooden_axe",
+    "minecraft:wooden_hoe",
+    "minecraft:wooden_pickaxe",
+    "minecraft:wooden_sword",
+    "minecraft:wooden_shovel"
+   ]
+  },
+  {
+   "id": "break_any_tool",
+   "name": "Break any Tool",
+   "type": "stat",
+   "icon": "minecraft:wooden_pickaxe",
+   "stat": "broken",
+   "keys": [
+    "wooden_axe",
+    "wooden_hoe",
+    "wooden_pickaxe",
+    "wooden_sword",
+    "wooden_shovel",
+    "wooden_spear",
+    "stone_axe",
+    "stone_hoe",
+    "stone_pickaxe",
+    "stone_sword",
+    "stone_shovel",
+    "stone_spear",
+    "copper_axe",
+    "copper_hoe",
+    "copper_pickaxe",
+    "copper_sword",
+    "copper_shovel",
+    "copper_spear",
+    "golden_axe",
+    "golden_hoe",
+    "golden_pickaxe",
+    "golden_sword",
+    "golden_shovel",
+    "golden_spear",
+    "iron_axe",
+    "iron_hoe",
+    "iron_pickaxe",
+    "iron_sword",
+    "iron_shovel",
+    "iron_spear",
+    "diamond_axe",
+    "diamond_hoe",
+    "diamond_pickaxe",
+    "diamond_sword",
+    "diamond_shovel",
+    "diamond_spear",
+    "fishing_rod",
+    "flint_and_steel",
+    "shears",
+    "brush",
+    "carrot_on_a_stick",
+    "warped_fungus_on_a_stick"
+   ],
+   "min": 1
+  },
+  {
+   "id": "have_your_shield_disabled",
+   "name": "Have your Shield disabled",
+   "type": "flag",
+   "icon": "minecraft:shield",
+   "any": [
+    "shield_disabled"
+   ]
+  },
+  {
+   "id": "shoot_firework_from_crossbow",
+   "name": "Shoot Firework from Crossbow",
+   "type": "flag",
+   "icon": "minecraft:firework_rocket",
+   "any": [
+    "crossbow_firework"
+   ]
+  },
+  {
+   "id": "use_brush_on_suspicious_block",
+   "name": "Use Brush on Suspicious Sand/Gravel",
+   "type": "flag",
+   "icon": "minecraft:brush",
+   "any": [
+    "brushed"
+   ]
+  },
+  {
+   "id": "break_fishing_rod",
+   "name": "Break Fishing Rod",
+   "type": "stat",
+   "icon": "minecraft:fishing_rod",
+   "stat": "broken",
+   "keys": [
+    "minecraft:fishing_rod"
+   ],
+   "min": 1
+  },
+  {
+   "id": "break_shield",
+   "name": "Break Shield",
+   "type": "stat",
+   "icon": "minecraft:shield",
+   "stat": "broken",
+   "keys": [
+    "minecraft:shield"
+   ],
+   "min": 1
+  },
+  {
+   "id": "wear_copper_armor",
+   "name": "Wear Full Copper Armor",
+   "type": "wear",
+   "icon": "minecraft:copper_chestplate",
+   "head": [
+    "minecraft:copper_helmet"
+   ],
+   "chest": [
+    "minecraft:copper_chestplate"
+   ],
+   "legs": [
+    "minecraft:copper_leggings"
+   ],
+   "feet": [
+    "minecraft:copper_boots"
+   ]
+  },
+  {
+   "id": "wear_diamond_armor",
+   "name": "Wear Full Diamond Armor",
+   "type": "wear",
+   "icon": "minecraft:diamond_chestplate",
+   "head": [
+    "minecraft:diamond_helmet"
+   ],
+   "chest": [
+    "minecraft:diamond_chestplate"
+   ],
+   "legs": [
+    "minecraft:diamond_leggings"
+   ],
+   "feet": [
+    "minecraft:diamond_boots"
+   ]
+  },
+  {
+   "id": "wear_golden_armor",
+   "name": "Wear Full Golden Armor",
+   "type": "wear",
+   "icon": "minecraft:golden_chestplate",
+   "head": [
+    "minecraft:golden_helmet"
+   ],
+   "chest": [
+    "minecraft:golden_chestplate"
+   ],
+   "legs": [
+    "minecraft:golden_leggings"
+   ],
+   "feet": [
+    "minecraft:golden_boots"
+   ]
+  },
+  {
+   "id": "wear_iron_armor",
+   "name": "Wear Full Iron Armor",
+   "type": "wear",
+   "icon": "minecraft:iron_chestplate",
+   "head": [
+    "minecraft:iron_helmet"
+   ],
+   "chest": [
+    "minecraft:iron_chestplate"
+   ],
+   "legs": [
+    "minecraft:iron_leggings"
+   ],
+   "feet": [
+    "minecraft:iron_boots"
+   ]
+  },
+  {
+   "id": "wear_leather_armor",
+   "name": "Wear Full Leather Armor",
+   "type": "wear",
+   "icon": "minecraft:leather_chestplate",
+   "head": [
+    "minecraft:leather_helmet"
+   ],
+   "chest": [
+    "minecraft:leather_chestplate"
+   ],
+   "legs": [
+    "minecraft:leather_leggings"
+   ],
+   "feet": [
+    "minecraft:leather_boots"
+   ]
+  },
+  {
+   "id": "put_wolf_armor_on_wolf",
+   "name": "Put Wolf Armor on Wolf",
+   "type": "flag",
+   "icon": "minecraft:wolf_armor",
+   "any": [
+    "wolf_armor"
+   ]
+  },
+  {
+   "id": "wear_carved_pumpkin_for_5_minutes",
+   "name": "Wear a Carved Pumpkin for 5 minutes",
+   "type": "counter",
+   "icon": "minecraft:carved_pumpkin",
+   "counter": "pumpkin_ticks",
+   "min": 6000
+  },
+  {
+   "id": "wear_chain_armor_piece",
+   "name": "Wear a Chain Armor Piece",
+   "type": "wear_any",
+   "icon": "minecraft:chainmail_helmet",
+   "items": [
+    "minecraft:chainmail_helmet",
+    "minecraft:chainmail_chestplate",
+    "minecraft:chainmail_leggings",
+    "minecraft:chainmail_boots"
+   ]
+  },
+  {
+   "id": "wear_colored_leather_armor_piece",
+   "name": "Wear Colored Leather Armor Piece",
+   "type": "wear_any",
+   "icon": "minecraft:{v0}",
+   "variants": [
+    "leather_helmet__black",
+    "leather_helmet__white",
+    "leather_helmet__gray",
+    "leather_helmet__light_gray",
+    "leather_helmet__blue",
+    "leather_helmet__light_blue",
+    "leather_helmet__orange",
+    "leather_helmet__red",
+    "leather_helmet__yellow",
+    "leather_helmet__magenta",
+    "leather_helmet__pink",
+    "leather_helmet__purple",
+    "leather_helmet__green",
+    "leather_helmet__lime",
+    "leather_helmet__cyan",
+    "leather_helmet__brown",
+    "leather_chestplate__black",
+    "leather_chestplate__white",
+    "leather_chestplate__gray",
+    "leather_chestplate__light_gray",
+    "leather_chestplate__blue",
+    "leather_chestplate__light_blue",
+    "leather_chestplate__orange",
+    "leather_chestplate__red",
+    "leather_chestplate__yellow",
+    "leather_chestplate__magenta",
+    "leather_chestplate__pink",
+    "leather_chestplate__purple",
+    "leather_chestplate__green",
+    "leather_chestplate__lime",
+    "leather_chestplate__cyan",
+    "leather_chestplate__brown",
+    "leather_leggings__black",
+    "leather_leggings__white",
+    "leather_leggings__gray",
+    "leather_leggings__light_gray",
+    "leather_leggings__blue",
+    "leather_leggings__light_blue",
+    "leather_leggings__orange",
+    "leather_leggings__red",
+    "leather_leggings__yellow",
+    "leather_leggings__magenta",
+    "leather_leggings__pink",
+    "leather_leggings__purple",
+    "leather_leggings__green",
+    "leather_leggings__lime",
+    "leather_leggings__cyan",
+    "leather_leggings__brown",
+    "leather_boots__black",
+    "leather_boots__white",
+    "leather_boots__gray",
+    "leather_boots__light_gray",
+    "leather_boots__blue",
+    "leather_boots__light_blue",
+    "leather_boots__orange",
+    "leather_boots__red",
+    "leather_boots__yellow",
+    "leather_boots__magenta",
+    "leather_boots__pink",
+    "leather_boots__purple",
+    "leather_boots__green",
+    "leather_boots__lime",
+    "leather_boots__cyan",
+    "leather_boots__brown"
+   ],
+   "items": [
+    "minecraft:{v0}"
+   ],
+   "dyed": "{v1}",
+   "variant_names": [
+    "Wear Black Leather Helmet",
+    "Wear White Leather Helmet",
+    "Wear Gray Leather Helmet",
+    "Wear Light Gray Leather Helmet",
+    "Wear Blue Leather Helmet",
+    "Wear Light Blue Leather Helmet",
+    "Wear Orange Leather Helmet",
+    "Wear Red Leather Helmet",
+    "Wear Yellow Leather Helmet",
+    "Wear Magenta Leather Helmet",
+    "Wear Pink Leather Helmet",
+    "Wear Purple Leather Helmet",
+    "Wear Green Leather Helmet",
+    "Wear Lime Leather Helmet",
+    "Wear Cyan Leather Helmet",
+    "Wear Brown Leather Helmet",
+    "Wear Black Leather Chestplate",
+    "Wear White Leather Chestplate",
+    "Wear Gray Leather Chestplate",
+    "Wear Light Gray Leather Chestplate",
+    "Wear Blue Leather Chestplate",
+    "Wear Light Blue Leather Chestplate",
+    "Wear Orange Leather Chestplate",
+    "Wear Red Leather Chestplate",
+    "Wear Yellow Leather Chestplate",
+    "Wear Magenta Leather Chestplate",
+    "Wear Pink Leather Chestplate",
+    "Wear Purple Leather Chestplate",
+    "Wear Green Leather Chestplate",
+    "Wear Lime Leather Chestplate",
+    "Wear Cyan Leather Chestplate",
+    "Wear Brown Leather Chestplate",
+    "Wear Black Leather Leggings",
+    "Wear White Leather Leggings",
+    "Wear Gray Leather Leggings",
+    "Wear Light Gray Leather Leggings",
+    "Wear Blue Leather Leggings",
+    "Wear Light Blue Leather Leggings",
+    "Wear Orange Leather Leggings",
+    "Wear Red Leather Leggings",
+    "Wear Yellow Leather Leggings",
+    "Wear Magenta Leather Leggings",
+    "Wear Pink Leather Leggings",
+    "Wear Purple Leather Leggings",
+    "Wear Green Leather Leggings",
+    "Wear Lime Leather Leggings",
+    "Wear Cyan Leather Leggings",
+    "Wear Brown Leather Leggings",
+    "Wear Black Leather Boots",
+    "Wear White Leather Boots",
+    "Wear Gray Leather Boots",
+    "Wear Light Gray Leather Boots",
+    "Wear Blue Leather Boots",
+    "Wear Light Blue Leather Boots",
+    "Wear Orange Leather Boots",
+    "Wear Red Leather Boots",
+    "Wear Yellow Leather Boots",
+    "Wear Magenta Leather Boots",
+    "Wear Pink Leather Boots",
+    "Wear Purple Leather Boots",
+    "Wear Green Leather Boots",
+    "Wear Lime Leather Boots",
+    "Wear Cyan Leather Boots",
+    "Wear Brown Leather Boots"
+   ]
+  },
+  {
+   "id": "wear_full_enchanted_armor",
+   "name": "Wear Full Enchanted Armor",
+   "type": "wear_special",
+   "icon": "minecraft:enchanted_book",
+   "mode": "enchanted"
+  },
+  {
+   "id": "wear_unique_colored_leather_armor",
+   "name": "Wear Full Leather Armor, in different colors",
+   "type": "wear_special",
+   "icon": "minecraft:leather_chestplate",
+   "mode": "dyed_distinct"
+  },
+  {
+   "id": "wear_unique_armor",
+   "name": "Wear Full Armor with different materials",
+   "type": "wear_special",
+   "icon": "minecraft:chainmail_chestplate",
+   "mode": "distinct_materials"
+  }
+ ]
+}

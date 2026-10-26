@@ -1,0 +1,11 @@
+.gradle/
+build/
+out/
+run/
+.idea/
+*.iml
+.vscode/
+/tools/.cache/
+.DS_Store
+# Draftout's goal icons, downloaded by tools/fetch_icons.py. They're Draftout's art, so they stay out of the repo.
+/src/main/resources/assets/opendraft/textures/goal/

@@ -1,0 +1,17 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "dev.opendraft.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "ContainerMenuMixin",
+    "ItemStackMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "client": [
+    "ClientPlayerFovMixin",
+    "PlayerScopingMixin"
+  ]
+}

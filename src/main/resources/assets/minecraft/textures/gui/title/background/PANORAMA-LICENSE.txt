@@ -1,0 +1,4 @@
+panorama_0.png to panorama_5.png: "Sinkhole" from Main Menu Panoramas by sumone_lol
+https://modrinth.com/resourcepack/noice-panoramas
+Licensed under CC BY-NC 4.0: https://creativecommons.org/licenses/by-nc/4.0/
+Resized from 1440x1440 to 1024x1024. Not covered by OpenDraft's MIT license; non-commercial use only.
