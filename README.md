@@ -20,6 +20,8 @@ under the MIT license.
   Shipwreck, Outpost, Witch Hut, Desert Temple, Jungle Temple, Igloo, Mansion, Ruined Portal, Trail Ruins,
   Abandoned Camp, Ancient City, Trial Chambers and Pale Garden. See [Seed filter](#seed-filter).
 - **A lobby on the title screen** with the player list, chat and settings. Every match starts in a fresh world.
+- **Invite codes**: copy the code, your friends paste it. The game opens your router's port by itself (UPnP), so
+  most players never deal with port forwarding.
 - **Time limit and overtime**, a lookout from the air before the clock starts, and forfeit and draw votes.
 - **Shared advancement messages**, and your progress on each goal when you hover it.
 
@@ -40,9 +42,9 @@ Everyone in a game needs the **same OpenDraft version**. To build the jar yourse
 ## Playing
 
 1. On the title screen, press **OpenDraft** (next to Singleplayer). This opens the lobby screen.
-2. One player types a name and presses **Create Lobby**. Their game runs the synchronizer, and the lobby shows an
-   invite address with a **Copy** button.
-3. Everyone else types their name and that address and presses **Join**. Names don't need a Minecraft account, and
+2. One player types a name and presses **Create Lobby**. Their game runs the synchronizer, and after a few seconds
+   the lobby shows an **invite code** with a **Copy** button. Send it to your friends.
+3. Everyone else types their name, pastes the code and presses **Join**. Names don't need a Minecraft account, and
    duplicate names get a number added.
 4. The lobby lists everyone who has joined, the settings and a chat. The first player in the lobby is the leader
    (marked with a star). Only the leader can press **Edit Settings** and **Start**.
@@ -136,7 +138,8 @@ The game keeps running while it's open.
 
 The lobby screen covers everything, and these commands also work inside a world:
 
-- `/opendraft host [port]` and `/opendraft join <address>[:port] [name]` start or join a game for the world you're in.
+- `/opendraft host [port]` and `/opendraft join <invite code or address> [name]` start or join a game for the world
+  you're in.
 - `/opendraft start [size] [minutes] [overtime]` deals a board and `/opendraft draft` starts a draft.
 - `/opendraft settings` shows the settings, and `/opendraft settings size|time|overtime|lookout|turn|mode ...` changes
   them.
@@ -145,13 +148,26 @@ The lobby screen covers everything, and these commands also work inside a world:
 
 The synchronizer can also run on its own, so the lobby keeps running when the player who created it closes Minecraft.
 Run the same jar from Releases with `java -jar opendraft-<version>.jar [--port 25570] [--seed <seed>]`. This needs
-Java 25 but not Minecraft.
-Players then press **Join** with its address.
+Java 25 but not Minecraft. It prints an invite code, and players join with that code or the machine's address.
 
-### Reaching the synchronizer
+### Playing over the internet
 
-On the same network, use the address the lobby shows. Across the internet, forward the port (TCP 25570 by default)
-or use a tunnel such as Tailscale, ZeroTier or playit.gg.
+When you create a lobby, your game asks your router to open the port (TCP 25570 by default) using UPnP, the same way
+game consoles do. The invite code holds your home-network address and your internet address, and joining tries both,
+so friends in the same house and friends elsewhere use the same code. The port is closed again when you leave the
+lobby.
+
+Under the code, the lobby says who can join:
+
+- **Works from any network**: you're done.
+- **Same network only**: the router didn't open the port. Either turn on UPnP in your router's settings, or forward
+  the port by hand: open the router's page (often `192.168.1.1` or `192.168.0.1`), find Port Forwarding, and forward
+  TCP port 25570 to this computer. The code already includes your internet address, so it works once the port is open.
+  If your connection is behind your internet provider's network (common on phone hotspots, dorms and some providers),
+  forwarding won't help; use a tunnel such as playit.gg, Tailscale or ZeroTier instead.
+
+On macOS, allow Minecraft to find devices on your local network if it asks, so it can reach the router. When the
+router doesn't answer, the game looks up your internet address with `api.ipify.org`.
 
 ### Panorama
 

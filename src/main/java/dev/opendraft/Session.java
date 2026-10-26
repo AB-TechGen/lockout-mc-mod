@@ -400,7 +400,7 @@ public final class Session {
         }
     }
 
-    private void addChatLine(String text) {
+    void addChatLine(String text) {
         chatLines.add(text);
         while (chatLines.size() > CHAT_LINES) chatLines.remove(0);
     }

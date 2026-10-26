@@ -1,5 +1,6 @@
 package dev.opendraft;
 
+import dev.opendraft.net.Invite;
 import dev.opendraft.net.OpenDraftHost;
 import dev.opendraft.net.Protocol;
 import net.minecraft.ChatFormatting;
@@ -13,15 +14,11 @@ import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.network.chat.Component;
 
-import java.net.Inet4Address;
-import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.util.Collections;
 import java.util.List;
 
 /**
  * The lobby, opened from the title screen. Before joining it offers to host a lobby (this game runs
- * the synchronizer) or join one by address. Inside, it lists the players, shows the leader's
+ * the synchronizer) or join one with an invite code. Inside, it lists the players, shows the leader's
  * settings, has a little chat, and the leader's Start button sends everyone into a new world.
  */
 public final class LobbyScreen extends Screen {
@@ -105,7 +102,7 @@ public final class LobbyScreen extends Screen {
         backButton.visible = !in;
         chatBox.visible = in;
         leaveButton.visible = in;
-        copyButton.visible = in && s.host != null;
+        copyButton.visible = in && s.host != null && s.host.reach() != null && s.host.reach().code() != null;
         editButton.visible = in && s.isLeader();
         boolean matchOn = in && s.matchOn();
         startButton.visible = in && s.isLeader() && !matchOn;
@@ -138,12 +135,16 @@ public final class LobbyScreen extends Screen {
             return;
         }
         Session.connect(host, "127.0.0.1:" + port, nameBox.getValue(), "-");
+        host.shareOnline(reach -> {
+            Session s = Session.current();
+            if (s != null && s.host == host && reach.code() != null) s.addChatLine("Press Copy to share the invite code.");
+        });
     }
 
     private void join() {
         String address = addressBox.getValue().trim();
         if (address.isEmpty()) {
-            Session.lastStatus = "Type the address you were given, like 192.168.1.20:25570.";
+            Session.lastStatus = "Paste the invite code you were given.";
             return;
         }
         remember();
@@ -165,8 +166,10 @@ public final class LobbyScreen extends Screen {
 
     private void copyInvite() {
         Session s = Session.current();
-        if (s == null || s.host == null) return;
-        Minecraft.getInstance().keyboardHandler.setClipboard(lanAddress() + ":" + s.host.port());
+        OpenDraftHost.Reach reach = s == null || s.host == null ? null : s.host.reach();
+        if (reach == null || reach.code() == null) return;
+        Minecraft.getInstance().keyboardHandler.setClipboard(reach.code());
+        copyButton.setMessage(Component.literal("Copied"));
     }
 
     @Override
@@ -195,7 +198,7 @@ public final class LobbyScreen extends Screen {
             centered(g, font, Component.literal("OpenDraft Lobby").withStyle(ChatFormatting.GOLD), 16, 0xFFFFFFFF);
             g.text(font, Component.literal("Your name"), cx - 100, 40, 0xFFAAAAAA, true);
             g.text(font, Component.literal("Host a lobby (others join you on this port)"), cx - 100, 82, 0xFFAAAAAA, true);
-            g.text(font, Component.literal("Join a lobby (address:port)"), cx - 100, 124, 0xFFAAAAAA, true);
+            g.text(font, Component.literal("Join a lobby (invite code or address)"), cx - 100, 124, 0xFFAAAAAA, true);
             String status = Session.lastStatus;
             if (status != null) wrapped(g, font, status, cx - 120, 162, 240, 0xFFEF5350);
             super.extractRenderState(g, mouseX, mouseY, delta);
@@ -206,12 +209,23 @@ public final class LobbyScreen extends Screen {
         int x0 = 8, y0 = 8;
         List<String> players = s.players;
         int rows = Math.max(players.size(), 1);
-        g.fill(x0, y0, x0 + PANEL_W, y0 + 34 + rows * 14, PANEL);
+        int top = s.host != null ? 42 : 32; // the host has a second line, about who can join
+        g.fill(x0, y0, x0 + PANEL_W, y0 + top + 2 + rows * 14, PANEL);
         g.text(font, Component.literal("Lobby (" + players.size() + ")").withStyle(ChatFormatting.BOLD), x0 + 5, y0 + 5, 0xFFFFFFFF, true);
-        String where = !s.welcomed ? "Connecting to " + s.address + "..."
-                : s.host != null ? "Invite: " + lanAddress() + ":" + s.host.port() : "Connected to " + s.address;
-        g.text(font, Component.literal(where), x0 + 5, y0 + 18, 0xFFAAAAAA, true);
-        int py = y0 + 32;
+        OpenDraftHost.Reach reach = s.host != null ? s.host.reach() : null;
+        String where;
+        if (s.host != null) {
+            where = reach == null ? "Getting your invite code..." : reach.code() == null ? "No invite code (no network found)" : "Code: " + reach.code();
+            String who = reach == null ? "Opening your router..." : reach.anywhere() ? "Works from any network" : "Same network only";
+            int whoColor = reach == null ? 0xFF888888 : reach.anywhere() ? 0xFF81C784 : 0xFFFFB74D;
+            g.text(font, Component.literal(who), x0 + 5, y0 + 28, whoColor, true);
+        } else if (!s.welcomed) {
+            where = "Connecting...";
+        } else {
+            where = "Connected to " + (Invite.decode(s.address) != null ? "the lobby" : s.address);
+        }
+        g.text(font, Component.literal(where), x0 + 5, y0 + 18, s.host != null && reach != null ? 0xFFFFFFFF : 0xFFAAAAAA, true);
+        int py = y0 + top;
         String leader = s.leader();
         for (String name : players) {
             int color = OpenDraftClient.colorOf(name);
@@ -240,7 +254,7 @@ public final class LobbyScreen extends Screen {
         // Chat, bottom left, above the input.
         List<String> chat = s.chatLines;
         int cy = height - 32;
-        for (int i = chat.size() - 1; i >= 0 && cy > y0 + 40 + rows * 14; i--) {
+        for (int i = chat.size() - 1; i >= 0 && cy > y0 + top + 8 + rows * 14; i--) {
             cy -= 10;
             g.text(font, Component.literal(font.plainSubstrByWidth(chat.get(i), Math.max(120, Math.min(240, width - 230)))), 10, cy, 0xFFDDDDDD, true);
         }
@@ -258,6 +272,8 @@ public final class LobbyScreen extends Screen {
             if (s.ended && s.winner != null) {
                 return s.winner.equals("-") ? "Last match: a draw." : "Last match: " + (s.winner.equals(s.me) ? "you won!" : s.winner + " won.");
             }
+            OpenDraftHost.Reach reach = s.host != null ? s.host.reach() : null;
+            if (reach != null && !reach.anywhere()) return reach.note();
             return s.isLeader() ? "Press Start when everyone's here." : null;
         }
         Long pending = WorldMaker.pendingSeed();
@@ -287,20 +303,6 @@ public final class LobbyScreen extends Screen {
             y += 10;
         }
         return y;
-    }
-
-    /** This computer's address on the local network, for the invite line. */
-    static String lanAddress() {
-        try {
-            for (NetworkInterface ni : Collections.list(NetworkInterface.getNetworkInterfaces())) {
-                if (!ni.isUp() || ni.isLoopback() || ni.isVirtual()) continue;
-                for (InetAddress a : Collections.list(ni.getInetAddresses())) {
-                    if (a instanceof Inet4Address && a.isSiteLocalAddress()) return a.getHostAddress();
-                }
-            }
-        } catch (Exception ignored) {
-        }
-        return "your-ip";
     }
 
     /** The game keeps running behind the lobby when it's opened in a world. */

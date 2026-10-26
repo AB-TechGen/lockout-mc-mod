@@ -156,7 +156,7 @@ public final class OpenDraftClient implements ClientModInitializer {
                 "OpenDraft " + modVersion(),
                 "The OpenDraft button on the title screen opens the lobby. In a world you can also use:",
                 "/opendraft host [port] - run the synchronizer in this game and join it",
-                "/opendraft join <address[:port]> [name] - join a synchronizer",
+                "/opendraft join <invite code or address> [name] - join a synchronizer",
                 "/opendraft start [size] [minutes] [overtime] - deal a new board (uses /opendraft settings when left out)",
                 "/opendraft draft [size] - pick the board's goals in turns",
                 "/opendraft pick <n> - pick goal n in a draft (or click it on the board)",
@@ -192,8 +192,11 @@ public final class OpenDraftClient implements ClientModInitializer {
             return 0;
         }
         src.sendFeedback(Component.literal("Synchronizer running on port " + port + " with seed " + seed
-                + ". Others join with /opendraft join " + LobbyScreen.lanAddress() + ":" + port).withStyle(ChatFormatting.GREEN));
+                + ". Getting your invite code...").withStyle(ChatFormatting.GREEN));
         connect(src, host, "127.0.0.1:" + port, null);
+        host.shareOnline(reach -> chat(Component.literal(reach.code() == null ? "OpenDraft: no invite code, since this computer isn't on a network."
+                : "OpenDraft: others join with /opendraft join " + reach.code() + ". " + reach.note())
+                .withStyle(reach.anywhere() ? ChatFormatting.GREEN : ChatFormatting.GOLD)));
         return 1;
     }
 

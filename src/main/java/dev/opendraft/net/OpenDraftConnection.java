@@ -3,6 +3,10 @@ package dev.opendraft.net;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 /** This game's connection to the synchronizer. Incoming lines go to {@code onLine} on a background thread. */
@@ -31,14 +35,16 @@ public final class OpenDraftConnection {
         return InetSocketAddress.createUnresolved(host, port);
     }
 
-    /** @param seed this world's seed, or "-" when joining from the title-screen lobby */
+    /**
+     * @param raw an invite code or an address
+     * @param seed this world's seed, or "-" when joining from the title-screen lobby
+     */
     public static OpenDraftConnection connect(String raw, String modVersion, String seed, String name,
                                             Consumer<String> onLine, Runnable onClosed) throws IOException {
-        InetSocketAddress addr = parseAddress(raw);
-        Socket socket = new Socket();
-        socket.connect(new InetSocketAddress(addr.getHostString(), addr.getPort()), 8_000);
+        List<InetSocketAddress> targets = Invite.decode(raw);
+        Socket socket = open(targets != null ? targets : List.of(parseAddress(raw)), 8_000);
         LineChannel ch = new LineChannel(socket);
-        OpenDraftConnection conn = new OpenDraftConnection(ch, addr.getHostString() + ":" + addr.getPort());
+        OpenDraftConnection conn = new OpenDraftConnection(ch, socket.getInetAddress().getHostAddress() + ":" + socket.getPort());
         ch.send("HELLO " + Protocol.VERSION + " " + modVersion + " " + seed + " " + Protocol.sanitizeName(name));
         Thread reader = new Thread(() -> {
             try {
@@ -52,6 +58,46 @@ public final class OpenDraftConnection {
         reader.setDaemon(true);
         reader.start();
         return conn;
+    }
+
+    /**
+     * Connects to whichever address answers first. An invite code holds the host's home-network
+     * and internet addresses, and only one of them works from any given place.
+     */
+    static Socket open(List<InetSocketAddress> targets, int timeoutMs) throws IOException {
+        if (targets.size() == 1) {
+            InetSocketAddress t = targets.get(0);
+            Socket s = new Socket();
+            s.connect(new InetSocketAddress(t.getHostString(), t.getPort()), timeoutMs);
+            return s;
+        }
+        CompletableFuture<Socket> first = new CompletableFuture<>();
+        AtomicInteger left = new AtomicInteger(targets.size());
+        for (InetSocketAddress t : targets) {
+            Thread th = new Thread(() -> {
+                Socket s = new Socket();
+                try {
+                    s.connect(new InetSocketAddress(t.getHostString(), t.getPort()), timeoutMs);
+                    if (!first.complete(s)) s.close();
+                } catch (IOException e) {
+                    try {
+                        s.close();
+                    } catch (IOException ignored) {
+                    }
+                    if (left.decrementAndGet() == 0) first.completeExceptionally(e);
+                }
+            }, "OpenDraft connect");
+            th.setDaemon(true);
+            th.start();
+        }
+        try {
+            return first.get();
+        } catch (ExecutionException e) {
+            throw e.getCause() instanceof IOException io ? io : new IOException(e.getCause());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IOException("interrupted");
+        }
     }
 
     public void send(String line) {

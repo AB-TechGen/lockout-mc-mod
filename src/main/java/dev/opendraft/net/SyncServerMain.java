@@ -36,6 +36,15 @@ public final class SyncServerMain {
         System.out.println("OpenDraft synchronizer " + modVersion() + " listening on port " + port
                 + (seed == null ? "" : " (seed " + seed + ")"));
         System.out.println("Players join from the OpenDraft button on the title screen, using this machine's address and port " + port);
+        int finalPort = port;
+        host.shareOnline(reach -> {
+            if (reach.code() == null) return;
+            System.out.println("Invite code: " + reach.code());
+            if (!reach.anywhere()) {
+                System.out.println("If players on other networks can't connect, check that TCP port " + finalPort
+                        + " is open in this machine's firewall and forwarded by its router.");
+            }
+        });
         Runtime.getRuntime().addShutdownHook(new Thread(host::close));
         Thread.currentThread().join();
     }

@@ -33,6 +33,10 @@ public final class OpenDraftHost {
     private final Random random = new Random();
     private ServerSocket server;
     private ScheduledExecutorService clock;
+    private volatile boolean closed;
+    private volatile PortOpener router;
+    private volatile Thread routerCleanup;
+    private volatile Reach reach;
 
     // Everything below is guarded by this.
     private final Map<String, LineChannel> players = new LinkedHashMap<>();
@@ -88,10 +92,84 @@ public final class OpenDraftHost {
         clock.scheduleAtFixedRate(this::tick, 200, 200, TimeUnit.MILLISECONDS);
     }
 
+    /**
+     * Who can join and with what code, once {@link #shareOnline} has worked it out.
+     * @param anywhere true when players on other networks should be able to connect
+     */
+    public record Reach(String code, boolean anywhere, String note) {
+    }
+
+    /** Null until {@link #shareOnline} finishes. */
+    public Reach reach() {
+        return reach;
+    }
+
+    /**
+     * In the background, asks the router to open the port and works out the invite code.
+     * {@code done} runs on that background thread.
+     */
+    public void shareOnline(Consumer<Reach> done) {
+        Thread t = new Thread(() -> {
+            PortOpener r = PortOpener.open(port);
+            if (r.opened()) {
+                // Take the forwarding off the router if the game quits without closing the lobby.
+                Thread cleanup = new Thread(r::close, "OpenDraft router cleanup");
+                synchronized (this) {
+                    if (closed) {
+                        r.close();
+                        return;
+                    }
+                    router = r;
+                    routerCleanup = cleanup;
+                    Runtime.getRuntime().addShutdownHook(cleanup);
+                }
+            }
+            String lan = r.localIp != null ? r.localIp : Invite.lanAddress();
+            String internet = r.externalIp != null && Invite.isPublic(r.externalIp) ? r.externalIp : null;
+            Reach result;
+            if (r.opened() && internet != null) {
+                result = new Reach(Invite.encode(lan, internet, port), true, "Friends anywhere can join with this code.");
+            } else if (r.opened()) {
+                result = new Reach(Invite.encode(lan, null, port), false, "Only players on your network can join: your connection is behind"
+                        + " another network (often your internet provider's). See \"Playing over the internet\" in the README.");
+            } else {
+                if (internet == null) internet = PortOpener.publicAddress();
+                result = new Reach(Invite.encode(lan, internet, port), false, "Only players on your network can join for now: your router"
+                        + " didn't open port " + port + " by itself. Turn on UPnP in the router's settings or forward the port"
+                        + " (see \"Playing over the internet\" in the README).");
+            }
+            log.accept(r.opened() ? "router opened port " + port + " (internet address " + r.externalIp + ")" : "router didn't open the port: " + r.problem);
+            if (closed) return;
+            reach = result;
+            done.accept(result);
+        }, "OpenDraft router");
+        t.setDaemon(true);
+        t.start();
+    }
+
     public void close() {
         try {
             if (server != null) server.close();
         } catch (IOException ignored) {
+        }
+        PortOpener r;
+        Thread cleanup;
+        synchronized (this) {
+            closed = true;
+            r = router;
+            cleanup = routerCleanup;
+            router = null;
+            routerCleanup = null;
+        }
+        if (r != null) {
+            try {
+                Runtime.getRuntime().removeShutdownHook(cleanup);
+            } catch (IllegalStateException ignored) {
+                // Already shutting down; the hook takes the forwarding off.
+            }
+            Thread off = new Thread(r::close, "OpenDraft router cleanup");
+            off.setDaemon(true);
+            off.start();
         }
         if (clock != null) clock.shutdownNow();
         synchronized (this) {
