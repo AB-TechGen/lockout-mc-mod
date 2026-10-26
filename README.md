@@ -26,6 +26,11 @@ under the MIT license.
   [Match worlds](#match-worlds).
 - **Goals that fit the world**: a goal that needs a biome (scaffolding needs a jungle) is only dealt when that biome
   is within 400 blocks of spawn. See [Match worlds](#match-worlds).
+- **Same luck for everyone**: drops, bartering, captains, food effects and golem damage follow sequences from the
+  world seed, so players on the same seed get the same outcomes in the same order. See
+  [Same luck for everyone](#same-luck-for-everyone-rng-standardization).
+- **Changes to vanilla**: at least 4 pearl trades from the first 16 gold blocks, far less Nether fog, and a first
+  Nether exit from up high puts the portal on the surface. See [Match worlds](#match-worlds).
 - **A lobby on the title screen** with the player list, chat and settings. Every match starts in a fresh world.
 - **Invite codes**: copy the code, your friends paste it, and it works from any network. Nobody has to set up port
   forwarding.
@@ -168,8 +173,9 @@ spawn and each structure are) with `/locate structure`. In the Nether, use
 
 ### Match worlds
 
-Every lobby match world (made by the lobby, or by hand with the match's seed) is generated with two changes, the
-same on every player's computer:
+Every lobby match world (made by the lobby, or by hand with the match's seed) has these changes from vanilla, the
+same on every player's computer. Random outcomes are also standardized; see
+[Same luck for everyone](#same-luck-for-everyone-rng-standardization).
 
 - **Lava pools.** Surface lava pools are twice as common as in vanilla, and there are 3 pools 50 to 200 blocks from
   spawn. Natural pools in that ring count towards the 3, and the rest are added on dry land away from villages, as
@@ -180,20 +186,36 @@ same on every player's computer:
 - **Nether fog** starts and ends much further away, so you can see across the Nether.
 - **First Nether exit.** If leaving the Nether for the first time makes a new Overworld portal and you were standing
   at y 55 or higher, the portal is made on the surface instead of in a cave.
-- **Same luck for everyone.** Random outcomes come from sequences seeded by the world seed, so players on the same
-  seed get the same results in the same order:
-  - each loot table has its own sequence (vanilla already does this), and each deepslate ore shares its stone ore's,
-    grass shares with fern, and tall grass with large fern;
-  - leather from cows, horses, donkeys and mules is one sequence, so killing the same number of them (in any order)
-    gives the same leather;
-  - piglin bartering, mob equipment drops (pillager crossbows, witch potions, piglin armour...), which naturally
-    spawned pillagers are captains (by spawn number, not time or place), food effects (hunger from rotten flesh and
-    raw chicken, poison from poisonous potatoes) and an iron golem's damage on players.
 - **Biome goals.** Goals that need something only a few biomes have are only dealt when one of those biomes is
   within 400 blocks of spawn: scaffolding and bamboo mosaic need a jungle, parrots a jungle, glow berries lush caves,
   powder snow a grove or snowy slopes, and so on. The list is the `biomes` field in
   `src/main/resources/opendraft/goals.json` (each group needs one of its biomes nearby). `/opendraft goals` in a
   world lists which goals that world leaves out and why.
+
+### Same luck for everyone (RNG standardization)
+
+In vanilla, two players on the same seed still get different luck: one gets a pearl from their first barter, the
+other needs ten. In match worlds, the random outcomes that decide a race come from **sequences seeded by the world
+seed** instead, so every player gets the same results in the same order. The 3rd diamond ore you mine drops the
+same as the 3rd diamond ore your opponent mines, and your 5th barter gives what theirs does. The sequences are saved
+with the world, so leaving and coming back doesn't reset them.
+
+Each of these has a sequence of its own:
+
+| What | How it's counted |
+| --- | --- |
+| Block drops (ores, gravel, leaves...) | Per block type. Each deepslate ore shares its stone ore's sequence (Lapis Ore and Deepslate Lapis Ore count as one), grass shares with fern, and tall grass with large fern. |
+| Mob drops | Per mob type. |
+| Leather | Cows, horses, donkeys and mules share one sequence just for leather, so killing the same number of them in any order and any mix gives the same leather. Looting still adds more. |
+| Piglin bartering | One sequence, by barter. On top of it, the first 144 gold ingots (16 gold blocks) are guaranteed at least 4 ender pearl trades of 2 to 4 pearls (see [Match worlds](#match-worlds)). Any further pearl trades come from the seed. |
+| Mob equipment drops | Per mob type, by kill: whether a pillager drops its crossbow, a witch its potion, a piglin its armour, and so on. |
+| Pillager captains | By spawn number: if the 2nd and 15th naturally spawned pillagers are captains for one player, they are for everyone. It doesn't promise a captain at a set time or place. |
+| Food effects | Per food, by meal: hunger from rotten flesh and raw chicken, poison from a poisonous potato. |
+| Iron golem damage | By hit, on players only. In vanilla it varies a lot (7.5 to 21.5 before difficulty). |
+
+The order is what's shared, not the world around it: your 3rd zombie gives the same drop as theirs, but which zombie is
+your 3rd depends on how you play. Taming (wolves, cats, parrots, horses) isn't standardized yet. Chest loot already
+comes from the world seed in vanilla, so the same chest has the same loot for everyone.
 
 ### Forfeit and draw
 
