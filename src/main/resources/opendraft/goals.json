@@ -123,6 +123,18 @@
    "icon": "minecraft:honeycomb",
    "advancements": [
     "minecraft:husbandry/wax_on"
+   ],
+   "biomes": [
+    [
+     "minecraft:plains",
+     "minecraft:sunflower_plains",
+     "minecraft:flower_forest",
+     "minecraft:forest",
+     "minecraft:birch_forest",
+     "minecraft:old_growth_birch_forest",
+     "minecraft:meadow",
+     "minecraft:cherry_grove"
+    ]
    ]
   },
   {
@@ -188,6 +200,11 @@
    "icon": "minecraft:sculk_catalyst",
    "advancements": [
     "minecraft:adventure/kill_mob_near_sculk_catalyst"
+   ],
+   "biomes": [
+    [
+     "minecraft:deep_dark"
+    ]
    ]
   },
   {
@@ -198,7 +215,12 @@
    "advancements": [
     "minecraft:adventure/uh_oh"
    ],
-   "title": "Uh Oh"
+   "title": "Uh Oh",
+   "biomes": [
+    [
+     "minecraft:sulfur_caves"
+    ]
+   ]
   },
   {
    "id": "get_any_spyglass_advancement",
@@ -303,7 +325,21 @@
     "minecraft:emerald_ore",
     "minecraft:deepslate_emerald_ore"
    ],
-   "min": 1
+   "min": 1,
+   "biomes": [
+    [
+     "minecraft:windswept_hills",
+     "minecraft:windswept_gravelly_hills",
+     "minecraft:windswept_forest",
+     "minecraft:meadow",
+     "minecraft:cherry_grove",
+     "minecraft:grove",
+     "minecraft:snowy_slopes",
+     "minecraft:jagged_peaks",
+     "minecraft:frozen_peaks",
+     "minecraft:stony_peaks"
+    ]
+   ]
   },
   {
    "id": "mine_mob_spawner",
@@ -325,7 +361,12 @@
    "keys": [
     "minecraft:turtle_egg"
    ],
-   "min": 1
+   "min": 1,
+   "biomes": [
+    [
+     "minecraft:beach"
+    ]
+   ]
   },
   {
    "id": "mine_3_types_of_ice",
@@ -339,7 +380,22 @@
     "minecraft:blue_ice",
     "minecraft:frosted_ice"
    ],
-   "count": 3
+   "count": 3,
+   "biomes": [
+    [
+     "minecraft:snowy_plains",
+     "minecraft:ice_spikes",
+     "minecraft:snowy_taiga",
+     "minecraft:snowy_beach",
+     "minecraft:frozen_river",
+     "minecraft:frozen_ocean",
+     "minecraft:grove",
+     "minecraft:snowy_slopes",
+     "minecraft:frozen_peaks",
+     "minecraft:jagged_peaks",
+     "minecraft:deep_frozen_ocean"
+    ]
+   ]
   },
   {
    "id": "mine_obsidian",
@@ -361,7 +417,12 @@
    "keys": [
     "minecraft:sea_lantern"
    ],
-   "min": 1
+   "min": 1,
+   "biomes": [
+    [
+     "#minecraft:is_ocean"
+    ]
+   ]
   },
   {
    "id": "use_anvil",
@@ -562,6 +623,11 @@
    "icon": "minecraft:glow_berries",
    "any": [
     "ate:minecraft:glow_berries"
+   ],
+   "biomes": [
+    [
+     "minecraft:lush_caves"
+    ]
    ]
   },
   {
@@ -598,6 +664,12 @@
    "icon": "minecraft:cookie",
    "any": [
     "ate:minecraft:cookie"
+   ],
+   "biomes": [
+    [
+     "minecraft:jungle",
+     "minecraft:sparse_jungle"
+    ]
    ]
   },
   {
@@ -616,6 +688,23 @@
    "icon": "minecraft:rabbit_stew",
    "any": [
     "ate:minecraft:rabbit_stew"
+   ],
+   "biomes": [
+    [
+     "minecraft:desert",
+     "minecraft:flower_forest",
+     "minecraft:meadow",
+     "minecraft:cherry_grove",
+     "minecraft:dappled_forest",
+     "minecraft:taiga",
+     "minecraft:old_growth_pine_taiga",
+     "minecraft:old_growth_spruce_taiga",
+     "minecraft:snowy_taiga",
+     "minecraft:snowy_plains",
+     "minecraft:ice_spikes",
+     "minecraft:snowy_slopes",
+     "minecraft:grove"
+    ]
    ]
   },
   {
@@ -634,6 +723,18 @@
    "icon": "minecraft:honey_bottle",
    "any": [
     "ate:minecraft:honey_bottle"
+   ],
+   "biomes": [
+    [
+     "minecraft:plains",
+     "minecraft:sunflower_plains",
+     "minecraft:flower_forest",
+     "minecraft:forest",
+     "minecraft:birch_forest",
+     "minecraft:old_growth_birch_forest",
+     "minecraft:meadow",
+     "minecraft:cherry_grove"
+    ]
    ]
   },
   {
@@ -657,6 +758,23 @@
     "ate:minecraft:mushroom_stew",
     "ate:minecraft:rabbit_stew",
     "ate:minecraft:beetroot_soup"
+   ],
+   "biomes": [
+    [
+     "minecraft:desert",
+     "minecraft:flower_forest",
+     "minecraft:meadow",
+     "minecraft:cherry_grove",
+     "minecraft:dappled_forest",
+     "minecraft:taiga",
+     "minecraft:old_growth_pine_taiga",
+     "minecraft:old_growth_spruce_taiga",
+     "minecraft:snowy_taiga",
+     "minecraft:snowy_plains",
+     "minecraft:ice_spikes",
+     "minecraft:snowy_slopes",
+     "minecraft:grove"
+    ]
    ]
   },
   {
@@ -730,6 +848,18 @@
    "icon": "minecraft:bee_spawn_egg",
    "any": [
     "death_type:minecraft:sting"
+   ],
+   "biomes": [
+    [
+     "minecraft:plains",
+     "minecraft:sunflower_plains",
+     "minecraft:flower_forest",
+     "minecraft:forest",
+     "minecraft:birch_forest",
+     "minecraft:old_growth_birch_forest",
+     "minecraft:meadow",
+     "minecraft:cherry_grove"
+    ]
    ]
   },
   {
@@ -758,7 +888,15 @@
     "entities": [
      "minecraft:polar_bear"
     ]
-   }
+   },
+   "biomes": [
+    [
+     "minecraft:snowy_plains",
+     "minecraft:ice_spikes",
+     "minecraft:frozen_ocean",
+     "minecraft:deep_frozen_ocean"
+    ]
+   ]
   },
   {
    "id": "die_to_pufferfish",
@@ -772,7 +910,14 @@
     "entities": [
      "minecraft:pufferfish"
     ]
-   }
+   },
+   "biomes": [
+    [
+     "minecraft:warm_ocean",
+     "minecraft:lukewarm_ocean",
+     "minecraft:deep_lukewarm_ocean"
+    ]
+   ]
   },
   {
    "id": "die_to_trident",
@@ -781,6 +926,13 @@
    "icon": "minecraft:trident",
    "any": [
     "death_type:minecraft:trident"
+   ],
+   "biomes": [
+    [
+     "#minecraft:is_ocean",
+     "#minecraft:is_river",
+     "minecraft:dripstone_caves"
+    ]
    ]
   },
   {
@@ -795,7 +947,12 @@
     "entities": [
      "minecraft:warden"
     ]
-   }
+   },
+   "biomes": [
+    [
+     "minecraft:deep_dark"
+    ]
+   ]
   },
   {
    "id": "die_to_sulfur_cube",
@@ -809,7 +966,12 @@
     "entities": [
      "minecraft:sulfur_cube"
     ]
-   }
+   },
+   "biomes": [
+    [
+     "minecraft:sulfur_caves"
+    ]
+   ]
   },
   {
    "id": "die_by_drowning",
@@ -845,6 +1007,12 @@
    "icon": "minecraft:powder_snow_bucket",
    "any": [
     "death_type:minecraft:freeze"
+   ],
+   "biomes": [
+    [
+     "minecraft:snowy_slopes",
+     "minecraft:grove"
+    ]
    ]
   },
   {
@@ -863,6 +1031,14 @@
    "icon": "minecraft:sweet_berries",
    "any": [
     "death_type:minecraft:sweet_berry_bush"
+   ],
+   "biomes": [
+    [
+     "minecraft:taiga",
+     "minecraft:old_growth_pine_taiga",
+     "minecraft:old_growth_spruce_taiga",
+     "minecraft:snowy_taiga"
+    ]
    ]
   },
   {
@@ -872,6 +1048,14 @@
    "icon": "minecraft:cactus",
    "any": [
     "death_type:minecraft:cactus"
+   ],
+   "biomes": [
+    [
+     "minecraft:desert",
+     "minecraft:badlands",
+     "minecraft:eroded_badlands",
+     "minecraft:wooded_badlands"
+    ]
    ]
   },
   {
@@ -890,6 +1074,11 @@
    "icon": "minecraft:pointed_dripstone",
    "any": [
     "death_type:minecraft:falling_stalactite"
+   ],
+   "biomes": [
+    [
+     "minecraft:dripstone_caves"
+    ]
    ]
   },
   {
@@ -964,7 +1153,18 @@
     "minecraft:dripstone_caves",
     "minecraft:deep_dark"
    ],
-   "count": 3
+   "count": 3,
+   "biomes": [
+    [
+     "minecraft:lush_caves"
+    ],
+    [
+     "minecraft:dripstone_caves"
+    ],
+    [
+     "minecraft:deep_dark"
+    ]
+   ]
   },
   {
    "id": "reach_nether_roof",
@@ -1114,7 +1314,13 @@
     "entities": [
      "minecraft:bogged"
     ]
-   }
+   },
+   "biomes": [
+    [
+     "minecraft:swamp",
+     "minecraft:mangrove_swamp"
+    ]
+   ]
   },
   {
    "id": "kill_elder_guardian",
@@ -1128,7 +1334,12 @@
     "entities": [
      "minecraft:elder_guardian"
     ]
-   }
+   },
+   "biomes": [
+    [
+     "#minecraft:has_structure/ocean_monument"
+    ]
+   ]
   },
   {
    "id": "kill_guardian",
@@ -1142,7 +1353,12 @@
     "entities": [
      "minecraft:guardian"
     ]
-   }
+   },
+   "biomes": [
+    [
+     "#minecraft:has_structure/ocean_monument"
+    ]
+   ]
   },
   {
    "id": "kill_parched",
@@ -1156,7 +1372,12 @@
     "entities": [
      "minecraft:parched"
     ]
-   }
+   },
+   "biomes": [
+    [
+     "minecraft:desert"
+    ]
+   ]
   },
   {
    "id": "kill_silverfish",
@@ -1184,7 +1405,21 @@
     "entities": [
      "minecraft:snow_golem"
     ]
-   }
+   },
+   "biomes": [
+    [
+     "minecraft:snowy_plains",
+     "minecraft:ice_spikes",
+     "minecraft:snowy_taiga",
+     "minecraft:snowy_beach",
+     "minecraft:frozen_river",
+     "minecraft:frozen_ocean",
+     "minecraft:grove",
+     "minecraft:snowy_slopes",
+     "minecraft:frozen_peaks",
+     "minecraft:jagged_peaks"
+    ]
+   ]
   },
   {
    "id": "kill_stray",
@@ -1198,7 +1433,13 @@
     "entities": [
      "minecraft:stray"
     ]
-   }
+   },
+   "biomes": [
+    [
+     "minecraft:snowy_plains",
+     "minecraft:ice_spikes"
+    ]
+   ]
   },
   {
    "id": "kill_warden",
@@ -1212,7 +1453,12 @@
     "entities": [
      "minecraft:warden"
     ]
-   }
+   },
+   "biomes": [
+    [
+     "minecraft:deep_dark"
+    ]
+   ]
   },
   {
    "id": "kill_witch",
@@ -1282,7 +1528,12 @@
     "entities": [
      "minecraft:husk"
     ]
-   }
+   },
+   "biomes": [
+    [
+     "minecraft:desert"
+    ]
+   ]
   },
   {
    "id": "kill_colored_sheep",
@@ -1342,6 +1593,20 @@
    "icon": "minecraft:snow_block",
    "any": [
     "kill:minecraft:snow_golem@nether"
+   ],
+   "biomes": [
+    [
+     "minecraft:snowy_plains",
+     "minecraft:ice_spikes",
+     "minecraft:snowy_taiga",
+     "minecraft:snowy_beach",
+     "minecraft:frozen_river",
+     "minecraft:frozen_ocean",
+     "minecraft:grove",
+     "minecraft:snowy_slopes",
+     "minecraft:frozen_peaks",
+     "minecraft:jagged_peaks"
+    ]
    ]
   },
   {
@@ -1561,6 +1826,16 @@
    "icon": "minecraft:diamond",
    "any": [
     "fox_diamond"
+   ],
+   "biomes": [
+    [
+     "minecraft:taiga",
+     "minecraft:snowy_taiga",
+     "minecraft:old_growth_pine_taiga",
+     "minecraft:old_growth_spruce_taiga",
+     "minecraft:grove",
+     "minecraft:dappled_forest"
+    ]
    ]
   },
   {
@@ -1707,6 +1982,16 @@
    "icon": "minecraft:armadillo_scute",
    "any": [
     "bred:minecraft:armadillo"
+   ],
+   "biomes": [
+    [
+     "minecraft:savanna",
+     "minecraft:savanna_plateau",
+     "minecraft:windswept_savanna",
+     "minecraft:badlands",
+     "minecraft:eroded_badlands",
+     "minecraft:wooded_badlands"
+    ]
    ]
   },
   {
@@ -1716,6 +2001,11 @@
    "icon": "minecraft:cactus",
    "any": [
     "bred:minecraft:camel"
+   ],
+   "biomes": [
+    [
+     "minecraft:desert"
+    ]
    ]
   },
   {
@@ -1743,6 +2033,16 @@
    "icon": "minecraft:sweet_berries",
    "any": [
     "bred:minecraft:fox"
+   ],
+   "biomes": [
+    [
+     "minecraft:taiga",
+     "minecraft:snowy_taiga",
+     "minecraft:old_growth_pine_taiga",
+     "minecraft:old_growth_spruce_taiga",
+     "minecraft:grove",
+     "minecraft:dappled_forest"
+    ]
    ]
   },
   {
@@ -1752,6 +2052,12 @@
    "icon": "minecraft:slime_ball",
    "any": [
     "bred:minecraft:frog"
+   ],
+   "biomes": [
+    [
+     "minecraft:swamp",
+     "minecraft:mangrove_swamp"
+    ]
    ]
   },
   {
@@ -1761,6 +2067,13 @@
    "icon": "minecraft:goat_horn",
    "any": [
     "bred:minecraft:goat"
+   ],
+   "biomes": [
+    [
+     "minecraft:snowy_slopes",
+     "minecraft:jagged_peaks",
+     "minecraft:frozen_peaks"
+    ]
    ]
   },
   {
@@ -1788,6 +2101,23 @@
    "icon": "minecraft:dandelion",
    "any": [
     "bred:minecraft:rabbit"
+   ],
+   "biomes": [
+    [
+     "minecraft:desert",
+     "minecraft:flower_forest",
+     "minecraft:meadow",
+     "minecraft:cherry_grove",
+     "minecraft:dappled_forest",
+     "minecraft:taiga",
+     "minecraft:old_growth_pine_taiga",
+     "minecraft:old_growth_spruce_taiga",
+     "minecraft:snowy_taiga",
+     "minecraft:snowy_plains",
+     "minecraft:ice_spikes",
+     "minecraft:snowy_slopes",
+     "minecraft:grove"
+    ]
    ]
   },
   {
@@ -1909,6 +2239,15 @@
    "icon": "minecraft:saddle",
    "any": [
     "riding:minecraft:horse"
+   ],
+   "biomes": [
+    [
+     "minecraft:plains",
+     "minecraft:sunflower_plains",
+     "minecraft:savanna",
+     "minecraft:savanna_plateau",
+     "minecraft:windswept_savanna"
+    ]
    ]
   },
   {
@@ -1928,6 +2267,15 @@
    "any": [
     "tamed:minecraft:horse",
     "tamed:minecraft:zombie_horse"
+   ],
+   "biomes": [
+    [
+     "minecraft:plains",
+     "minecraft:sunflower_plains",
+     "minecraft:savanna",
+     "minecraft:savanna_plateau",
+     "minecraft:windswept_savanna"
+    ]
    ]
   },
   {
@@ -1942,7 +2290,12 @@
     "entities": [
      "minecraft:nautilus"
     ]
-   }
+   },
+   "biomes": [
+    [
+     "#minecraft:is_ocean"
+    ]
+   ]
   },
   {
    "id": "tame_parrot",
@@ -1951,6 +2304,12 @@
    "icon": "minecraft:wheat_seeds",
    "any": [
     "tamed:minecraft:parrot"
+   ],
+   "biomes": [
+    [
+     "minecraft:jungle",
+     "minecraft:bamboo_jungle"
+    ]
    ]
   },
   {
@@ -1960,6 +2319,19 @@
    "icon": "minecraft:bone",
    "any": [
     "tamed:minecraft:wolf"
+   ],
+   "biomes": [
+    [
+     "minecraft:forest",
+     "minecraft:grove",
+     "minecraft:taiga",
+     "minecraft:snowy_taiga",
+     "minecraft:old_growth_pine_taiga",
+     "minecraft:old_growth_spruce_taiga",
+     "minecraft:savanna_plateau",
+     "minecraft:sparse_jungle",
+     "minecraft:wooded_badlands"
+    ]
    ]
   },
   {
@@ -2010,7 +2382,13 @@
    "items": [
     "minecraft:scaffolding"
    ],
-   "count": 1
+   "count": 1,
+   "biomes": [
+    [
+     "minecraft:jungle",
+     "minecraft:bamboo_jungle"
+    ]
+   ]
   },
   {
    "id": "obtain_tinted_glass",
@@ -2040,7 +2418,12 @@
    "items": [
     "minecraft:resin_block"
    ],
-   "count": 1
+   "count": 1,
+   "biomes": [
+    [
+     "minecraft:pale_garden"
+    ]
+   ]
   },
   {
    "id": "obtain_resin_brick_wall",
@@ -2050,7 +2433,12 @@
    "items": [
     "minecraft:resin_brick_wall"
    ],
-   "count": 1
+   "count": 1,
+   "biomes": [
+    [
+     "minecraft:pale_garden"
+    ]
+   ]
   },
   {
    "id": "obtain_smooth_basalt",
@@ -2080,7 +2468,13 @@
    "items": [
     "minecraft:bamboo_mosaic_stairs"
    ],
-   "count": 1
+   "count": 1,
+   "biomes": [
+    [
+     "minecraft:jungle",
+     "minecraft:bamboo_jungle"
+    ]
+   ]
   },
   {
    "id": "obtain_bell",
@@ -2120,7 +2514,19 @@
    "items": [
     "minecraft:dead_bush"
    ],
-   "count": 1
+   "count": 1,
+   "biomes": [
+    [
+     "minecraft:desert",
+     "minecraft:badlands",
+     "minecraft:eroded_badlands",
+     "minecraft:wooded_badlands",
+     "minecraft:swamp",
+     "minecraft:mangrove_swamp",
+     "minecraft:old_growth_pine_taiga",
+     "minecraft:old_growth_spruce_taiga"
+    ]
+   ]
   },
   {
    "id": "obtain_end_rod",
@@ -2140,7 +2546,12 @@
    "items": [
     "minecraft:flowering_azalea"
    ],
-   "count": 1
+   "count": 1,
+   "biomes": [
+    [
+     "minecraft:lush_caves"
+    ]
+   ]
   },
   {
    "id": "obtain_soul_campfire",
@@ -2170,7 +2581,16 @@
    "items": [
     "minecraft:tropical_fish_bucket"
    ],
-   "count": 1
+   "count": 1,
+   "biomes": [
+    [
+     "minecraft:warm_ocean",
+     "minecraft:lukewarm_ocean",
+     "minecraft:deep_lukewarm_ocean",
+     "minecraft:mangrove_swamp",
+     "minecraft:lush_caves"
+    ]
+   ]
   },
   {
    "id": "obtain_cobweb",
@@ -2190,7 +2610,17 @@
    "items": [
     "minecraft:dried_kelp_block"
    ],
-   "count": 1
+   "count": 1,
+   "biomes": [
+    [
+     "minecraft:ocean",
+     "minecraft:deep_ocean",
+     "minecraft:cold_ocean",
+     "minecraft:deep_cold_ocean",
+     "minecraft:lukewarm_ocean",
+     "minecraft:deep_lukewarm_ocean"
+    ]
+   ]
   },
   {
    "id": "obtain_powder_snow_bucket",
@@ -2200,7 +2630,13 @@
    "items": [
     "minecraft:powder_snow_bucket"
    ],
-   "count": 1
+   "count": 1,
+   "biomes": [
+    [
+     "minecraft:snowy_slopes",
+     "minecraft:grove"
+    ]
+   ]
   },
   {
    "id": "obtain_sponge",
@@ -2210,7 +2646,12 @@
    "items": [
     "minecraft:sponge"
    ],
-   "count": 1
+   "count": 1,
+   "biomes": [
+    [
+     "#minecraft:has_structure/ocean_monument"
+    ]
+   ]
   },
   {
    "id": "obtain_written_book",
@@ -2230,7 +2671,12 @@
    "items": [
     "minecraft:sulfur_cube_bucket"
    ],
-   "count": 1
+   "count": 1,
+   "biomes": [
+    [
+     "minecraft:sulfur_caves"
+    ]
+   ]
   },
   {
    "id": "obtain_straw_bed",
@@ -2360,7 +2806,12 @@
    "items": [
     "minecraft:heart_of_the_sea"
    ],
-   "count": 1
+   "count": 1,
+   "biomes": [
+    [
+     "#minecraft:has_structure/buried_treasure"
+    ]
+   ]
   },
   {
    "id": "obtain_lodestone",
@@ -3454,6 +3905,27 @@
    "icon": "minecraft:wolf_armor",
    "any": [
     "wolf_armor"
+   ],
+   "biomes": [
+    [
+     "minecraft:forest",
+     "minecraft:grove",
+     "minecraft:taiga",
+     "minecraft:snowy_taiga",
+     "minecraft:old_growth_pine_taiga",
+     "minecraft:old_growth_spruce_taiga",
+     "minecraft:savanna_plateau",
+     "minecraft:sparse_jungle",
+     "minecraft:wooded_badlands"
+    ],
+    [
+     "minecraft:savanna",
+     "minecraft:savanna_plateau",
+     "minecraft:windswept_savanna",
+     "minecraft:badlands",
+     "minecraft:eroded_badlands",
+     "minecraft:wooded_badlands"
+    ]
    ]
   },
   {

@@ -37,6 +37,8 @@ public final class Settings {
     public static String filter = "";
     /** How close to spawn, in blocks, the filtered structures must be. */
     public static int radius = 300;
+    /** A random seed must have a bastion and a fortress near 0, 0 in the Nether, with nether wart in one of them. */
+    public static boolean nether = true;
     /**
      * How many of your newest OpenDraft match worlds to keep; older ones are deleted. 0 keeps them all.
      * It's about your own saves folder, so each player sets their own and it isn't shared with the lobby.
@@ -83,6 +85,8 @@ public final class Settings {
         seed = text(get.apply("seed"));
         filter = cleanFilter(get.apply("filter"));
         radius = clamp(get.apply("radius"), radius, 50, 2000);
+        String n = text(get.apply("nether"));
+        if (!n.isEmpty()) nether = !n.equals("0") && !n.equalsIgnoreCase("false");
         name = text(get.apply("name"));
         address = text(get.apply("address"));
         port = clamp(get.apply("port"), port, 1, 65535);
@@ -124,13 +128,17 @@ public final class Settings {
         m.put("turnSeconds", String.valueOf(turnSeconds));
         m.put("filter", filter);
         m.put("radius", String.valueOf(radius));
+        m.put("nether", nether ? "1" : "0");
         return m;
     }
 
     /** As sent in a SETTINGS line: key=value pairs separated by spaces. A typed seed skips the filter. */
     public static String encode() {
         Map<String, String> m = values();
-        if (!seed.isEmpty()) m.put("filter", "");
+        if (!seed.isEmpty()) {
+            m.put("filter", "");
+            m.put("nether", "0");
+        }
         StringBuilder b = new StringBuilder();
         m.forEach((k, v) -> b.append(b.isEmpty() ? "" : " ").append(k).append('=').append(v));
         return b.toString();
@@ -212,6 +220,9 @@ public final class Settings {
         List<SeedSearch.Target> near = targets(m.get("filter"));
         if (!near.isEmpty()) {
             out.add("Near spawn (" + clamp(m.get("radius"), 300, 50, 2000) + " blocks): " + SeedSearch.labels(near));
+        }
+        if ("1".equals(m.get("nether"))) {
+            out.add("Nether: bastion and fortress within " + SeedSearch.NETHER_RADIUS + " blocks of 0, 0, with nether wart");
         }
         return out;
     }

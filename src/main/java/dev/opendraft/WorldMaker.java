@@ -11,6 +11,7 @@ import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.client.gui.screens.worldselection.CreateWorldScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.Difficulty;
 
 import java.lang.reflect.Method;
@@ -43,6 +44,17 @@ public final class WorldMaker {
     /** The seed a world is about to be created with, for the lobby to show. */
     public static Long pendingSeed() {
         return pendingSeed;
+    }
+
+    /**
+     * Whether a world is a lobby match's, so it gets the match's worldgen rules: one made with the match's
+     * seed while the match is on (also by hand), or one this class named, so exploring it later stays the same.
+     */
+    static boolean isMatchWorld(ServerLevel level) {
+        Session s = Session.current();
+        Long seed = s == null ? null : s.matchSeed;
+        return seed != null && seed == level.getSeed()
+                || WorldCleaner.MATCH_WORLD.matcher(level.getServer().getWorldData().getLevelName()).matches();
     }
 
     /** Leaves the current world, if any, and creates a fresh one with the match's seed. */

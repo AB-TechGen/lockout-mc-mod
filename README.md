@@ -20,6 +20,12 @@ under the MIT license.
 - **Seed filtering**: pick what a random seed must have near spawn, and how near. The options are Village,
   Shipwreck, Outpost, Witch Hut, Desert Temple, Jungle Temple, Igloo, Mansion, Ruined Portal, Trail Ruins,
   Abandoned Camp, Ancient City, Trial Chambers and Pale Garden. See [Seed filter](#seed-filter).
+- **A bastion and a fortress near 0, 0 in the Nether**, with nether wart guaranteed in one of them. See
+  [Seed filter](#seed-filter).
+- **Lava pools near spawn**: 3 pools 50 to 200 blocks from spawn, and surface lava pools twice as common. See
+  [Match worlds](#match-worlds).
+- **Goals that fit the world**: a goal that needs a biome (scaffolding needs a jungle) is only dealt when that biome
+  is within 400 blocks of spawn. See [Match worlds](#match-worlds).
 - **A lobby on the title screen** with the player list, chat and settings. Every match starts in a fresh world.
 - **Invite codes**: copy the code, your friends paste it, and it works from any network. Nobody has to set up port
   forwarding.
@@ -86,6 +92,7 @@ The leader's **Edit Settings** has two tabs. They're saved in `config/opendraft.
 | World | Seed (blank = random) | blank |
 | World | Structures and biomes a random seed must have near spawn | none |
 | World | How near (blocks from spawn) | 300 |
+| World | Nether: a bastion and a fortress within 250 blocks of 0, 0, with nether wart | on |
 
 ### Old match worlds
 
@@ -110,10 +117,32 @@ seeds for up to a minute and then starts the match with the first one that has e
 each thing is from spawn. If no seed turns up, the lobby says how often each one appeared, so you can tell which to
 turn off. A typed seed is used as it is, without the filter.
 
+The **Nether** toggle (on by default) also asks for a bastion and a fortress within 250 blocks of 0, 0 in the
+Nether, with nether wart in one of them: either the bastion is a housing bastion (every one has wart in its centre)
+or the fortress has a nether wart room. The distance setting doesn't change the 250. With only the Nether toggle on,
+a seed turns up in about a second (roughly one seed in seven passes).
+
 The search doesn't generate any terrain. For each seed it works out where spawn is and where the game would try to
 place each structure, then checks the biome there, which is the same first test the game makes. That is quick and
 right almost every time, but a structure can still occasionally fail to appear for reasons the search can't see. To check it in a world with cheats on, compare `/opendraft seed` (where the search thinks
-spawn and each structure are) with `/locate structure`.
+spawn and each structure are) with `/locate structure`. In the Nether, use
+`/execute in minecraft:the_nether positioned 0 64 0 run locate structure minecraft:fortress` (or
+`minecraft:bastion_remnant`); `/locate` gives the corner of the structure's chunk, 8 blocks off from
+`/opendraft seed`'s numbers.
+
+### Match worlds
+
+Every lobby match world (made by the lobby, or by hand with the match's seed) is generated with two changes, the
+same on every player's computer:
+
+- **Lava pools.** Surface lava pools are twice as common as in vanilla, and there are 3 pools 50 to 200 blocks from
+  spawn. Natural pools in that ring count towards the 3, and the rest are added on dry land away from villages, as
+  part of the terrain. Very occasionally water or cliffs leave no room for one, so it can be 2.
+- **Biome goals.** Goals that need something only a few biomes have are only dealt when one of those biomes is
+  within 400 blocks of spawn: scaffolding and bamboo mosaic need a jungle, parrots a jungle, glow berries lush caves,
+  powder snow a grove or snowy slopes, and so on. The list is the `biomes` field in
+  `src/main/resources/opendraft/goals.json` (each group needs one of its biomes nearby). `/opendraft goals` in a
+  world lists which goals that world leaves out and why.
 
 ### Forfeit and draw
 

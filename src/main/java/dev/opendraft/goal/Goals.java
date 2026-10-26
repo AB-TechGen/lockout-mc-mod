@@ -6,7 +6,9 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
 import dev.opendraft.OpenDraftClient;
+import net.minecraft.core.Holder;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.world.level.biome.Biome;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -105,10 +107,12 @@ public final class Goals {
 
     /**
      * Picks a random board: at most one goal per group (so "Kill 7 unique" and "Kill 15 unique"
-     * never share a board), one random variant per goal, and only goals this game can detect.
+     * never share a board), one random variant per goal, and only goals this game can detect
+     * whose biomes (see {@link NearbyBiomes}) are near this world's spawn.
      */
     public static List<String> pickBoard(int size, MinecraftServer server, Random random) {
         load();
+        Set<Holder<Biome>> near = NearbyBiomes.around(server);
         List<String> ids = new ArrayList<>(byId.keySet());
         Collections.shuffle(ids, random);
         Set<String> groups = new HashSet<>();
@@ -119,7 +123,7 @@ public final class Goals {
             Collections.shuffle(variants, random);
             for (Goal g : variants) {
                 if (groups.contains(g.group)) break;
-                if (!Checks.available(g, server)) continue;
+                if (!Checks.available(g, server) || NearbyBiomes.missing(g, near) != null) continue;
                 groups.add(g.group);
                 out.add(g.key);
                 break;
@@ -128,14 +132,17 @@ public final class Goals {
         return out;
     }
 
-    /** Goal ids that can't appear on a board in this game, with the reason. */
+    /** Goal ids that can't appear on a board in this world, with the reason. */
     public static Map<String, String> unavailable(MinecraftServer server) {
         load();
+        Set<Holder<Biome>> near = NearbyBiomes.around(server);
         Map<String, String> out = new LinkedHashMap<>();
         for (Map.Entry<String, List<Goal>> e : byId.entrySet()) {
             boolean any = false;
             for (Goal g : e.getValue()) any |= Checks.available(g, server);
+            String biome = NearbyBiomes.missing(e.getValue().get(0), near);
             if (!any) out.put(e.getKey(), Checks.whyUnavailable(e.getValue().get(0), server));
+            else if (biome != null) out.put(e.getKey(), "no " + biome + " within " + NearbyBiomes.RADIUS + " blocks of spawn");
         }
         return out;
     }

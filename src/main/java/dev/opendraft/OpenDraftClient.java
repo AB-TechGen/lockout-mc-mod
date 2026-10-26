@@ -334,21 +334,22 @@ public final class OpenDraftClient implements ClientModInitializer {
         if (s == null || !s.isLeader() || SeedSearch.running()) return;
         s.send("SETTINGS " + Settings.encode());
         List<SeedSearch.Target> near = Settings.filterTargets();
-        if (!Settings.seed.isEmpty() || near.isEmpty()) {
+        boolean nether = Settings.nether;
+        if (!Settings.seed.isEmpty() || (near.isEmpty() && !nether)) {
             SeedSearch.lastProblem = null;
             s.send("MATCH " + Settings.matchSeed());
             return;
         }
         int radius = Settings.radius;
-        sayInLobby(s, "Looking for a seed with " + SeedSearch.labels(near) + " within " + radius + " blocks of spawn...");
-        SeedSearch.start(near, radius, found -> {
+        sayInLobby(s, "Looking for a seed with " + SeedSearch.wanted(near, radius, nether) + "...");
+        SeedSearch.start(near, radius, nether, found -> {
             // Only start if nothing changed while searching.
             if (Session.current() != s || !s.isLeader() || s.matchOn()) return;
             sayInLobby(s, found.summary());
             s.send("MATCH " + found.seed());
         }, why -> {
             if (Session.current() != s) return;
-            sayInLobby(s, "Couldn't find a seed with all of that near spawn.");
+            sayInLobby(s, "Couldn't find a seed with all of that.");
         });
     }
 
@@ -458,7 +459,7 @@ public final class OpenDraftClient implements ClientModInitializer {
         if (server == null) return 0;
         Map<String, String> missing = Goals.unavailable(server);
         int total = Goals.all().size();
-        src.sendFeedback(Component.literal((total - missing.size()) + " of " + total + " goals can be dealt in this version.")
+        src.sendFeedback(Component.literal((total - missing.size()) + " of " + total + " goals can be dealt in this world.")
                 .withStyle(ChatFormatting.GOLD));
         missing.forEach((id, why) -> src.sendFeedback(Component.literal(" - " + id + ": " + why).withStyle(ChatFormatting.GRAY)));
         return 1;
