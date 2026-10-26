@@ -4,6 +4,7 @@ import dev.opendraft.goal.Goal;
 import dev.opendraft.goal.Goals;
 import dev.opendraft.net.OpenDraftConnection;
 import dev.opendraft.net.OpenDraftHost;
+import dev.opendraft.net.Protocol;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
@@ -103,7 +104,7 @@ public final class Session {
      */
     public static Session connect(OpenDraftHost host, String address, String name, String seed) {
         end();
-        Session session = new Session(host, address, dev.opendraft.net.Protocol.sanitizeName(name));
+        Session session = new Session(host, address, Protocol.sanitizeName(name));
         current = session;
         lastStatus = null;
         Thread t = new Thread(() -> {
@@ -283,6 +284,8 @@ public final class Session {
                 String[] parts = rest.split(" ", 2);
                 if (parts.length < 2) return;
                 addChatLine("<" + parts[0] + "> " + parts[1]);
+                // The name in its board colour, the message in white. Player chat turned off keeps it to the lobby screen.
+                if (!Settings.playerChat) return;
                 OpenDraftClient.chat(Component.literal("<" + parts[0] + "> ").withColor(OpenDraftClient.colorOf(parts[0]) & 0xFFFFFF)
                         .append(Component.literal(parts[1]).withStyle(ChatFormatting.WHITE)));
             }
@@ -429,11 +432,16 @@ public final class Session {
                 for (String v : now) {
                     if (before.contains(v) || v.equals(me)) continue;
                     OpenDraftClient.chat(Component.literal(v + " offers a draw. Open the board (" + OpenDraftClient.boardKeyName()
-                            + ") or use /opendraft draw to accept.").withStyle(ChatFormatting.YELLOW));
+                            + ") to accept within " + Protocol.DRAW_OFFER_SECONDS + " seconds.").withStyle(ChatFormatting.YELLOW));
                 }
                 if (now.isEmpty() && !before.isEmpty() && !ended) {
                     OpenDraftClient.chat(Component.literal("The draw offer lapsed.").withStyle(ChatFormatting.GRAY));
                 }
+            }
+            case "DRAWDECLINED" -> {
+                drawVotes = List.of();
+                OpenDraftClient.chat(Component.literal("The draw wasn't accepted within " + Protocol.DRAW_OFFER_SECONDS
+                        + " seconds, so it's declined.").withStyle(ChatFormatting.YELLOW));
             }
             case "END" -> {
                 ended = true;

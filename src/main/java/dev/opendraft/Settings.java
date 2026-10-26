@@ -42,6 +42,17 @@ public final class Settings {
      * It's about your own saves folder, so each player sets their own and it isn't shared with the lobby.
      */
     public static int keepWorlds = 5;
+    /**
+     * How big the opened board is, in percent of its normal size (50 to 300); it never grows past what fits on the
+     * screen. Each player sets their own, like keepWorlds, and it isn't shared with the lobby.
+     */
+    public static int boardScale = 100;
+    public static final int MIN_BOARD_SCALE = 50, MAX_BOARD_SCALE = 300;
+    /**
+     * Chat typed in a world goes to everyone in the lobby, and theirs shows in yours. Off keeps your chat in your own
+     * world and hides theirs. Each player sets their own.
+     */
+    public static boolean playerChat = true;
     /** What the lobby's button cycles through. */
     private static final int[] KEEP_WORLDS_CHOICES = {1, 2, 3, 5, 10, 20, 50, 0};
     /** What the lobby screen last used, so it's filled in next time. */
@@ -87,6 +98,8 @@ public final class Settings {
         address = text(get.apply("address"));
         port = clamp(get.apply("port"), port, 1, 65535);
         keepWorlds = clamp(get.apply("keepWorlds"), keepWorlds, 0, 1000);
+        boardScale = clamp(get.apply("boardScale"), boardScale, MIN_BOARD_SCALE, MAX_BOARD_SCALE);
+        playerChat = !"false".equals(text(get.apply("playerChat")));
     }
 
     private static String text(String raw) {
@@ -101,6 +114,8 @@ public final class Settings {
         p.setProperty("address", address);
         p.setProperty("port", String.valueOf(port));
         p.setProperty("keepWorlds", String.valueOf(keepWorlds));
+        p.setProperty("boardScale", String.valueOf(boardScale));
+        p.setProperty("playerChat", String.valueOf(playerChat));
         if (!relay.isEmpty()) p.setProperty("relay", relay);
         Path f = file();
         try {

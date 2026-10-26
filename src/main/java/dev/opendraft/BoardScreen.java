@@ -6,6 +6,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.AbstractSliderButton;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
@@ -24,18 +25,23 @@ import java.util.Optional;
  * The game keeps running behind it, since everyone's clock is the synchronizer's.
  */
 public final class BoardScreen extends Screen {
-    /** A cell is at most this many pixels; 36 shows item icons at exactly 2x, so they stay sharp. */
-    private static final int MAX_CELL = 36;
+    /** A cell at 100% size; 36 shows item icons at exactly 2x, so they stay sharp. The size slider scales it. */
+    private static final int BASE_CELL = 36;
     private static final int GAP = 2;
     /** Space between the panel's edge and what's in it. */
     private static final int PAD = 8;
-    private static final int BUTTON_W = 96;
+    private static final int BUTTON_W = 96, SLIDER_W = 160;
+    /** Height kept free for the header, the score lines, the button row and the size slider under it. */
+    private static final int RESERVED_H = 144;
     private static final int PANEL = 0xD0101014;
     private static final int PANEL_EDGE = 0xFF3A3A44;
 
     /** The cell under the mouse in the last frame, or -1. */
     private int hovered = -1;
     private Button forfeitButton, drawButton, lobbyButton, closeButton;
+    private SizeSlider sizeSlider;
+    /** The board size when the screen opened, so it's only saved if the slider changed it. */
+    private int scaleWhenOpened;
     /** Forfeit asks once more before it counts; this is when the first press happened. */
     private long forfeitArmedAt;
 
@@ -54,7 +60,50 @@ public final class BoardScreen extends Screen {
                 .bounds(0, 0, BUTTON_W, 20).build());
         closeButton = addRenderableWidget(Button.builder(Component.literal("Close Board"), b -> close())
                 .bounds(0, 0, BUTTON_W, 20).build());
+        scaleWhenOpened = Settings.boardScale;
+        sizeSlider = addRenderableWidget(new SizeSlider());
         tick();
+    }
+
+    /** Saves the board size if the slider changed it, once the board closes rather than on every step. */
+    @Override
+    public void removed() {
+        super.removed();
+        if (Settings.boardScale != scaleWhenOpened) Settings.save();
+    }
+
+    /**
+     * The board's size, 50% to 300% in steps of 10. When the board can't get that big on this screen it's as big as
+     * fits, and the label says so.
+     */
+    private final class SizeSlider extends AbstractSliderButton {
+        private static final int STEP = 10;
+
+        SizeSlider() {
+            super(0, 0, SLIDER_W, 20, Component.empty(), toValue(Settings.boardScale));
+            updateMessage();
+        }
+
+        private static double toValue(int scale) {
+            return (scale - Settings.MIN_BOARD_SCALE) / (double) (Settings.MAX_BOARD_SCALE - Settings.MIN_BOARD_SCALE);
+        }
+
+        @Override
+        protected void applyValue() {
+            int steps = (int) Math.round(value * (Settings.MAX_BOARD_SCALE - Settings.MIN_BOARD_SCALE) / STEP);
+            Settings.boardScale = Settings.MIN_BOARD_SCALE + steps * STEP;
+        }
+
+        @Override
+        protected void updateMessage() {
+            Layout l = layout();
+            setMessage(Component.literal("Board size: " + (l.capped() ? l.cell() * 100 / BASE_CELL + "% (max)" : Settings.boardScale + "%")));
+        }
+
+        /** The label, again: whether the size fits can change without the slider moving (a resize, a draft ending). */
+        void refresh() {
+            updateMessage();
+        }
     }
 
     @Override
@@ -79,7 +128,7 @@ public final class BoardScreen extends Screen {
         placeButtons();
     }
 
-    /** The visible buttons in one centred row just under the panel. */
+    /** The visible buttons in one centred row just under the panel, and the size slider centred under them. */
     private void placeButtons() {
         List<Button> row = new ArrayList<>();
         if (forfeitButton.visible) row.add(forfeitButton);
@@ -93,11 +142,17 @@ public final class BoardScreen extends Screen {
             b.setY(y);
             x += BUTTON_W + 4;
         }
+        sizeSlider.setX((width - SLIDER_W) / 2);
+        sizeSlider.setY(y + 24);
+        sizeSlider.refresh();
     }
 
-    /** Where everything goes: the panel, the grid inside it, the lines under the grid and the button row. */
+    /**
+     * Where everything goes: the panel, the grid inside it, the lines under the grid and the button row. capped is
+     * true when the board is smaller than the chosen size, because that wouldn't fit on the screen.
+     */
     private record Layout(int px, int py, int pw, int ph, int gx, int gy, int cell, int columns, int gridH,
-                          List<Component> footer, int buttonsY) {
+                          List<Component> footer, int buttonsY, boolean capped) {
     }
 
     private Layout layout() {
@@ -108,9 +163,11 @@ public final class BoardScreen extends Screen {
         int n = goals == null ? 0 : goals.size();
         int columns = BoardHud.columns(Math.max(n, 1));
         int rows = Math.max(1, (n + columns - 1) / columns);
-        // As big as fits, up to MAX_CELL, leaving room for the header, the scores and the buttons.
-        int cell = Math.min(MAX_CELL, Math.min((width - 2 * PAD - 20) / columns, (height - 120) / rows) - GAP);
-        cell = Math.max(14, cell);
+        // The chosen size, or as big as fits if that's smaller, leaving room for the header, the scores, the buttons
+        // and the slider.
+        int fits = Math.min((width - 2 * PAD - 20) / columns, (height - RESERVED_H) / rows) - GAP;
+        int wanted = Math.round(BASE_CELL * Settings.boardScale / 100f);
+        int cell = Math.max(8, Math.min(wanted, fits));
         int gridW = columns * cell + (columns - 1) * GAP;
         int gridH = rows * cell + (rows - 1) * GAP;
         int pw = Math.max(gridW + 2 * PAD, 200);
@@ -132,9 +189,9 @@ public final class BoardScreen extends Screen {
         }
         int headerH = 26;
         int ph = PAD + headerH + gridH + (footer.isEmpty() ? 0 : 6 + footer.size() * 11) + PAD;
-        int py = Math.max(4, (height - (ph + 4 + 20)) / 2);
+        int py = Math.max(4, (height - (ph + 4 + 20 + 4 + 20)) / 2);
         return new Layout((width - pw) / 2, py, pw, ph, (width - gridW) / 2, py + PAD + headerH, cell, columns, gridH,
-                footer, py + ph + 4);
+                footer, py + ph + 4, wanted > cell);
     }
 
     private void forfeit() {
@@ -201,7 +258,7 @@ public final class BoardScreen extends Screen {
         if (goals == null) {
             centered(g, font, Component.literal("OpenDraft lobby").withStyle(ChatFormatting.GOLD), 14, 0xFFFFFFFF);
             centered(g, font, Component.literal(s.waitingForStart ? "Waiting for everyone's world to load..."
-                    : "No board yet. Start one from the lobby, or with /opendraft start."), height / 2 - 10, 0xFFFFFFFF);
+                    : "No board yet. Start a match from the lobby."), height / 2 - 10, 0xFFFFFFFF);
             centered(g, font, Component.literal("Players: " + String.join(", ", s.players)), height / 2 + 4, 0xFFAAAAAA);
             return;
         }

@@ -3,16 +3,12 @@ package dev.opendraft;
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
-import com.mojang.brigadier.builder.LiteralArgumentBuilder;
-import com.mojang.brigadier.context.CommandContext;
-import dev.opendraft.goal.Goal;
 import dev.opendraft.goal.Goals;
-import dev.opendraft.net.OpenDraftHost;
-import dev.opendraft.net.Protocol;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.message.v1.ClientSendMessageEvents;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
@@ -28,7 +24,6 @@ import net.minecraft.client.renderer.fog.FogData;
 import net.minecraft.core.SectionPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import org.slf4j.Logger;
@@ -53,6 +48,8 @@ public final class OpenDraftClient implements ClientModInitializer {
     public static KeyMapping TOGGLE_BOARD_KEY;
     /** Turns fullbright on or off. G by default (vanilla doesn't use it); key mappings can't include Alt. */
     public static KeyMapping FULLBRIGHT_KEY;
+    /** The longest chat message passed on; the synchronizer turns away longer lines. */
+    private static final int MAX_CHAT = 250;
     /** Unbound, for a key mapping. 26.3 numbers keys by SDL scancode, so the game's own constants are used, not GLFW's. */
     private static final int NO_KEY = InputConstants.UNKNOWN.getValue();
     // What this game last told the synchronizer about where its player is, and in which session.
@@ -93,7 +90,7 @@ public final class OpenDraftClient implements ClientModInitializer {
             while (BOARD_KEY.consumeClick()) {
                 if (mc.player == null || mc.gui.screen() != null) continue;
                 if (Session.current() == null) {
-                    chat(Component.literal("Not in an OpenDraft game. Use the OpenDraft button on the title screen, or /opendraft join.")
+                    chat(Component.literal("Not in an OpenDraft game. Use the OpenDraft button on the title screen.")
                             .withStyle(ChatFormatting.GRAY));
                 } else {
                     mc.gui.setScreen(new BoardScreen());
@@ -114,45 +111,21 @@ public final class OpenDraftClient implements ClientModInitializer {
             MatchLock.lockScreen(screen);
             ScreenEvents.afterTick(screen).register(MatchLock::lockScreen);
         });
+        // Chat typed in a world goes to everyone in the lobby, like on a server, and comes back to you from there.
+        ClientSendMessageEvents.ALLOW_CHAT.register(message -> {
+            Session s = Session.current();
+            if (s == null || !s.welcomed || !Settings.playerChat) return true;
+            s.send("CHAT " + (message.length() > MAX_CHAT ? message.substring(0, MAX_CHAT) : message));
+            return false;
+        });
         // Leaving a world keeps you in the lobby; the title screen takes you back to it.
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
             if (Session.current() != null) WorldMaker.returnToLobby = true;
         });
+        // Everything a player does has a screen or a key; the commands left are for checking worlds and seeds.
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> dispatcher.register(
                 literal("opendraft")
                         .executes(ctx -> help(ctx.getSource()))
-                        .then(literal("host")
-                                .executes(ctx -> host(ctx.getSource(), 0))
-                                .then(argument("port", IntegerArgumentType.integer(1, 65535))
-                                        .executes(ctx -> host(ctx.getSource(), IntegerArgumentType.getInteger(ctx, "port")))))
-                        .then(literal("join")
-                                .then(argument("address_and_name", StringArgumentType.greedyString())
-                                        .executes(OpenDraftClient::join)))
-                        .then(literal("start")
-                                .executes(ctx -> start(ctx.getSource(), Settings.size, Settings.minutes, Settings.overtime, Settings.mode.equals("draft")))
-                                .then(argument("size", IntegerArgumentType.integer(Protocol.MIN_BOARD, Protocol.MAX_BOARD))
-                                        .executes(ctx -> start(ctx.getSource(), IntegerArgumentType.getInteger(ctx, "size"),
-                                                Settings.minutes, Settings.overtime, Settings.mode.equals("draft")))
-                                        .then(argument("minutes", IntegerArgumentType.integer(0, 600))
-                                                .executes(ctx -> start(ctx.getSource(), IntegerArgumentType.getInteger(ctx, "size"),
-                                                        IntegerArgumentType.getInteger(ctx, "minutes"), Settings.overtime, Settings.mode.equals("draft")))
-                                                .then(argument("overtime", IntegerArgumentType.integer(0, 120))
-                                                        .executes(ctx -> start(ctx.getSource(), IntegerArgumentType.getInteger(ctx, "size"),
-                                                                IntegerArgumentType.getInteger(ctx, "minutes"), IntegerArgumentType.getInteger(ctx, "overtime"),
-                                                                Settings.mode.equals("draft")))))))
-                        .then(literal("draft")
-                                .executes(ctx -> start(ctx.getSource(), Settings.size, Settings.minutes, Settings.overtime, true))
-                                .then(argument("size", IntegerArgumentType.integer(Protocol.MIN_BOARD, Protocol.MAX_BOARD))
-                                        .executes(ctx -> start(ctx.getSource(), IntegerArgumentType.getInteger(ctx, "size"),
-                                                Settings.minutes, Settings.overtime, true))))
-                        .then(literal("forfeit").executes(ctx -> vote(ctx.getSource(), "FORFEIT")))
-                        .then(literal("draw").executes(ctx -> vote(ctx.getSource(), "DRAW"))
-                                .then(literal("decline").executes(ctx -> vote(ctx.getSource(), "NODRAW"))))
-                        .then(literal("pick")
-                                .then(argument("number", IntegerArgumentType.integer(1, 64))
-                                        .executes(ctx -> pick(ctx.getSource(), IntegerArgumentType.getInteger(ctx, "number")))))
-                        .then(settingsCommand())
-                        .then(literal("board").executes(ctx -> board(ctx.getSource())))
                         .then(literal("goals").executes(ctx -> goals(ctx.getSource())))
                         .then(literal("seed")
                                 .executes(ctx -> seedReport(ctx.getSource(), 1000))
@@ -160,37 +133,7 @@ public final class OpenDraftClient implements ClientModInitializer {
                                         .executes(ctx -> seedReport(ctx.getSource(), IntegerArgumentType.getInteger(ctx, "blocks")))))
                         .then(literal("ids")
                                 .then(argument("word", StringArgumentType.word())
-                                        .executes(ctx -> ids(ctx.getSource(), StringArgumentType.getString(ctx, "word")))))
-                        .then(literal("hud").executes(ctx -> {
-                            BoardHud.visible = !BoardHud.visible;
-                            ctx.getSource().sendFeedback(Component.literal("OpenDraft board " + (BoardHud.visible ? "shown." : "hidden.")));
-                            return 1;
-                        }))
-                        .then(literal("leave").executes(ctx -> {
-                            Session.end();
-                            ctx.getSource().sendFeedback(Component.literal("Left the OpenDraft game."));
-                            return 1;
-                        }))));
-    }
-
-    private static LiteralArgumentBuilder<FabricClientCommandSource> settingsCommand() {
-        return literal("settings")
-                .executes(ctx -> showSettings(ctx.getSource()))
-                .then(literal("size").then(argument("goals", IntegerArgumentType.integer(Protocol.MIN_BOARD, Protocol.MAX_BOARD))
-                        .executes(ctx -> setting(ctx.getSource(), () -> Settings.size = IntegerArgumentType.getInteger(ctx, "goals")))))
-                .then(literal("time").then(argument("minutes", IntegerArgumentType.integer(0, 600))
-                        .executes(ctx -> setting(ctx.getSource(), () -> Settings.minutes = IntegerArgumentType.getInteger(ctx, "minutes")))))
-                .then(literal("overtime").then(argument("minutes", IntegerArgumentType.integer(0, 120))
-                        .executes(ctx -> setting(ctx.getSource(), () -> Settings.overtime = IntegerArgumentType.getInteger(ctx, "minutes")))))
-                .then(literal("lookout").then(argument("seconds", IntegerArgumentType.integer(0, 120))
-                        .executes(ctx -> setting(ctx.getSource(), () -> Settings.lookout = IntegerArgumentType.getInteger(ctx, "seconds")))))
-                .then(literal("turn").then(argument("seconds", IntegerArgumentType.integer(5, 120))
-                        .executes(ctx -> setting(ctx.getSource(), () -> Settings.turnSeconds = IntegerArgumentType.getInteger(ctx, "seconds")))))
-                .then(literal("keepworlds").then(argument("worlds", IntegerArgumentType.integer(0, 1000))
-                        .executes(ctx -> setting(ctx.getSource(), () -> Settings.keepWorlds = IntegerArgumentType.getInteger(ctx, "worlds")))))
-                .then(literal("mode")
-                        .then(literal("random").executes(ctx -> setting(ctx.getSource(), () -> Settings.mode = "random")))
-                        .then(literal("draft").executes(ctx -> setting(ctx.getSource(), () -> Settings.mode = "draft"))));
+                                        .executes(ctx -> ids(ctx.getSource(), StringArgumentType.getString(ctx, "word")))))));
     }
 
     // ---- commands -------------------------------------------------------------------------
@@ -198,20 +141,11 @@ public final class OpenDraftClient implements ClientModInitializer {
     private static int help(FabricClientCommandSource src) {
         src.sendFeedback(Component.literal(String.join("\n",
                 "OpenDraft " + modVersion(),
-                "The OpenDraft button on the title screen opens the lobby. In a world you can also use:",
-                "/opendraft host [port] - run the synchronizer in this game and join it",
-                "/opendraft join <invite code or address> [name] - join a synchronizer",
-                "/opendraft start [size] [minutes] [overtime] - deal a new board (uses /opendraft settings when left out)",
-                "/opendraft draft [size] - pick the board's goals in turns",
-                "/opendraft pick <n> - pick goal n in a draft (or click it on the board)",
-                "/opendraft settings - board size, time limit, overtime, lookout, mode",
-                "/opendraft board - list this board's goals (press " + boardKeyName() + " for the big board)",
-                "/opendraft forfeit, /opendraft draw [decline] - give up, or vote for a draw",
-                "/opendraft goals - which goals this version supports",
-                "/opendraft ids <word> - list block, item and entity ids containing a word",
-                "/opendraft seed [blocks] - where the seed filter thinks spawn and each structure are in this world",
-                "/opendraft hud - show or hide the board",
-                "/opendraft leave")));
+                "Everything is in the lobby (the OpenDraft button on the title screen) and on the board (" + boardKeyName() + ").",
+                "For checking a world:",
+                "/opendraft goals - which goals this world can't deal, and why",
+                "/opendraft seed [blocks] - where the seed search thinks spawn, each structure and the Nether ones are",
+                "/opendraft ids <word> - list block, item and entity ids containing a word")));
         return 1;
     }
 
@@ -221,61 +155,6 @@ public final class OpenDraftClient implements ClientModInitializer {
             src.sendError(Component.literal("Open your singleplayer world first. Everyone plays their own world on the same seed."));
         }
         return server;
-    }
-
-    /** @param port the port to use, or 0 to pick one */
-    private static int host(FabricClientCommandSource src, int port) {
-        MinecraftServer server = world(src);
-        if (server == null) return 0;
-        Session.end(); // frees the port if this game was already hosting
-        long seed = server.overworld().getSeed();
-        OpenDraftHost host = new OpenDraftHost(port == 0 ? Settings.port : port, modVersion(), seed, msg -> LOG.info("[sync] {}", msg));
-        try {
-            if (port == 0) host.openAnyPort();
-            else host.open();
-        } catch (Exception e) {
-            src.sendError(Component.literal((port == 0 ? "Couldn't create the lobby: " : "Could not open port " + port + ": ") + e.getMessage()));
-            return 0;
-        }
-        src.sendFeedback(Component.literal("Lobby created for this world. Getting your invite code...").withStyle(ChatFormatting.GREEN));
-        connect(src, host, "127.0.0.1:" + host.port(), null);
-        host.shareOnline(reach -> chat(Component.literal(reach.code() == null ? "OpenDraft: no invite code, since this computer isn't on a network."
-                : "OpenDraft: others join with /opendraft join " + reach.code() + ". " + reach.note())
-                .withStyle(reach.anywhere() ? ChatFormatting.GREEN : ChatFormatting.GOLD)));
-        return 1;
-    }
-
-    private static int join(CommandContext<FabricClientCommandSource> ctx) {
-        if (world(ctx.getSource()) == null) return 0;
-        String[] parts = StringArgumentType.getString(ctx, "address_and_name").trim().split("\\s+");
-        connect(ctx.getSource(), null, parts[0], parts.length > 1 ? parts[1] : null);
-        return 1;
-    }
-
-    /** Joins from inside a world, which has to have the game's seed. */
-    private static void connect(FabricClientCommandSource src, OpenDraftHost host, String address, String name) {
-        Minecraft mc = Minecraft.getInstance();
-        MinecraftServer server = mc.getSingleplayerServer();
-        if (server == null) return;
-        // No accounts involved: the display name is the only identity, so dev clients work too.
-        String display = name != null ? name : !Settings.name.isEmpty() ? Settings.name : mc.getUser().getName();
-        Session.connect(host, address, display, String.valueOf(server.overworld().getSeed()));
-        src.sendFeedback(Component.literal("Connecting to " + address + "...").withStyle(ChatFormatting.GRAY));
-    }
-
-    private static int start(FabricClientCommandSource src, int size, int minutes, int overtime, boolean draft) {
-        Session s = Session.current();
-        if (s == null) {
-            src.sendError(Component.literal("Join a game first: the OpenDraft button on the title screen, or /opendraft host or /opendraft join."));
-            return 0;
-        }
-        if (world(src) == null) return 0;
-        String error = deal(s, size, minutes, overtime, draft);
-        if (error != null) {
-            src.sendError(Component.literal(error));
-            return 0;
-        }
-        return 1;
     }
 
     /** Deals a board from this world (goals that don't exist in it are left out). Returns an error, or null. */
@@ -420,80 +299,6 @@ public final class OpenDraftClient implements ClientModInitializer {
     /** Lobby chat lines are capped in length by the synchronizer. */
     private static void sayInLobby(Session s, String text) {
         s.send("CHAT " + (text.length() > 250 ? text.substring(0, 247) + "..." : text));
-    }
-
-    private static int vote(FabricClientCommandSource src, String line) {
-        Session s = Session.current();
-        if (s == null || s.goals == null || s.ended) {
-            src.sendError(Component.literal("No game is running."));
-            return 0;
-        }
-        s.send(line);
-        return 1;
-    }
-
-    private static int pick(FabricClientCommandSource src, int number) {
-        Session s = Session.current();
-        if (s == null || !s.drafting()) {
-            src.sendError(Component.literal("No draft is running."));
-            return 0;
-        }
-        if (!s.myTurn()) {
-            src.sendError(Component.literal("It's " + s.turnPlayer + "'s turn."));
-            return 0;
-        }
-        int idx = number - 1;
-        String[] picks = s.draftPicks;
-        if (idx >= picks.length || picks[idx] != null) {
-            src.sendError(Component.literal("That goal isn't available."));
-            return 0;
-        }
-        s.send("PICK " + s.draftId + " " + idx);
-        return 1;
-    }
-
-    private static int showSettings(FabricClientCommandSource src) {
-        src.sendFeedback(Component.literal("OpenDraft settings").withStyle(ChatFormatting.GOLD));
-        for (String line : Settings.describe()) src.sendFeedback(Component.literal("  " + line));
-        src.sendFeedback(Component.literal("Change them in the lobby (Edit Settings), or with /opendraft settings followed by "
-                + "size <3-25>, time <minutes>, overtime <minutes>, lookout <seconds>, turn <seconds>, mode random|draft "
-                + "or keepworlds <n> (old match worlds to keep, 0 keeps them all). Time 0 means no limit.").withStyle(ChatFormatting.GRAY));
-        return 1;
-    }
-
-    private static int setting(FabricClientCommandSource src, Runnable change) {
-        change.run();
-        Settings.save();
-        Session s = Session.current();
-        if (s != null && s.isLeader()) s.send("SETTINGS " + Settings.encode());
-        src.sendFeedback(Component.literal("Saved. " + String.join(" | ", Settings.describe())).withStyle(ChatFormatting.GREEN));
-        return 1;
-    }
-
-    private static int board(FabricClientCommandSource src) {
-        Session s = Session.current();
-        boolean draft = s != null && s.drafting();
-        List<Goal> goals = s == null ? null : draft ? s.draftPool : s.goals;
-        if (goals == null) {
-            src.sendError(Component.literal("No board yet."));
-            return 0;
-        }
-        MutableComponent out = Component.literal(draft ? "Draft pool (/opendraft pick <n> on your turn):" : "OpenDraft board:")
-                .withStyle(ChatFormatting.GOLD);
-        String[] owners = draft ? s.draftPicks : s.owners;
-        for (int i = 0; i < goals.size(); i++) {
-            Goal g = goals.get(i);
-            MutableComponent line = Component.literal("\n" + (i + 1) + ". " + (g == null ? "?" : g.name));
-            String owner = i < owners.length ? owners[i] : null;
-            if (owner != null) {
-                line.withStyle(ChatFormatting.STRIKETHROUGH).withColor(colorOf(owner) & 0xFFFFFF);
-                line.append(Component.literal(" (" + (owner.equals(s.me) ? "you" : owner) + ")")
-                        .withStyle(s2 -> s2.withStrikethrough(false)));
-            }
-            out.append(line);
-        }
-        src.sendFeedback(out);
-        return 1;
     }
 
     private static int goals(FabricClientCommandSource src) {

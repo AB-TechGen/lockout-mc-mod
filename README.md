@@ -103,10 +103,10 @@ The leader's **Edit Settings** has two tabs. They're saved in `config/opendraft.
 Every match is played in a new world, so the lobby has an **Old worlds** button (under the settings, or above
 **Back** before you join). It sets how many OpenDraft match worlds to keep: 1, 2, 3, 5 (the default), 10, 20, 50 or
 all. When you get back to the title screen, the oldest match worlds past that number are deleted. Only folders that
-OpenDraft itself made (named like `OpenDraft 2026-10-26 14_30`) are ever touched, never your other worlds, and a world
-that's open is skipped. Each player sets their own, since it's about their own saves folder. It's saved as
-`keepWorlds` in `config/opendraft.properties`, and `/opendraft settings keepworlds <n>` sets it too (0 keeps them
-all). To keep a match world for good, rename its folder or copy it somewhere else.
+OpenDraft itself made (named like `OpenDraft 2026-10-26 14_30`) are ever touched, never your other worlds, and a
+world that's open is skipped. Each player sets their own, since it's about their own saves folder. It's saved as
+`keepWorlds` in `config/opendraft.properties`; any other number can be typed there (0 keeps them all). To keep a
+match world for good, rename its folder or copy it somewhere else.
 
 On the steppers, shift-click changes the time limit, lookout and turn length by 1 instead of 5. When time runs out
 the leader wins. On a tie for the lead, overtime starts and whoever pulls ahead first wins. If overtime also runs
@@ -224,9 +224,8 @@ Open the full-screen board during a match:
 - **Forfeit** (press it twice to confirm) gives up. Your claims stay on the board, but you can't claim more and they
   stop counting. When only one player is left, they win; with more players left, the game goes on without you.
 - **Offer Draw** asks everyone else. When every player still in the game has accepted, the game ends in a draw.
-  Any goal claimed cancels the offer.
-
-`/opendraft forfeit`, `/opendraft draw` and `/opendraft draw decline` do the same from chat.
+  If not everyone has accepted within 30 seconds, the offer is declined (everyone sees it in yellow in chat). Any goal
+  claimed also cancels it, and **Cancel Draw** takes your vote back.
 
 ### Fair play
 
@@ -255,14 +254,19 @@ are lit, without touching your Brightness setting. It's off again each time the 
 With the board set to Drafted, the synchronizer deals a pool of twice as many goals as the board needs. Players pick
 in join order and then back the other way (A B C, C B A, A B C...), so whoever ends a round picks twice in a row
 and nobody gets ahead. With two players, that's 1 goal on the first turn and 2 on every turn after. The board opens
-on your turn; click a goal to pick it, or use `/opendraft pick <n>` with the numbers from `/opendraft board`. A goal
+on your turn; click a goal to pick it. A goal
 can only be picked once, and when a turn runs out of time the remaining picks are made at random. The board is
 shuffled once it's full.
 
 ### Chat
 
-Advancements anyone earns appear in everyone's chat, like on a shared server. Death messages and other chat stay in
-your own world. The lobby has its own chat.
+What you type in chat in a world goes to everyone in the lobby, like on a shared server: it shows as `<name>
+message`, with the name in that player's board colour and the message in white. The lobby screen's chat is the same
+conversation. Advancements anyone earns also appear in everyone's chat. Death messages stay in your own world.
+
+The **Player chat** button in the lobby (under Old worlds) turns this off for you: your chat stays in your own world,
+and other players' messages only show on the lobby screen. Each player sets their own; it's saved as `playerChat` in
+`config/opendraft.properties`.
 
 ### The board
 
@@ -282,19 +286,21 @@ unique foods, unique breeds or mob kills shows above the hotbar for a few second
 Press **B** (rebind it under Controls, in the OpenDraft category) for the big board, a panel in the middle of the
 screen with Forfeit, Offer Draw and Close Board under it. Hover a goal to see its
 name, who claimed it and, for goals that need several things, your progress (for example "Your progress: 3/5").
-The game keeps running while it's open.
+The game keeps running while it's open. The **Board size** slider under the buttons makes the board 50% to 300% of
+its normal size; if that won't fit on your screen it's as big as fits, and the slider says "(max)". Each player sets
+their own, and it's saved as `boardScale` in `config/opendraft.properties`.
 
 ### Commands and the standalone synchronizer
 
-The lobby screen covers everything, and these commands also work inside a world:
+Everything you do in a game has a screen or a key: the lobby, the board and the keybinds. Each match gets one board,
+dealt once everyone's world has loaded; to start over, go back to the lobby and press **Start** for a new match. The
+only commands are for checking a world:
 
-- `/opendraft host` and `/opendraft join <invite code or address> [name]` start or join a game for the world
-  you're in. `/opendraft host <port>` uses that port instead of picking one.
-- `/opendraft start [size] [minutes] [overtime]` deals a board and `/opendraft draft` starts a draft.
-- `/opendraft settings` shows the settings, and `/opendraft settings size|time|overtime|lookout|turn|mode ...` changes
-  them.
-- `/opendraft board` lists the goals in chat, `/opendraft goals` shows which goals this version can deal,
-  `/opendraft hud` toggles the small board and `/opendraft leave` leaves the game.
+- `/opendraft goals` lists which goals this world can't deal, and why (content this version lacks, or a biome that
+  isn't within 400 blocks of spawn).
+- `/opendraft seed [blocks]` shows where the seed search thinks spawn, each structure and the Nether bastion and
+  fortress are, to compare with `/locate`.
+- `/opendraft ids <word>` lists block, item and entity ids containing a word, for updating goals.json.
 
 The synchronizer can also run on its own, so the lobby keeps running when the player who created it closes Minecraft.
 Run the same jar from Releases with `java -jar opendraft-<version>.jar [--port 25570] [--seed <seed>]`. This needs

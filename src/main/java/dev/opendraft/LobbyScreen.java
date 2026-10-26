@@ -38,6 +38,8 @@ public final class LobbyScreen extends Screen {
     private Button backButton;
     /** How many old match worlds to keep. Everyone has one, since it's about their own saves folder. */
     private Button keepButton;
+    /** Whether chat goes to and comes from the other players in a world. Everyone sets their own. */
+    private Button chatButton;
     /** The host's invite code is hidden until they press Show, so it's safe on stream. */
     private static boolean showCode;
 
@@ -99,7 +101,19 @@ public final class LobbyScreen extends Screen {
         keepButton.setTooltip(Tooltip.create(Component.literal("Every match makes a new world. When there are more "
                 + "OpenDraft match worlds than this, the oldest are deleted when you get back to the title screen. "
                 + "Your other worlds are never touched.")));
+        chatButton = addRenderableWidget(Button.builder(chatLabel(), b -> {
+                    Settings.playerChat = !Settings.playerChat;
+                    Settings.save();
+                    b.setMessage(chatLabel());
+                }).bounds(0, 0, PANEL_W, 20).build());
+        chatButton.setTooltip(Tooltip.create(Component.literal("On: what you type in chat in a world goes to everyone in "
+                + "the lobby, and theirs shows in your chat. Off: your chat stays in your own world and theirs only shows "
+                + "here in the lobby.")));
         updateWidgets();
+    }
+
+    private static Component chatLabel() {
+        return Component.literal("Player chat: " + (Settings.playerChat ? "on" : "off"));
     }
 
     private static Component keepLabel() {
@@ -133,6 +147,9 @@ public final class LobbyScreen extends Screen {
         keepButton.setWidth(in ? PANEL_W : 200);
         keepButton.setX(in ? width - 8 - PANEL_W : width / 2 - 100);
         keepButton.setY(in ? 132 : height - 52);
+        chatButton.setWidth(keepButton.getWidth());
+        chatButton.setX(keepButton.getX());
+        chatButton.setY(in ? 156 : height - 76);
     }
 
     @Override

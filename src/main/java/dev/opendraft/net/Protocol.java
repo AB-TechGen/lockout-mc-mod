@@ -27,6 +27,7 @@ package dev.opendraft.net;
  * host -> client   GO &lt;matchId&gt;                (everyone's world is ready; the leader deals the board)
  * host -> client   FORFEITED &lt;name&gt;
  * host -> client   DRAWVOTE &lt;name&gt;...          (who has voted for a draw; empty when it lapses)
+ * host -> client   DRAWDECLINED                (the draw on offer wasn't accepted in DRAW_OFFER_SECONDS)
  * host -> client   WHERE &lt;name&gt; &lt;overworld|nether|end|lobby&gt;
  * host -> client   CHAT &lt;name&gt; &lt;text...&gt;
  * host -> client   DRAFTPOOL &lt;draftId&gt; &lt;key&gt;...
@@ -43,7 +44,9 @@ package dev.opendraft.net;
  * </pre>
  */
 public final class Protocol {
-    public static final int VERSION = 8;
+    public static final int VERSION = 9;
+    /** A draw offer that not everyone has accepted after this long is declined. */
+    public static final int DRAW_OFFER_SECONDS = 30;
     public static final int DEFAULT_PORT = 25570;
     public static final int MIN_BOARD = 3;
     public static final int MAX_BOARD = 25;

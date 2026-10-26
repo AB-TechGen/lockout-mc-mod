@@ -25,7 +25,7 @@ import java.util.function.Consumer;
  * The synchronizer. It only tracks the bingo board; nobody's world goes through it.
  * Every player, including whoever runs it, connects over TCP. It is the only judge
  * of who claimed what, runs the draft and keeps the match clock. It has no Minecraft
- * dependencies, so it runs either inside a player's game ({@code /opendraft host}) or on
+ * dependencies, so it runs either inside a player's game (the lobby's Create Lobby) or on
  * its own ({@link SyncServerMain}).
  */
 public final class OpenDraftHost {
@@ -63,6 +63,10 @@ public final class OpenDraftHost {
     private String settings = "";
     private int matchId;
     private boolean loading; // between MATCH and GO, while everyone creates their world
+    /** GO has gone out and the leader hasn't dealt yet. A match gets one board: no new ones mid-seed. */
+    private boolean boardDue;
+    /** When the draw now on offer was first offered; it's declined after Protocol.DRAW_OFFER_SECONDS. */
+    private long drawOfferedAt;
     private long loadDeadline;
     private final Set<String> ready = new HashSet<>();
 
@@ -396,7 +400,7 @@ public final class OpenDraftHost {
         switch (p[0]) {
             case "NEWBOARD" -> {
                 // NEWBOARD <limitSec> <overtimeSec> <lookoutSec> <key>...
-                if (!mayStart(name) || p.length < 4) return;
+                if (!mayDeal(name) || p.length < 4) return;
                 List<String> boardKeys = Arrays.asList(p).subList(4, p.length);
                 if (!validBoard(name, boardKeys)) return;
                 draft = null;
@@ -405,7 +409,7 @@ public final class OpenDraftHost {
             }
             case "DRAFT" -> {
                 // DRAFT <limitSec> <overtimeSec> <lookoutSec> <size> <turnSec> <poolKey>...
-                if (!mayStart(name) || p.length < 6) return;
+                if (!mayDeal(name) || p.length < 6) return;
                 int size = Integer.parseInt(p[4]);
                 List<String> pool = Arrays.asList(p).subList(6, p.length);
                 if (size < Protocol.MIN_BOARD || size > Protocol.MAX_BOARD || pool.size() < size || pool.size() > 64) {
@@ -416,6 +420,7 @@ public final class OpenDraftHost {
                 keys = null;
                 pending.clear();
                 forgetColors();
+                boardDue = false;
                 draftId++;
                 draft = new Draft(pool, size, Integer.parseInt(p[5]), Integer.parseInt(p[1]), Integer.parseInt(p[2]),
                         Integer.parseInt(p[3]), new ArrayList<>(players.keySet()));
@@ -448,6 +453,7 @@ public final class OpenDraftHost {
                 forfeited.clear();
                 drawVotes.clear();
                 ready.clear();
+                boardDue = false;
                 loading = true;
                 loadDeadline = System.currentTimeMillis() + 180_000;
                 log.accept(name + " started match " + matchId + " on seed " + seed);
@@ -468,7 +474,9 @@ public final class OpenDraftHost {
                 else checkDraw();
             }
             case "DRAW" -> {
-                if (keys == null || ended || forfeited.contains(name) || !drawVotes.add(name)) return;
+                if (keys == null || ended || forfeited.contains(name)) return;
+                if (drawVotes.isEmpty()) drawOfferedAt = System.currentTimeMillis();
+                if (!drawVotes.add(name)) return;
                 broadcast(drawLine());
                 checkDraw();
             }
@@ -629,6 +637,17 @@ public final class OpenDraftHost {
         return true;
     }
 
+    /**
+     * A board (or draft) can only be dealt once per match, by the leader, right after everyone's world has loaded.
+     * Starting over means going back to the lobby for a new match and a new world.
+     */
+    private boolean mayDeal(String from) {
+        if (boardDue && from.equals(leader())) return true;
+        players.get(from).send("INFO A match gets one board, dealt once everyone's world has loaded. To start over, go back"
+                + " to the lobby and press Start.");
+        return false;
+    }
+
     /** PLAYERS &lt;name&gt;:&lt;colour&gt;... in join order. */
     private String playersLine() {
         StringBuilder b = new StringBuilder("PLAYERS");
@@ -651,6 +670,7 @@ public final class OpenDraftHost {
 
     private void go() {
         loading = false;
+        boardDue = true;
         log.accept("match " + matchId + ": everyone is in");
         broadcast("GO " + matchId);
     }
@@ -698,6 +718,7 @@ public final class OpenDraftHost {
         overtime = false;
         ended = false;
         loading = false;
+        boardDue = false;
         forfeited.clear();
         drawVotes.clear();
         log.accept("board " + boardId + ": " + keys.length + " goals, limit " + limitSec + "s, overtime "
@@ -729,6 +750,11 @@ public final class OpenDraftHost {
                 go();
             }
             if (draft != null && now >= draft.deadline) draft.timeout();
+            if (!drawVotes.isEmpty() && now - drawOfferedAt >= Protocol.DRAW_OFFER_SECONDS * 1000L) {
+                // Not everyone accepted in time, so the offer is declined.
+                drawVotes.clear();
+                broadcast("DRAWDECLINED");
+            }
             if (keys == null || ended || limitSec <= 0) return;
             long elapsed = now - startedAt;
             if (!overtime && elapsed >= limitSec * 1000L) {
