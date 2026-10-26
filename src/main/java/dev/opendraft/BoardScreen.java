@@ -229,8 +229,14 @@ public final class BoardScreen extends Screen {
             if (over) hovered = i;
             int bg = owner == null ? BoardHud.UNCLAIMED : OpenDraftClient.colorOf(owner);
             if (draft && owner != null) bg = dim(bg);
-            if (over) g.fill(cx - 1, cy - 1, cx + cell + 1, cy + cell + 1, 0xFFFFFFFF);
-            g.fill(cx, cy, cx + cell, cy + cell, bg);
+            if (over) {
+                // A white frame round the cell, drawn as edges since unclaimed cells are see-through.
+                g.fill(cx - 1, cy - 1, cx + cell + 1, cy, 0xFFFFFFFF);
+                g.fill(cx - 1, cy + cell, cx + cell + 1, cy + cell + 1, 0xFFFFFFFF);
+                g.fill(cx - 1, cy, cx, cy + cell, 0xFFFFFFFF);
+                g.fill(cx + cell, cy, cx + cell + 1, cy + cell, 0xFFFFFFFF);
+            }
+            if (owner != null) g.fill(cx, cy, cx + cell, cy + cell, bg);
             Goal goal = goals.get(i);
             if (goal == null) continue;
             if (GoalIcons.draw(g, goal, cx + 2, cy + 2, cell - 4)) continue; // its picture, number included
@@ -275,7 +281,7 @@ public final class BoardScreen extends Screen {
         if (s.myTurn()) {
             return Component.literal("Your turn: pick " + picks + " (" + BoardHud.formatCountdown(left) + ")").withStyle(ChatFormatting.AQUA);
         }
-        return Component.literal(s.turnPlayer + " is picking " + picks + " (" + BoardHud.formatCountdown(left) + ")")
+        return Component.literal(BoardHud.shortName(s.turnPlayer) + " is picking " + picks + " (" + BoardHud.formatCountdown(left) + ")")
                 .withColor(OpenDraftClient.colorOf(s.turnPlayer) & 0xFFFFFF);
     }
 

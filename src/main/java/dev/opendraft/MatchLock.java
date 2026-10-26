@@ -120,8 +120,6 @@ public final class MatchLock {
         if (wanted != Difficulty.PEACEFUL || server != Minecraft.getInstance().getSingleplayerServer()) return wanted;
         ServerLevel overworld = server.overworld();
         if (overworld == null || !on(Session.current(), overworld.getSeed())) return wanted;
-        OpenDraftClient.chat(Component.literal("OpenDraft: Peaceful isn't allowed during a match, so it's Easy instead.")
-                .withStyle(ChatFormatting.RED));
         return Difficulty.EASY;
     }
 

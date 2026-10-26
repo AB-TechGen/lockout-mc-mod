@@ -27,10 +27,13 @@ public final class BoardHud {
     static final int CELL = 18;
     static final int GAP = 1;
     static final int PAD = 3;
-    static final int UNCLAIMED = 0xFF5A5A5A;
+    /** Unclaimed cells have no fill, so the icon sits straight on the panel. */
+    static final int UNCLAIMED = 0x00000000;
     static final int PANEL = 0xA0101014;
     /** Scores wider than this wrap onto another line, so four players don't stretch the panel across the screen. */
     static final int SCORE_WIDTH = 150;
+    /** Longer names are cut to this many characters plus "...", so they don't stretch the panels. */
+    static final int NAME_CHARS = 8;
 
     private static final Map<String, ItemStack> ICON_ITEMS = new ConcurrentHashMap<>();
 
@@ -93,7 +96,7 @@ public final class BoardHud {
             int cx = gx + (i % columns) * (CELL + GAP);
             int cy = gy + (i / columns) * (CELL + GAP);
             String owner = i < owners.length ? owners[i] : null;
-            g.fill(cx, cy, cx + CELL, cy + CELL, owner == null ? UNCLAIMED : OpenDraftClient.colorOf(owner));
+            if (owner != null) g.fill(cx, cy, cx + CELL, cy + CELL, OpenDraftClient.colorOf(owner));
             Goal goal = goals.get(i);
             if (goal != null) {
                 drawIcon(g, goal, cx + 1, cy + 1);
@@ -113,7 +116,7 @@ public final class BoardHud {
         Component a = Component.literal("Board draft").withStyle(ChatFormatting.GOLD);
         Component b = s.turnPlayer == null ? Component.literal("Starting...")
                 : s.myTurn() ? Component.literal("Your pick! " + formatCountdown(left)).withStyle(ChatFormatting.AQUA)
-                : Component.literal(s.turnPlayer + " is picking " + formatCountdown(left));
+                : Component.literal(shortName(s.turnPlayer) + " is picking " + formatCountdown(left));
         Component c = Component.literal("Press " + OpenDraftClient.boardKeyName() + " to open the board").withStyle(ChatFormatting.GRAY);
         int w = Math.max(font.width(a), Math.max(font.width(b), font.width(c))) + PAD * 2;
         int x0 = sw - w - 4;
@@ -162,7 +165,7 @@ public final class BoardHud {
         // Fade out over the last second.
         int alpha = age < 6000 ? 0xFF : (int) (0xFF * (7000 - age) / 1000);
         color = (alpha << 24) | (color & 0xFFFFFF);
-        String sub = draw ? "Nobody wins this one" : (won ? "You won " : s.winner + " won ") + scoreText(s);
+        String sub = draw ? "Nobody wins this one" : (won ? "You won " : shortName(s.winner) + " won ") + scoreText(s);
         if (!draw && !won && s.participants().size() > 2 && !s.iForfeited()) sub += ", " + yourPlace(s);
         g.fill(0, sh / 2 - 46, sw, sh / 2 + 10, (alpha * 0x90 / 0xFF) << 24);
         Matrix3x2fStack pose = g.pose();
@@ -207,6 +210,11 @@ public final class BoardHud {
 
     // ---- shared with BoardScreen --------------------------------------------------------------------
 
+    /** "GamingGangster_" becomes "GamingGa...". */
+    static String shortName(String name) {
+        return name.length() <= NAME_CHARS ? name : name.substring(0, NAME_CHARS) + "...";
+    }
+
     static int columns(int n) {
         return Math.max(1, (int) Math.ceil(Math.sqrt(n)));
     }
@@ -220,7 +228,7 @@ public final class BoardHud {
         List<Component> lines = new ArrayList<>();
         MutableComponent line = null;
         for (String name : order) {
-            Component part = Component.literal((name.equals(me) ? "You" : name) + " " + s.score(name)
+            Component part = Component.literal((name.equals(me) ? "You" : shortName(name)) + " " + s.score(name)
                     + (s.forfeited.contains(name) ? " (forfeit)" : "")).withColor(OpenDraftClient.colorOf(name) & 0xFFFFFF);
             if (line != null && font.width(line) + font.width("  ") + font.width(part) > maxWidth) {
                 lines.add(line);
@@ -259,7 +267,7 @@ public final class BoardHud {
 
     static String result(Session s) {
         if (!s.ended || s.winner == null) return null;
-        return s.winner.equals("-") ? "Draw" : s.winner.equals(s.me) ? "You win!" : s.winner + " wins!";
+        return s.winner.equals("-") ? "Draw" : s.winner.equals(s.me) ? "You win!" : shortName(s.winner) + " wins!";
     }
 
     /** The goal's Draftout picture when it has one, otherwise its item, 16x16 at x, y. */
