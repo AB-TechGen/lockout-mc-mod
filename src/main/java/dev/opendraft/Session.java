@@ -441,10 +441,11 @@ public final class Session {
                     case "goal", "challenge" -> parts[1];
                     default -> "task";
                 };
+                // Grey apart from the player's board colour and the advancement's title, so it stands back from other chat.
                 Component who = Component.literal(parts[0]).withColor(OpenDraftClient.colorOf(parts[0]) & 0xFFFFFF);
                 Component title = Component.literal("[" + parts[2] + "]")
                         .withStyle(frame.equals("challenge") ? ChatFormatting.DARK_PURPLE : ChatFormatting.GREEN);
-                OpenDraftClient.chat(Component.translatable("chat.type.advancement." + frame, who, title));
+                OpenDraftClient.chat(Component.translatable("chat.type.advancement." + frame, who, title).withStyle(ChatFormatting.GRAY));
             }
             default -> {
             }
