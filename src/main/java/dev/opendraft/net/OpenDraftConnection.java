@@ -11,10 +11,10 @@ import java.util.function.Consumer;
 
 /** This game's connection to the synchronizer. Incoming lines go to {@code onLine} on a background thread. */
 public final class OpenDraftConnection {
-    private final LineChannel channel;
+    private final Lines channel;
     private final String address;
 
-    private OpenDraftConnection(LineChannel channel, String address) {
+    private OpenDraftConnection(Lines channel, String address) {
         this.channel = channel;
         this.address = address;
     }
@@ -36,15 +36,24 @@ public final class OpenDraftConnection {
     }
 
     /**
-     * @param raw an invite code or an address
+     * @param raw a lobby code (through the relay), an invite code or an address
      * @param seed this world's seed, or "-" when joining from the title-screen lobby
      */
     public static OpenDraftConnection connect(String raw, String modVersion, String seed, String name,
                                             Consumer<String> onLine, Runnable onClosed) throws IOException {
-        List<InetSocketAddress> targets = Invite.decode(raw);
-        Socket socket = open(targets != null ? targets : List.of(parseAddress(raw)), 8_000);
-        LineChannel ch = new LineChannel(socket);
-        OpenDraftConnection conn = new OpenDraftConnection(ch, socket.getInetAddress().getHostAddress() + ":" + socket.getPort());
+        String room = Relay.normalize(raw);
+        Lines ch;
+        String where;
+        if (room != null) {
+            ch = Relay.join(room);
+            where = "lobby " + Relay.format(room);
+        } else {
+            List<InetSocketAddress> targets = Invite.decode(raw);
+            Socket socket = open(targets != null ? targets : List.of(parseAddress(raw)), 8_000);
+            ch = new LineChannel(socket);
+            where = socket.getInetAddress().getHostAddress() + ":" + socket.getPort();
+        }
+        OpenDraftConnection conn = new OpenDraftConnection(ch, where);
         ch.send("HELLO " + Protocol.VERSION + " " + modVersion + " " + seed + " " + Protocol.sanitizeName(name));
         Thread reader = new Thread(() -> {
             try {

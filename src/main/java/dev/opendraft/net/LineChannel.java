@@ -13,7 +13,7 @@ import java.nio.charset.StandardCharsets;
  * One TCP connection that sends and receives UTF-8 lines.
  * Lines are capped so a bad peer can't make us buffer forever.
  */
-public final class LineChannel implements Closeable {
+public final class LineChannel implements Lines, Closeable {
     public static final int MAX_LINE = 16 * 1024;
 
     private final Socket socket;
@@ -29,7 +29,7 @@ public final class LineChannel implements Closeable {
         this.out = socket.getOutputStream();
     }
 
-    /** Returns the next line, or null once the peer has closed the connection. */
+    @Override
     public String readLine() throws IOException {
         ByteArrayOutputStream buf = new ByteArrayOutputStream(128);
         while (true) {
@@ -48,6 +48,7 @@ public final class LineChannel implements Closeable {
         }
     }
 
+    @Override
     public synchronized void send(String line) {
         if (closed) return;
         try {
@@ -58,6 +59,7 @@ public final class LineChannel implements Closeable {
         }
     }
 
+    @Override
     public boolean isClosed() {
         return closed;
     }

@@ -20,8 +20,8 @@ under the MIT license.
   Shipwreck, Outpost, Witch Hut, Desert Temple, Jungle Temple, Igloo, Mansion, Ruined Portal, Trail Ruins,
   Abandoned Camp, Ancient City, Trial Chambers and Pale Garden. See [Seed filter](#seed-filter).
 - **A lobby on the title screen** with the player list, chat and settings. Every match starts in a fresh world.
-- **Invite codes**: copy the code, your friends paste it. The game opens your router's port by itself (UPnP), so
-  most players never deal with port forwarding.
+- **Invite codes**: copy the code, your friends paste it, and it works from any network. Nobody has to set up port
+  forwarding.
 - **Time limit and overtime**, a lookout from the air before the clock starts, and forfeit and draw votes.
 - **Shared advancement messages**, and your progress on each goal when you hover it.
 
@@ -152,10 +152,14 @@ Java 25 but not Minecraft. It prints an invite code, and players join with that 
 
 ### Playing over the internet
 
-When you create a lobby, your game asks your router to open the port (TCP 25570 by default) using UPnP, the same way
-game consoles do. The invite code holds your home-network address and your internet address, and joining tries both,
-so friends in the same house and friends elsewhere use the same code. The port is closed again when you leave the
-lobby.
+When you create a lobby, your game gets a short code like `K7QM-2D9X` from the OpenDraft relay, a small free service
+that passes the game's messages between players (see [`relay/README.md`](relay/README.md)). Friends anywhere join
+with it, and nobody opens any ports. The synchronizer still runs in your game.
+
+If the relay can't be reached, your game asks your router to open the port instead (TCP 25570 by default), using
+UPnP the way game consoles do. The code is longer then: it holds your home-network address and your internet
+address, and joining tries both, so friends in the same house and friends elsewhere use the same code. The port is
+closed again when you leave the lobby.
 
 Under the code, the lobby says who can join:
 
@@ -168,6 +172,9 @@ Under the code, the lobby says who can join:
 
 On macOS, allow Minecraft to find devices on your local network if it asks, so it can reach the router. When the
 router doesn't answer, the game looks up your internet address with `api.ipify.org`.
+
+To use your own relays, add `relay=<address>` (or several, separated by commas) to `config/opendraft.properties`.
+Everyone in the lobby needs the same ones.
 
 ### Panorama
 

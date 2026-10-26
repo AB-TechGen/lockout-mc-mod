@@ -18,8 +18,10 @@ public final class SyncServerMain {
             switch (args[i]) {
                 case "--port" -> port = Integer.parseInt(args[++i]);
                 case "--seed" -> seed = Long.parseLong(args[++i]);
+                case "--relay" -> Relay.url = args[++i];
+                case "--no-relay" -> Relay.url = "";
                 case "--help", "-h" -> {
-                    System.out.println("Usage: java -jar opendraft.jar [--port 25570] [--seed <world seed>]");
+                    System.out.println("Usage: java -jar opendraft.jar [--port 25570] [--seed <world seed>] [--relay <url,...> | --no-relay]");
                     System.out.println("Without --seed, the lobby's Start button (or the first player to join from a world) sets it.");
                     return;
                 }

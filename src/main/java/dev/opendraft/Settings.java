@@ -1,5 +1,6 @@
 package dev.opendraft;
 
+import dev.opendraft.net.Relay;
 import net.fabricmc.loader.api.FabricLoader;
 
 import java.io.IOException;
@@ -40,6 +41,8 @@ public final class Settings {
     public static String name = "";
     public static String address = "";
     public static int port = 25570;
+    /** Other relays than the built-in ones (comma-separated), for running your own. Empty uses the built-in ones. */
+    public static String relay = "";
 
     private Settings() {
     }
@@ -59,6 +62,8 @@ public final class Settings {
             return;
         }
         apply(p::getProperty);
+        relay = text(p.getProperty("relay"));
+        Relay.url = relay.isEmpty() ? Relay.DEFAULT_URL : relay;
     }
 
     private static void apply(java.util.function.Function<String, String> get) {
@@ -87,6 +92,7 @@ public final class Settings {
         p.setProperty("name", name);
         p.setProperty("address", address);
         p.setProperty("port", String.valueOf(port));
+        if (!relay.isEmpty()) p.setProperty("relay", relay);
         Path f = file();
         try {
             Files.createDirectories(f.getParent());

@@ -1,0 +1,13 @@
+# The OpenDraft relay. Deploy with `npx wrangler deploy` from this folder (see README.md here).
+name = "opendraft-relay"
+main = "src/index.js"
+compatibility_date = "2026-06-01"
+
+[[durable_objects.bindings]]
+name = "LOBBY"
+class_name = "Lobby"
+
+# The free plan only offers Durable Objects backed by SQLite.
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Lobby"]

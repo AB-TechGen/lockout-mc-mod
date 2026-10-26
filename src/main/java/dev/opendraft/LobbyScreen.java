@@ -3,6 +3,7 @@ package dev.opendraft;
 import dev.opendraft.net.Invite;
 import dev.opendraft.net.OpenDraftHost;
 import dev.opendraft.net.Protocol;
+import dev.opendraft.net.Relay;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -222,7 +223,7 @@ public final class LobbyScreen extends Screen {
         } else if (!s.welcomed) {
             where = "Connecting...";
         } else {
-            where = "Connected to " + (Invite.decode(s.address) != null ? "the lobby" : s.address);
+            where = "Connected to " + (Relay.normalize(s.address) != null || Invite.decode(s.address) != null ? "the lobby" : s.address);
         }
         g.text(font, Component.literal(where), x0 + 5, y0 + 18, s.host != null && reach != null ? 0xFFFFFFFF : 0xFFAAAAAA, true);
         int py = y0 + top;

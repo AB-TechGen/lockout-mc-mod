@@ -35,6 +35,7 @@ public final class OpenDraftHost {
     private ScheduledExecutorService clock;
     private volatile boolean closed;
     private volatile PortOpener router;
+    private volatile Relay.Bridge relay;
     private volatile Thread routerCleanup;
     private volatile Reach reach;
 
@@ -105,11 +106,34 @@ public final class OpenDraftHost {
     }
 
     /**
-     * In the background, asks the router to open the port and works out the invite code.
-     * {@code done} runs on that background thread.
+     * In the background, opens a lobby on the relay, or if there's no relay, asks the router to
+     * open the port, and works out the code players join with. {@code done} runs on that thread.
      */
     public void shareOnline(Consumer<Reach> done) {
         Thread t = new Thread(() -> {
+            if (Relay.available()) {
+                try {
+                    Relay.Bridge b = Relay.host(port, log, () -> {
+                        Reach was = reach;
+                        if (!closed && was != null) reach = new Reach(was.code(), false, "Lost the connection to the relay, so"
+                                + " players can't join with this code anymore. Leave the lobby and create it again.");
+                    });
+                    synchronized (this) {
+                        if (closed) {
+                            b.close();
+                            return;
+                        }
+                        relay = b;
+                    }
+                    log.accept("relay lobby " + b.code());
+                    Reach result = new Reach(b.code(), true, "Friends anywhere can join with this code.");
+                    reach = result;
+                    done.accept(result);
+                    return;
+                } catch (IOException e) {
+                    log.accept("relay unavailable (" + e.getMessage() + "), asking the router instead");
+                }
+            }
             PortOpener r = PortOpener.open(port);
             if (r.opened()) {
                 // Take the forwarding off the router if the game quits without closing the lobby.
@@ -154,13 +178,17 @@ public final class OpenDraftHost {
         }
         PortOpener r;
         Thread cleanup;
+        Relay.Bridge b;
         synchronized (this) {
             closed = true;
+            b = relay;
+            relay = null;
             r = router;
             cleanup = routerCleanup;
             router = null;
             routerCleanup = null;
         }
+        if (b != null) b.close();
         if (r != null) {
             try {
                 Runtime.getRuntime().removeShutdownHook(cleanup);
