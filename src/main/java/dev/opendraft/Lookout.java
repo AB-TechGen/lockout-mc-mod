@@ -3,6 +3,7 @@ package dev.opendraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Abilities;
+import net.minecraft.world.entity.player.Input;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
@@ -12,8 +13,9 @@ import java.util.UUID;
 /**
  * Holds the player in spectator mode high above where they stand, before the clock starts: while
  * everyone's world loads, during a draft, and through the lookout. They can look around (holding
- * right-click zooms like a spyglass) but not move. Afterwards they're put back on the ground in
- * their old game mode. Runs on the integrated server.
+ * right-click zooms like a spyglass) but not move. Sneaking drops them to where they stand for a
+ * look from the ground, and jumping takes them back up, except in the lookout's last seconds, which
+ * are spent on the ground. Afterwards they get their old game mode back. Runs on the integrated server.
  */
 final class Lookout {
     /** Blocks above the highest ground nearby, so the view is open in every direction. */
@@ -24,6 +26,8 @@ final class Lookout {
     private final double x, y, z, airY;
     private final GameType mode;
     private final float flyingSpeed;
+    /** Looking from the ground instead of the sky. */
+    private boolean ground;
 
     private Lookout(ServerPlayer p) {
         this.player = p.getUUID();
@@ -39,7 +43,7 @@ final class Lookout {
         Lookout l = new Lookout(p);
         p.setGameMode(GameType.SPECTATOR);
         p.teleportTo(l.x, l.airY, l.z);
-        l.tick(p);
+        l.tick(p, false);
         return l;
     }
 
@@ -62,14 +66,20 @@ final class Lookout {
         return best;
     }
 
-    void tick(ServerPlayer p) {
+    /** @param ending the lookout's last seconds: on the ground for good, so everyone starts from where they'll play */
+    void tick(ServerPlayer p, boolean ending) {
         if (!p.isSpectator()) p.setGameMode(GameType.SPECTATOR);
         Abilities a = p.getAbilities();
         if (a.getFlyingSpeed() != 0f) {
             a.setFlyingSpeed(0f); // no drifting: looking around works, moving doesn't
             p.onUpdateAbilities();
         }
-        if (p.distanceToSqr(new Vec3(x, airY, z)) > 0.25) p.teleportTo(x, airY, z);
+        // The keys the client last reported: sneak for the ground, jump for the sky.
+        Input input = p.getLastClientInput();
+        if (input.shift() || ending) ground = true;
+        else if (input.jump()) ground = false;
+        double atY = ground ? y : airY;
+        if (p.distanceToSqr(new Vec3(x, atY, z)) > 0.25) p.teleportTo(x, atY, z);
     }
 
     /** Back to the ground, in the game mode they had. */

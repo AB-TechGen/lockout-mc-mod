@@ -56,8 +56,10 @@ update. To build the jar yourself instead, see
    duplicate names get a number added.
 4. The lobby lists everyone who has joined, the settings and a chat. The first player in the lobby is the leader
    (marked with a star). Only the leader can press **Edit Settings** and **Start**.
-5. **Start** makes everyone's game create a new singleplayer world with the same seed. When every world has loaded,
-   the board is dealt (or drafted) and the lookout begins.
+5. **Start** makes everyone's game create a new singleplayer world with the same seed. Until the slowest computer
+   has finished loading and drawing the terrain, everyone who is already in sees a "Waiting for other players..."
+   screen instead of the world, so nobody gets extra time to look around. Then the board is dealt (or drafted) and
+   the lookout begins.
 6. After the game, press **Back to Lobby** on the full-screen board to leave the world and return to the lobby for
    the next match.
 
@@ -135,8 +137,15 @@ still switch between Easy, Normal and Hard, but picking Peaceful puts the world 
 
 When a board starts, everyone is put in spectator mode 20 blocks above the highest ground nearby, so nobody is
 stuck inside a mountain. You're held there for the lookout (30 seconds by default) and can look around but not
-move. Hold right-click to zoom like a spyglass. The last 5 seconds count down in the middle of the screen, then
-you're put back where you were in your old game mode and the clock starts. Nothing counts during the lookout.
+move. Hold right-click to zoom like a spyglass. Press **sneak** to drop to where you're standing for the ground view,
+and **jump** to go back up to the sky view. For the last 5 seconds you're put on the ground and can't go back up,
+while they count down in the middle of the screen. Then you get your old game mode back and the clock starts.
+Nothing counts during the lookout.
+
+### Fullbright
+
+Press **Alt+2** in a world to turn fullbright on or off. It sets the game's brightness to 1500%, so caves and nights
+are lit, without touching your Brightness setting. It's off again each time the game starts.
 
 ### Draft
 

@@ -16,6 +16,16 @@ dependencies {
     implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
 }
 
+loom {
+    runs {
+        client {
+            // Same Intel driver workaround the vanilla launcher passes, and a JVM crash log in run/ if the game dies natively.
+            vmArg '-XX:HeapDumpPath=MojangTricksIntelDriversForPerformance_javaw.exe_minecraft.exe.heapdump'
+            vmArg '-XX:ErrorFile=hs_err_%p.log'
+        }
+    }
+}
+
 processResources {
     inputs.property 'version', project.version
     filesMatching('fabric.mod.json') {

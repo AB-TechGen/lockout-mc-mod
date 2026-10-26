@@ -26,6 +26,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public final class Session {
     /** startMillis while a board has arrived but its START hasn't yet. */
     public static final long NOT_STARTED = Long.MAX_VALUE;
+    /** The last part of the lookout, spent on the ground with a countdown. */
+    public static final long GROUND_MILLIS = 5000;
     private static final int CHAT_LINES = 50;
 
     private static volatile Session current;
@@ -53,6 +55,8 @@ public final class Session {
     /** Between MATCH and the clock starting: players are held in the air while the others load. */
     public volatile boolean waitingForStart;
     public volatile int readySent;
+    /** GO arrived for this match: every world is loaded, so the view no longer has to be covered. */
+    public volatile boolean everyoneLoaded;
 
     // The board. startMillis is when the clock starts (after the lookout), in this computer's time.
     public volatile int boardId;
@@ -183,6 +187,20 @@ public final class Session {
         return inLookout() || (waitingForStart && matchSeed != null);
     }
 
+    /**
+     * This game is in the match world but someone else's world is still loading. The view is covered
+     * until then, so a faster computer doesn't get extra time to look around.
+     */
+    public boolean waitingForOthers(long worldSeed) {
+        Long seed = matchSeed;
+        return waitingForStart && !everyoneLoaded && seed != null && seed == worldSeed;
+    }
+
+    /** In the lookout's last {@link #GROUND_MILLIS}: the player is on the ground and can't go back up. */
+    public boolean lookoutEnding() {
+        return inLookout() && startMillis - System.currentTimeMillis() <= GROUND_MILLIS;
+    }
+
     public boolean drafting() {
         return draftPool != null;
     }
@@ -275,11 +293,14 @@ public final class Session {
                 drawVotes = List.of();
                 startMillis = NOT_STARTED;
                 waitingForStart = true;
+                everyoneLoaded = false;
                 if (fresh) WorldMaker.createMatchWorld(id, seed);
             }
             case "GO" -> {
                 // Everyone's world is loaded: the leader deals the board from their world.
-                if (Integer.parseInt(rest.trim()) == matchId && isLeader()) {
+                if (Integer.parseInt(rest.trim()) != matchId) return;
+                everyoneLoaded = true;
+                if (isLeader()) {
                     Minecraft mc = Minecraft.getInstance();
                     mc.execute(OpenDraftClient::dealBoard);
                 }
@@ -355,7 +376,9 @@ public final class Session {
                 String key = OpenDraftClient.boardKeyName();
                 if (elapsed < 0) {
                     OpenDraftClient.chat(Component.literal("OpenDraft: " + n + " goals, " + time + ". Look around for "
-                            + (-elapsed + 999) / 1000 + "s first; hold right-click to zoom. Press " + key + " for the board.")
+                            + (-elapsed + 999) / 1000 + "s first; hold right-click to zoom, sneak to see from the ground and jump "
+                            + "to go back up. You're put on the ground for the last " + GROUND_MILLIS / 1000 + "s. Press " + key
+                            + " for the board.")
                             .withStyle(ChatFormatting.GOLD));
                 } else if (elapsed < 1000) {
                     OpenDraftClient.chat(Component.literal("The match has started! " + n + " goals, " + time + ". Press " + key + " for the board.")

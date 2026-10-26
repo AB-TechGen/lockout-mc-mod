@@ -12,6 +12,7 @@ import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.fabricmc.fabric.api.event.player.UseEntityCallback;
 import net.minecraft.client.Minecraft;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.LivingEntity;
@@ -26,14 +27,16 @@ import java.util.UUID;
  * Runs on the integrated server of this player's singleplayer world. It holds the player in the
  * air until the clock starts (while everyone loads, during a draft and the lookout), then watches
  * them, checks the board every half second and sends a claim the first time a goal is done. It
- * also tells the others about advancements and says when this world is ready for the match.
+ * also tells the others about advancements. (Saying this world is ready for the match is done on
+ * the client, by {@link OpenDraftClient}, once the terrain has been drawn.)
  */
 public final class ServerHooks {
     private static final int CHECK_EVERY = 10;
     private static final int ADVANCEMENTS_EVERY = 20;
     private static volatile Tracker tracker;
     private static volatile ServerPlayer trackedPlayer;
-    private static Lookout lookout;
+    /** Set on the server thread, read on the client thread to tell when the player is up in the air. */
+    private static volatile Lookout lookout;
     private static int tick;
     /** Progress text ("3/5") per board cell, for the board's hover text. Replaced, never edited. */
     private static volatile String[] progress = new String[0];
@@ -100,6 +103,21 @@ public final class ServerHooks {
         return trackedPlayer;
     }
 
+    /** The player is being held for the lookout (or while everyone loads), so the view they'll get is in place. */
+    public static boolean holdingPlayer() {
+        return lookout != null;
+    }
+
+    /**
+     * The player held for the lookout, if they're in {@code level}. They're a spectator, which vanilla
+     * leaves out of mob spawning, so without this nothing would spawn for them to see. Used by the mixins.
+     */
+    public static ServerPlayer heldPlayerIn(ServerLevel level) {
+        Lookout l = lookout;
+        ServerPlayer p = l == null ? null : level.getServer().getPlayerList().getPlayer(l.player);
+        return p != null && p.level() == level ? p : null;
+    }
+
     /** Progress for board cell {@code i} of {@code boardId}, or null. Read by the board screen. */
     public static String progress(int boardId, int i) {
         String[] p = progress;
@@ -129,18 +147,12 @@ public final class ServerHooks {
         }
         tick++;
         if (tick % ADVANCEMENTS_EVERY == 0 && s.rightWorld(worldSeed)) relayAdvancements(server, s, p);
-        // This world is the lobby match's: tell the synchronizer it's loaded.
-        Long matchSeed = s.matchSeed;
-        if (s.waitingForStart && matchSeed != null && matchSeed == worldSeed && s.readySent != s.matchId) {
-            s.readySent = s.matchId;
-            s.send("READY " + s.matchId);
-        }
 
         List<Goal> goals = s.goals;
         if (hold) {
             tracker = null;
             if (lookout == null) lookout = Lookout.begin(p);
-            else lookout.tick(p);
+            else lookout.tick(p, s.lookoutEnding());
             return;
         }
         if (goals == null || !s.running() && !s.ended || s.iForfeited() || !s.rightWorld(worldSeed)) {

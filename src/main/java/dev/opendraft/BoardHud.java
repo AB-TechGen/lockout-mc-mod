@@ -127,14 +127,30 @@ public final class BoardHud {
         g.text(font, c, x0 + PAD, y0 + PAD + lh * 2, 0xFFFFFFFF, true);
     }
 
-    /** The last five seconds of the lookout as a big number in the middle of the screen, then "GO!". */
+    /**
+     * Covers the whole view while this world is loaded but someone else's isn't, so nobody gets to
+     * look around longer than the others. Drawn before the rest of the HUD, so chat still shows.
+     */
+    public static void waitingCover(GuiGraphicsExtractor g, DeltaTracker delta) {
+        Minecraft mc = Minecraft.getInstance();
+        Session s = Session.current();
+        var server = mc.getSingleplayerServer();
+        if (s == null || mc.player == null || server == null || !s.waitingForOthers(server.overworld().getSeed())) return;
+        int sw = mc.getWindow().getGuiScaledWidth();
+        int sh = mc.getWindow().getGuiScaledHeight();
+        g.fill(0, 0, sw, sh, 0xFF101014);
+        Component c = Component.literal("Waiting for other players...");
+        g.text(mc.font, c, (sw - mc.font.width(c)) / 2, sh / 2 - mc.font.lineHeight / 2, 0xFFFFFFFF, true);
+    }
+
+    /** The lookout's last seconds, spent on the ground, as a big number in the middle of the screen, then "GO!". */
     private static void lookoutCountdown(GuiGraphicsExtractor g, Font font, Session s, int sw, int sh) {
         long start = s.startMillis;
         if (s.goals == null || start == Session.NOT_STARTED || !s.hadLookout) return;
         long left = start - System.currentTimeMillis();
         String text;
         int color;
-        if (left > 0 && left <= 5000) {
+        if (left > 0 && left <= Session.GROUND_MILLIS) {
             text = String.valueOf((left + 999) / 1000);
             color = 0xFFFFD54F;
         } else if (left <= 0 && left > -1500) {

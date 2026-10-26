@@ -9,3 +9,4 @@ run/
 # Created by Cloudflare's wrangler when deploying the relay
 /relay/.wrangler/
 /relay/node_modules/
+todo.md

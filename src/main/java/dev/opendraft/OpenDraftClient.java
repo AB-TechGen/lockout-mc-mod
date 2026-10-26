@@ -20,6 +20,7 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.LevelLoadingScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.Identifier;
@@ -45,6 +46,13 @@ public final class OpenDraftClient implements ClientModInitializer {
     /** GLFW's key code for B (LWJGL isn't on the compile classpath). */
     private static final int KEY_B = 66;
 
+    /** Ticks the terrain must stay fully drawn before this game says it's ready, so a lull between chunks doesn't count. */
+    private static final int SETTLE_TICKS = 40;
+    /** Ticks in the match world after which it's ready anyway, in case the terrain never settles. */
+    private static final int READY_ANYWAY_TICKS = 60 * 20;
+    private static int settledTicks;
+    private static int inWorldTicks;
+
     public static String modVersion() {
         return FabricLoader.getInstance().getModContainer("opendraft")
                 .map(c -> c.getMetadata().getVersion().getFriendlyString()).orElse("dev");
@@ -55,6 +63,7 @@ public final class OpenDraftClient implements ClientModInitializer {
         Goals.load();
         Settings.load();
         ServerHooks.register();
+        HudElementRegistry.addFirst(Identifier.fromNamespaceAndPath("opendraft", "waiting"), BoardHud::waitingCover);
         HudElementRegistry.addLast(Identifier.fromNamespaceAndPath("opendraft", "board"), BoardHud::extractRenderState);
         KeyMapping.Category category = KeyMapping.Category.register(Identifier.fromNamespaceAndPath("opendraft", "opendraft"));
         BOARD_KEY = KeyMappingHelper.registerKeyMapping(new KeyMapping("key.opendraft.board", KEY_B, category));
@@ -69,6 +78,13 @@ public final class OpenDraftClient implements ClientModInitializer {
                 }
             }
             WorldMaker.tick();
+            reportReady(mc);
+            // F1 would hide the waiting cover along with the rest of the HUD.
+            Session s = Session.current();
+            MinecraftServer server = mc.getSingleplayerServer();
+            if (s != null && server != null && mc.gui.hud.isHidden() && s.waitingForOthers(server.overworld().getSeed())) {
+                mc.gui.hud.toggle();
+            }
         });
         // The lobby button on the title screen, filling in Create World for lobby matches, and no LAN or cheats mid-match.
         ScreenEvents.AFTER_INIT.register((client, screen, w, h) -> {
@@ -265,6 +281,30 @@ public final class OpenDraftClient implements ClientModInitializer {
         if (error != null) chat(Component.literal("OpenDraft: couldn't deal the board: " + error).withStyle(ChatFormatting.RED));
     }
 
+    /**
+     * Tells the synchronizer this game's match world has loaded. That's once the loading screen is gone,
+     * the player is up in the air and the terrain around them has been drawn, not when the world opens:
+     * a slower computer can take a while longer to get there, and the board waits for everyone.
+     */
+    private static void reportReady(Minecraft mc) {
+        Session s = Session.current();
+        MinecraftServer server = mc.getSingleplayerServer();
+        Long seed = s == null ? null : s.matchSeed;
+        if (s == null || seed == null || !s.waitingForStart || s.readySent == s.matchId
+                || server == null || mc.player == null || mc.level == null || server.overworld().getSeed() != seed) {
+            settledTicks = 0;
+            inWorldTicks = 0;
+            return;
+        }
+        inWorldTicks++;
+        boolean drawn = !(mc.gui.screen() instanceof LevelLoadingScreen) && ServerHooks.holdingPlayer()
+                && mc.levelRenderer.hasRenderedAllSections();
+        settledTicks = drawn ? settledTicks + 1 : 0;
+        if (settledTicks < SETTLE_TICKS && inWorldTicks < READY_ANYWAY_TICKS) return;
+        s.readySent = s.matchId;
+        s.send("READY " + s.matchId);
+    }
+
     /** The lobby's Start button: shares the settings and sends everyone into a new world. */
     static void startLobbyMatch() {
         Session s = Session.current();
@@ -427,6 +467,20 @@ public final class OpenDraftClient implements ClientModInitializer {
         Session s = Session.current();
         if (s == null || mc.player == null || mc.gui.screen() != null || !mc.options.keyUse.isDown()) return false;
         return s.inLookout() || s.waitingForStart;
+    }
+
+    /** Gamma while fullbright is on: 1500%, past the Brightness slider's 100%. */
+    public static final Double FULLBRIGHT_GAMMA = 15.0;
+    /** Toggled with Alt+2; read by the lightmap. Not saved, so it's off each time the game starts. */
+    public static volatile boolean fullbright;
+
+    /** Alt+2 in a world with no screen open. Returns whether it was handled, so the 2 doesn't also pick a hotbar slot. */
+    public static boolean toggleFullbright() {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player == null || mc.gui.screen() != null) return false;
+        fullbright = !fullbright;
+        mc.gui.hud.setOverlayMessage(Component.literal("Fullbright " + (fullbright ? "on" : "off")), false);
+        return true;
     }
 
     /**

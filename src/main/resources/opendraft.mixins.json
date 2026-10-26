@@ -4,15 +4,19 @@
   "package": "dev.opendraft.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
+    "ChunkMapSpawningMixin",
     "ContainerMenuMixin",
     "DifficultyMixin",
-    "ItemStackMixin"
+    "ItemStackMixin",
+    "NaturalSpawnerMixin"
   ],
   "injectors": {
     "defaultRequire": 1
   },
   "client": [
     "ClientPlayerFovMixin",
+    "FullbrightKeyMixin",
+    "LightmapGammaMixin",
     "PlayerScopingMixin"
   ]
 }
