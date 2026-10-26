@@ -121,7 +121,7 @@ The game keeps running while it's open.
 
 ### Commands and the standalone synchronizer
 
-The lobby screen covers everything, but the old commands still work inside a world:
+The lobby screen covers everything, and these commands also work inside a world:
 
 - `/opendraft host [port]` and `/opendraft join <address>[:port] [name]` start or join a game for the world you're in.
 - `/opendraft start [size] [minutes] [overtime]` deals a board and `/opendraft draft` starts a draft.
@@ -147,19 +147,6 @@ The lobby and title screen use the "Sinkhole" panorama by sumone_lol, from
 `assets/minecraft/textures/gui/title/background`. It's licensed CC BY-NC 4.0, so it's for non-commercial use only.
 Delete those six images to get vanilla's panorama back.
 
-## Goal icons
-
-The board uses Draftout's goal art when it's packed into the mod and falls back to an item icon otherwise. To pack
-the art, run this before building:
-
-```
-pip install pillow
-python3 tools/fetch_icons.py
-```
-
-The icons belong to Draftout. Ask them before you share a jar that includes them. They're listed in `.gitignore`,
-so they never get committed.
-
 ## Building from source
 
 Most players should use the jar from [Releases](../../releases). To build it yourself, you need JDK 25:
@@ -170,8 +157,8 @@ Most players should use the jar from [Releases](../../releases). To build it you
 
 The jar is written to `build/libs/`; install it the same way as in [Installing](#installing). On GitHub, the Build
 workflow in `.github/workflows/build.yml` runs this on every push and attaches the jar to the run (under Artifacts).
-That jar has no Draftout icons, so goals show item icons. If Gradle can't resolve the Loom or loader versions in
-`gradle.properties`, copy the current values for 26.3 from <https://fabricmc.net/develop/>.
+If Gradle can't resolve the Loom or loader versions in `gradle.properties`, copy the current values for 26.3 from
+<https://fabricmc.net/develop/>.
 
 ## How goals are detected
 
@@ -208,7 +195,7 @@ A few Draftout rules need hooks that vanilla doesn't expose. These are close but
 ## Credits
 
 - Goals and goal rules: [Draftout](https://draftoutmc.com) and the
-  [Draftout wiki](https://github.com/draftout/draftout-wiki). The icons are Draftout's and aren't included here.
+  [Draftout wiki](https://github.com/draftout/draftout-wiki).
 - Lobby and title screen panorama: "Sinkhole" from [Main Menu Panoramas](https://modrinth.com/resourcepack/noice-panoramas)
   by sumone_lol, under [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/) (resized to 1024x1024). It's
   for non-commercial use only.

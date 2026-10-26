@@ -6,7 +6,6 @@ import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -30,8 +29,6 @@ public final class BoardHud {
     static final int UNCLAIMED = 0xFF5A5A5A;
     static final int PANEL = 0xA0101014;
 
-    /** Draftout icon textures, packed as 32x32 PNGs by tools/fetch_icons.py. Missing ones fall back to an item. */
-    private static final Map<String, Boolean> HAS_TEXTURE = new ConcurrentHashMap<>();
     private static final Map<String, ItemStack> ICON_ITEMS = new ConcurrentHashMap<>();
 
     public static volatile boolean visible = true;
@@ -224,15 +221,7 @@ public final class BoardHud {
     }
 
     static void drawIcon(GuiGraphicsExtractor g, Goal goal, int x, int y) {
-        Identifier tex = Identifier.fromNamespaceAndPath("opendraft", "textures/goal/" + goal.id + "/" + goal.variant + ".png");
-        boolean has = HAS_TEXTURE.computeIfAbsent(tex.toString(),
-                k -> Minecraft.getInstance().getResourceManager().getResource(tex).isPresent());
-        if (has) {
-            // The texture is 32x32; a 16x16 "texture size" maps all of it onto the 16px cell.
-            g.blit(RenderPipelines.GUI_TEXTURED, tex, x, y, 0, 0, 16, 16, 16, 16);
-        } else {
-            g.fakeItem(ICON_ITEMS.computeIfAbsent(goal.key, k -> iconItem(goal)), x, y);
-        }
+        g.fakeItem(ICON_ITEMS.computeIfAbsent(goal.key, k -> iconItem(goal)), x, y);
     }
 
     /** The goal's count in the icon's corner, like a stack size ("Obtain 64 Arrows" shows 64). */

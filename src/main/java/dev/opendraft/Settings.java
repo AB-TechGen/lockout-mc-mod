@@ -50,8 +50,6 @@ public final class Settings {
 
     public static void load() {
         Path f = file();
-        // Before the rename to OpenDraft the settings lived in lockout.properties.
-        if (!Files.exists(f)) f = f.resolveSibling("lockout.properties");
         if (!Files.exists(f)) return;
         Properties p = new Properties();
         try (Reader r = Files.newBufferedReader(f)) {
