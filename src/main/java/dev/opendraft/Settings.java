@@ -37,6 +37,13 @@ public final class Settings {
     public static String filter = "";
     /** How close to spawn, in blocks, the filtered structures must be. */
     public static int radius = 300;
+    /**
+     * How many of your newest OpenDraft match worlds to keep; older ones are deleted. 0 keeps them all.
+     * It's about your own saves folder, so each player sets their own and it isn't shared with the lobby.
+     */
+    public static int keepWorlds = 5;
+    /** What the lobby's button cycles through. */
+    private static final int[] KEEP_WORLDS_CHOICES = {1, 2, 3, 5, 10, 20, 50, 0};
     /** What the lobby screen last used, so it's filled in next time. */
     public static String name = "";
     public static String address = "";
@@ -79,6 +86,7 @@ public final class Settings {
         name = text(get.apply("name"));
         address = text(get.apply("address"));
         port = clamp(get.apply("port"), port, 1, 65535);
+        keepWorlds = clamp(get.apply("keepWorlds"), keepWorlds, 0, 1000);
     }
 
     private static String text(String raw) {
@@ -92,6 +100,7 @@ public final class Settings {
         p.setProperty("name", name);
         p.setProperty("address", address);
         p.setProperty("port", String.valueOf(port));
+        p.setProperty("keepWorlds", String.valueOf(keepWorlds));
         if (!relay.isEmpty()) p.setProperty("relay", relay);
         Path f = file();
         try {
@@ -167,6 +176,19 @@ public final class Settings {
         }
     }
 
+    /** The next choice for the lobby's "old worlds" button, after the current one, wrapping round. */
+    public static int nextKeepWorlds() {
+        for (int i = 0; i < KEEP_WORLDS_CHOICES.length; i++) {
+            if (KEEP_WORLDS_CHOICES[i] == keepWorlds) return KEEP_WORLDS_CHOICES[(i + 1) % KEEP_WORLDS_CHOICES.length];
+        }
+        return KEEP_WORLDS_CHOICES[0]; // a number typed into the config: start the cycle over
+    }
+
+    /** "keep newest 5" or "keep all". */
+    public static String keepWorldsText() {
+        return keepWorlds <= 0 ? "keep all" : "keep newest " + keepWorlds;
+    }
+
     /** "25 goals (5x5)" or "12 goals". */
     public static String boardSize(int n) {
         int root = (int) Math.round(Math.sqrt(n));
@@ -197,6 +219,7 @@ public final class Settings {
     public static List<String> describe() {
         List<String> out = describe(decode(encode()));
         out.add("Seed: " + (seed.isEmpty() ? "random" : seed));
+        out.add("Old match worlds: " + keepWorldsText() + " (only on this computer)");
         return out;
     }
 

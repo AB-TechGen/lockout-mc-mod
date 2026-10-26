@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -40,6 +41,16 @@ public final class OpenDraftHost {
     private volatile Thread routerCleanup;
     private volatile Reach reach;
 
+    /**
+     * Ping adjustment. The synchronizer times how long each player's messages take to reach it and
+     * judges a close claim by when it was probably made, not when it arrived. A claim only waits as
+     * long as another player's message could still be on its way (the difference in their lag), and
+     * lag is only made up for up to this many ms each way.
+     */
+    static final long MAX_ONE_WAY_MS = 300;
+    /** Each player's smoothed round trip in ms, from PING and PONG. Written on the players' own threads. */
+    private final Map<String, Double> roundTrip = new ConcurrentHashMap<>();
+
     // Everything below is guarded by this.
     private final Map<String, LineChannel> players = new LinkedHashMap<>();
     /** Each player's colour, kept while they own anything on the board so it never changes mid-game. */
@@ -64,6 +75,12 @@ public final class OpenDraftHost {
     private boolean ended;
     private final Set<String> forfeited = new LinkedHashSet<>();
     private final Set<String> drawVotes = new LinkedHashSet<>();
+    /** Claims waiting out the ping window, by goal. The first one for a goal schedules {@link #resolveClaim}. */
+    private final Map<Integer, List<PendingClaim>> pending = new HashMap<>();
+
+    /** @param made when the claim was probably made: when it arrived minus the player's one-way lag (epoch ms) */
+    private record PendingClaim(String name, long made) {
+    }
 
     // The draft, while one is running.
     private Draft draft;
@@ -101,6 +118,7 @@ public final class OpenDraftHost {
             return t;
         });
         clock.scheduleAtFixedRate(this::tick, 200, 200, TimeUnit.MILLISECONDS);
+        clock.scheduleAtFixedRate(this::pingAll, 2, 2, TimeUnit.SECONDS);
     }
 
     /** Opens on the port given, or on any free one if that's taken. Players join with a code, so the number doesn't matter. */
@@ -280,8 +298,15 @@ public final class OpenDraftHost {
             name = join(ch, Protocol.sanitizeName(p[4]), theirSeed);
             if (name == null) return;
             for (String line; (line = ch.readLine()) != null; ) {
+                // Taken before waiting for the lock, so time spent behind another player's line isn't counted as lag.
+                long arrived = System.currentTimeMillis();
+                long arrivedNanos = System.nanoTime();
                 try {
-                    onLine(name, line);
+                    if (line.startsWith("PONG ")) {
+                        pong(name, line, arrivedNanos);
+                        continue;
+                    }
+                    onLine(name, line, arrived);
                 } catch (RuntimeException e) {
                     log.accept("bad line from " + name + ": " + line + " (" + e + ")");
                 }
@@ -318,6 +343,7 @@ public final class OpenDraftHost {
         }
         log.accept(name + " joined from " + ch.remote());
         ch.send("WELCOME " + name);
+        ch.send("PING " + System.nanoTime()); // so their lag is known before their first claim
         broadcast(playersLine());
         broadcastExcept(ch, "INFO " + name + " joined.");
         // Catch the newcomer up on whatever is happening.
@@ -347,6 +373,7 @@ public final class OpenDraftHost {
     private synchronized void leave(String name, LineChannel ch) {
         if (players.get(name) != ch) return;
         players.remove(name);
+        roundTrip.remove(name);
         log.accept(name + " left");
         forgetColors();
         broadcast(playersLine());
@@ -360,7 +387,7 @@ public final class OpenDraftHost {
         }
     }
 
-    private synchronized void onLine(String name, String line) {
+    private synchronized void onLine(String name, String line, long arrived) {
         String[] p = line.split(" ");
         switch (p[0]) {
             case "NEWBOARD" -> {
@@ -383,6 +410,7 @@ public final class OpenDraftHost {
                     return;
                 }
                 keys = null;
+                pending.clear();
                 forgetColors();
                 draftId++;
                 draft = new Draft(pool, size, Integer.parseInt(p[5]), Integer.parseInt(p[1]), Integer.parseInt(p[2]),
@@ -409,6 +437,7 @@ public final class OpenDraftHost {
                 matchId++;
                 draft = null;
                 keys = null;
+                pending.clear();
                 forgetColors();
                 ended = false;
                 overtime = false;
@@ -456,15 +485,8 @@ public final class OpenDraftHost {
                 if (keys == null || ended || board != boardId || idx < 0 || idx >= owners.length || owners[idx] != null) {
                     return;
                 }
-                if (System.currentTimeMillis() < startedAt) return; // still in the lookout
-                owners[idx] = name;
-                broadcast("CLAIMED " + idx + " " + name);
-                if (!drawVotes.isEmpty()) {
-                    // A new claim changes the game, so an open draw offer lapses.
-                    drawVotes.clear();
-                    broadcast(drawLine());
-                }
-                checkEnd();
+                if (arrived < startedAt) return; // still in the lookout
+                claim(name, idx, arrived);
             }
             case "ADV" -> {
                 // ADV <frame> <title...>: someone earned an advancement; tell everyone else.
@@ -475,6 +497,98 @@ public final class OpenDraftHost {
             default -> {
             }
         }
+    }
+
+    // ---- ping adjustment ------------------------------------------------------------------------
+
+    private synchronized void pingAll() {
+        long now = System.nanoTime();
+        for (LineChannel c : players.values()) c.send("PING " + now);
+    }
+
+    /** PONG &lt;the number from PING&gt;: one round trip, smoothed so a single slow packet doesn't swing it. */
+    private void pong(String name, String line, long arrivedNanos) {
+        long ms = (arrivedNanos - Long.parseLong(line.substring("PONG ".length()).trim())) / 1_000_000;
+        if (ms < 0 || ms > 10_000) return;
+        roundTrip.merge(name, (double) ms, (old, now) -> old * 0.7 + now * 0.3);
+    }
+
+    /** How long this player's messages take to get here: half their round trip, capped. 0 until it's been measured. */
+    private long oneWay(String name) {
+        Double rtt = roundTrip.get(name);
+        return rtt == null ? 0 : Math.min(MAX_ONE_WAY_MS, Math.round(rtt / 2));
+    }
+
+    /** A claim has arrived for a goal nobody owns yet. */
+    private void claim(String name, int idx, long arrived) {
+        long mine = oneWay(name);
+        long made = arrived - mine;
+        List<PendingClaim> waiting = pending.get(idx);
+        if (waiting != null) {
+            // Someone's claim for this goal is already waiting out its window: this one is judged with it.
+            if (waiting.stream().noneMatch(c -> c.name().equals(name))) waiting.add(new PendingClaim(name, made));
+            return;
+        }
+        // A claim someone else made before this one can still be on its way, for as long as their lag is longer.
+        long window = 0;
+        for (String other : players.keySet()) {
+            if (!other.equals(name) && !forfeited.contains(other)) window = Math.max(window, oneWay(other) - mine);
+        }
+        if (window <= 0 || clock == null) {
+            applyClaim(idx, name);
+            return;
+        }
+        waiting = new ArrayList<>();
+        waiting.add(new PendingClaim(name, made));
+        pending.put(idx, waiting);
+        int forBoard = boardId;
+        clock.schedule(() -> resolveClaim(forBoard, idx, Long.MAX_VALUE), window, TimeUnit.MILLISECONDS);
+    }
+
+    /**
+     * A goal's window is over: whoever probably claimed it first gets it. Claims made after {@code cutoff}
+     * (the end of the time limit) don't count; with a cutoff, claims are left waiting if none qualifies.
+     */
+    private synchronized void resolveClaim(int forBoard, int idx, long cutoff) {
+        List<PendingClaim> waiting = pending.get(idx);
+        if (waiting == null) return;
+        if (forBoard != boardId || keys == null || ended || owners[idx] != null) {
+            pending.remove(idx);
+            return;
+        }
+        PendingClaim best = null;
+        for (PendingClaim c : waiting) {
+            if (forfeited.contains(c.name()) || c.made() > cutoff) continue;
+            if (best == null || c.made() < best.made()) best = c;
+        }
+        if (best == null) {
+            if (cutoff == Long.MAX_VALUE) pending.remove(idx);
+            return;
+        }
+        pending.remove(idx);
+        PendingClaim arrivedFirst = waiting.get(0);
+        if (!arrivedFirst.name().equals(best.name())) {
+            long by = arrivedFirst.made() - best.made();
+            log.accept("goal " + idx + ": " + best.name() + " ahead of " + arrivedFirst.name() + " by " + by + " ms after ping");
+            broadcast("INFO " + best.name() + " got there " + by + " ms before " + arrivedFirst.name() + " once ping is taken into account.");
+        }
+        applyClaim(idx, best.name());
+    }
+
+    private void resolveClaimsUpTo(long cutoff) {
+        for (int idx : new ArrayList<>(pending.keySet())) resolveClaim(boardId, idx, cutoff);
+    }
+
+    /** Gives the goal to {@code name} and tells everyone. */
+    private void applyClaim(int idx, String name) {
+        owners[idx] = name;
+        broadcast("CLAIMED " + idx + " " + name);
+        if (!drawVotes.isEmpty()) {
+            // A new claim changes the game, so an open draw offer lapses.
+            drawVotes.clear();
+            broadcast(drawLine());
+        }
+        checkEnd();
     }
 
     /** Compares versions like 0.7.0 and 0.8.0 number by number; parts that aren't numbers count as 0. */
@@ -565,6 +679,7 @@ public final class OpenDraftHost {
 
     private void startMatch(List<String> boardKeys, int limit, int overtimeLength, int lookout) {
         boardId++;
+        pending.clear();
         keys = boardKeys.toArray(new String[0]);
         owners = new String[keys.length];
         forgetColors();
@@ -608,6 +723,8 @@ public final class OpenDraftHost {
             if (keys == null || ended || limitSec <= 0) return;
             long elapsed = now - startedAt;
             if (!overtime && elapsed >= limitSec * 1000L) {
+                resolveClaimsUpTo(startedAt + limitSec * 1000L); // claims made in time still count
+                if (ended) return;
                 String w = winnerOrDash();
                 if (!w.equals("-") || overtimeSec <= 0) {
                     end(w);
@@ -617,7 +734,8 @@ public final class OpenDraftHost {
                     broadcast("OVERTIME");
                 }
             } else if (overtime && elapsed >= (limitSec + overtimeSec) * 1000L) {
-                end(winnerOrDash());
+                resolveClaimsUpTo(startedAt + (limitSec + overtimeSec) * 1000L);
+                if (!ended) end(winnerOrDash());
             }
         } catch (RuntimeException e) {
             log.accept("clock error: " + e);

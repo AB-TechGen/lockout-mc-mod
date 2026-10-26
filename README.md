@@ -25,6 +25,11 @@ under the MIT license.
   forwarding.
 - **Time limit and overtime**, a lookout from the air before the clock starts, and forfeit and draw votes.
 - **Shared advancement messages**, and your progress on each goal when you hover it.
+- **Goal pictures** from Draftout on the board, so you can tell goals apart at a glance.
+- **Fair on laggy connections**: close claims are judged by when they were made, not when they arrived. See
+  [Ping](#ping).
+- **Old match worlds are cleaned up**: keep the newest few and the rest are deleted. See
+  [Old match worlds](#old-match-worlds).
 
 ## Installing
 
@@ -80,6 +85,16 @@ The leader's **Edit Settings** has two tabs. They're saved in `config/opendraft.
 | World | Structures and biomes a random seed must have near spawn | none |
 | World | How near (blocks from spawn) | 300 |
 
+### Old match worlds
+
+Every match is played in a new world, so the lobby has an **Old worlds** button (under the settings, or above
+**Back** before you join). It sets how many OpenDraft match worlds to keep: 1, 2, 3, 5 (the default), 10, 20, 50 or
+all. When you get back to the title screen, the oldest match worlds past that number are deleted. Only folders that
+OpenDraft itself made (named like `OpenDraft 2026-10-26 14_30`) are ever touched, never your other worlds, and a world
+that's open is skipped. Each player sets their own, since it's about their own saves folder. It's saved as
+`keepWorlds` in `config/opendraft.properties`, and `/opendraft settings keepworlds <n>` sets it too (0 keeps them
+all). To keep a match world for good, rename its folder or copy it somewhere else.
+
 On the steppers, shift-click changes the time limit, lookout and turn length by 1 instead of 5. When time runs out
 the leader wins. On a tie for the lead, overtime starts and whoever pulls ahead first wins. If overtime also runs
 out, or every goal is claimed while it's still tied, it's a draw.
@@ -111,9 +126,10 @@ Open the full-screen board during a match:
 
 ### Fair play
 
-Match worlds are created with commands off. During a match, **Open to LAN**, **Allow Commands**, the game mode
-buttons and **Edit Game Rules** are greyed out, in the pause menu and in World Options. If your world gets opened to
-other players or commands get turned on some other way, OpenDraft turns them straight back off.
+Match worlds are created with commands off, on Normal difficulty. During a match, **Open to LAN**, **Allow Commands**,
+the game mode buttons and **Edit Game Rules** are greyed out, in the pause menu and in World Options. If your world
+gets opened to other players or commands get turned on some other way, OpenDraft turns them straight back off. You can
+still switch between Easy, Normal and Hard, but picking Peaceful puts the world on Easy instead.
 
 ### Lookout
 
@@ -138,13 +154,16 @@ your own world. The lobby has its own chat.
 
 ### The board
 
-A small icon grid sits in the top-right corner (it moves down while you have status effects, so it doesn't cover
+A small grid of goal pictures sits in the top-right corner (it moves down while you have status effects, so it doesn't cover
 them). Your claims are always cyan on your screen. Everyone else gets red, yellow, green and so on in the order they
 joined, and keeps that colour for the whole game on every other player's screen too. Unclaimed goals are grey.
-Goals with a number show it on the icon. The scores and the clock sit under the grid: time left when there's a
+The pictures show the goal's number where it has one. The goals with colour variants (wool, concrete, glazed
+terracotta, harnesses, cushions, leather armour and sheep) show the item in that colour instead, with the number in
+the corner. The scores and the clock sit under the grid: time left when there's a
 limit, time played otherwise.
 
-Press **B** (rebind it under Controls, in the OpenDraft category) for the full-screen board. Hover a goal to see its
+Press **B** (rebind it under Controls, in the OpenDraft category) for the big board, a panel in the middle of the
+screen with Forfeit, Offer Draw and Close Board under it. Hover a goal to see its
 name, who claimed it and, for goals that need several things, your progress (for example "Your progress: 3/5").
 The game keeps running while it's open.
 
@@ -235,14 +254,29 @@ A few Draftout rules need hooks that vanilla doesn't expose. These are close but
 - **Teleport through Nether Portal using Ender Pearl** counts a dimension change that lands you where your pearl went.
 - **Feed Golden Dandelion to any Baby Mob** counts using a golden dandelion on a mob.
 
+## Ping
+
+The synchronizer sends every player a `PING` every 2 seconds and times the `PONG` that comes back, so it knows how
+long each player's messages take to reach it (half the round trip, smoothed). When a claim arrives, it works out when
+it was probably made: the time it arrived minus that player's lag. If someone with more lag could still have a claim
+on the way that was made earlier, the claim waits for exactly that long (the difference in lag, at most 300 ms)
+before it counts. Then the goal goes to whoever probably finished first, and everyone sees a line like "Bob got there
+63 ms before Alice once ping is taken into account" when the order changed. With everyone on similar connections a
+claim counts straight away. Claims that were made before the time limit ran out still count at the end, even if they
+were still waiting.
+
+Lag is measured by the mod, so a modified copy could pretend to have more lag than it does. The 300 ms cap limits
+what that could gain.
+
 ## Limits
 
-- Ties go to whichever claim reaches the synchronizer first, so being closer to it is a slight edge.
+- Lag is made up for up to 300 ms each way (see [Ping](#ping)); past that, being closer to the synchronizer is
+  still a slight edge.
 - State isn't saved. If the synchronizer closes, the game ends; rejoining while it runs replays the current board.
 
 ## Credits
 
-- Goals and goal rules: [Draftout](https://draftoutmc.com) and the
+- Goals, goal rules and goal pictures: [Draftout](https://draftoutmc.com) and the
   [Draftout wiki](https://github.com/draftout/draftout-wiki).
 - Lobby and title screen panorama: "Sinkhole" from [Main Menu Panoramas](https://modrinth.com/resourcepack/noice-panoramas)
   by sumone_lol, under [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/) (resized to 1024x1024). It's

@@ -12,6 +12,7 @@ import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.Difficulty;
 
 import java.lang.reflect.Method;
 import java.util.List;
@@ -21,7 +22,8 @@ import java.util.Set;
  * Keeps a match fair. While you're playing one, the buttons that open your world to LAN, allow
  * commands, change game modes or edit game rules are greyed out, wherever they are (the pause menu,
  * World Options, LAN Options). If the world gets opened or commands get turned on some other way,
- * the server side turns them straight back off.
+ * the server side turns them straight back off. The difficulty can still be Easy, Normal or Hard,
+ * but Peaceful (no hostile mobs, no hunger) becomes Easy.
  */
 public final class MatchLock {
     /** The translation keys of the locked buttons' labels. */
@@ -92,6 +94,8 @@ public final class MatchLock {
      */
     static void enforce(MinecraftServer server) {
         if (++tick % 10 != 0) return;
+        // Backup for DifficultyMixin, in case the world got to Peaceful some way it didn't see.
+        if (server.overworld().getDifficulty() == Difficulty.PEACEFUL) call(server, "setDifficulty", Difficulty.EASY, true);
         if (Boolean.TRUE.equals(call(server, "isPublished")) && call(server, "unpublishServer") != FAILED) {
             OpenDraftClient.chat(Component.literal("OpenDraft: your world can't be opened to other players during a match.")
                     .withStyle(ChatFormatting.RED));
@@ -106,6 +110,19 @@ public final class MatchLock {
             for (ServerPlayer p : server.getPlayerList().getPlayers()) server.getPlayerList().sendPlayerPermissionLevel(p);
         }
         OpenDraftClient.chat(Component.literal("OpenDraft: commands stay off during a match.").withStyle(ChatFormatting.RED));
+    }
+
+    /**
+     * Called by DifficultyMixin whenever this game's world changes difficulty: Peaceful becomes Easy
+     * during a match. Any other difficulty, and anything outside a match, goes through unchanged.
+     */
+    public static Difficulty replacePeaceful(MinecraftServer server, Difficulty wanted) {
+        if (wanted != Difficulty.PEACEFUL || server != Minecraft.getInstance().getSingleplayerServer()) return wanted;
+        ServerLevel overworld = server.overworld();
+        if (overworld == null || !on(Session.current(), overworld.getSeed())) return wanted;
+        OpenDraftClient.chat(Component.literal("OpenDraft: Peaceful isn't allowed during a match, so it's Easy instead.")
+                .withStyle(ChatFormatting.RED));
+        return Difficulty.EASY;
     }
 
     /** Calls a public method by name, returning its result (null for void) or FAILED when it isn't there or throws. */

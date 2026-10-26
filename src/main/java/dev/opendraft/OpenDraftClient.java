@@ -148,6 +148,8 @@ public final class OpenDraftClient implements ClientModInitializer {
                         .executes(ctx -> setting(ctx.getSource(), () -> Settings.lookout = IntegerArgumentType.getInteger(ctx, "seconds")))))
                 .then(literal("turn").then(argument("seconds", IntegerArgumentType.integer(5, 120))
                         .executes(ctx -> setting(ctx.getSource(), () -> Settings.turnSeconds = IntegerArgumentType.getInteger(ctx, "seconds")))))
+                .then(literal("keepworlds").then(argument("worlds", IntegerArgumentType.integer(0, 1000))
+                        .executes(ctx -> setting(ctx.getSource(), () -> Settings.keepWorlds = IntegerArgumentType.getInteger(ctx, "worlds")))))
                 .then(literal("mode")
                         .then(literal("random").executes(ctx -> setting(ctx.getSource(), () -> Settings.mode = "random")))
                         .then(literal("draft").executes(ctx -> setting(ctx.getSource(), () -> Settings.mode = "draft"))));
@@ -348,8 +350,8 @@ public final class OpenDraftClient implements ClientModInitializer {
         src.sendFeedback(Component.literal("OpenDraft settings").withStyle(ChatFormatting.GOLD));
         for (String line : Settings.describe()) src.sendFeedback(Component.literal("  " + line));
         src.sendFeedback(Component.literal("Change them in the lobby (Edit Settings), or with /opendraft settings followed by "
-                + "size <3-25>, time <minutes>, overtime <minutes>, lookout <seconds>, turn <seconds> or mode random|draft. "
-                + "Time 0 means no limit.").withStyle(ChatFormatting.GRAY));
+                + "size <3-25>, time <minutes>, overtime <minutes>, lookout <seconds>, turn <seconds>, mode random|draft "
+                + "or keepworlds <n> (old match worlds to keep, 0 keeps them all). Time 0 means no limit.").withStyle(ChatFormatting.GRAY));
         return 1;
     }
 
@@ -402,7 +404,7 @@ public final class OpenDraftClient implements ClientModInitializer {
     /** Lists block, item and entity ids containing a word, to find what new content is called. */
     private static int ids(FabricClientCommandSource src, String word) {
         String w = word.toLowerCase(java.util.Locale.ROOT);
-        java.util.List<String> found = new java.util.ArrayList<>();
+        List<String> found = new java.util.ArrayList<>();
         net.minecraft.core.registries.BuiltInRegistries.BLOCK.keySet().forEach(k -> { if (k.getPath().contains(w)) found.add("block " + k); });
         net.minecraft.core.registries.BuiltInRegistries.ITEM.keySet().forEach(k -> { if (k.getPath().contains(w)) found.add("item " + k); });
         net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.keySet().forEach(k -> { if (k.getPath().contains(w)) found.add("entity " + k); });

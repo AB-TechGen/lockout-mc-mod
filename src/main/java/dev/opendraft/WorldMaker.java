@@ -11,6 +11,7 @@ import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.client.gui.screens.worldselection.CreateWorldScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.world.Difficulty;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -76,6 +77,7 @@ public final class WorldMaker {
     static void afterInit(Screen screen) {
         if (screen instanceof TitleScreen) {
             addTitleButton(screen);
+            WorldCleaner.run(); // after a match: its world is closed now, so the oldest ones past the limit can go
             if (pendingSeed != null) {
                 openCreateSoon = true;
             } else if (returnToLobby && Session.current() != null) {
@@ -173,6 +175,7 @@ public final class WorldMaker {
         call(ui, "setName", pendingName);
         call(ui, "setSeed", Long.toString(pendingSeed));
         call(ui, "setAllowCommands", false);
+        call(ui, "setDifficulty", Difficulty.NORMAL); // everyone plays the same difficulty, and never Peaceful
         pressOn = screen;
         pressIn = 3; // give the screen a moment to settle
     }

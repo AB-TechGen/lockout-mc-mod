@@ -10,6 +10,7 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.client.input.KeyEvent;
@@ -34,6 +35,8 @@ public final class LobbyScreen extends Screen {
     private EditBox chatBox;
     private Button showButton, copyButton, editButton, startButton, joinMatchButton, leaveButton;
     private Button backButton;
+    /** How many old match worlds to keep. Everyone has one, since it's about their own saves folder. */
+    private Button keepButton;
     /** The host's invite code is hidden until they press Show, so it's safe on stream. */
     private static boolean showCode;
 
@@ -87,7 +90,19 @@ public final class LobbyScreen extends Screen {
                 }).bounds(width - 212, height - 28, 100, 20).build());
         backButton = addRenderableWidget(Button.builder(Component.literal("Back"), b -> back())
                 .bounds(cx - 50, height - 28, 100, 20).build());
+        keepButton = addRenderableWidget(Button.builder(keepLabel(), b -> {
+                    Settings.keepWorlds = Settings.nextKeepWorlds();
+                    Settings.save();
+                    b.setMessage(keepLabel());
+                }).bounds(0, 0, PANEL_W, 20).build());
+        keepButton.setTooltip(Tooltip.create(Component.literal("Every match makes a new world. When there are more "
+                + "OpenDraft match worlds than this, the oldest are deleted when you get back to the title screen. "
+                + "Your other worlds are never touched.")));
         updateWidgets();
+    }
+
+    private static Component keepLabel() {
+        return Component.literal("Old worlds: " + (Settings.keepWorlds <= 0 ? "keep all" : "keep " + Settings.keepWorlds));
     }
 
     private static void back() {
@@ -113,6 +128,10 @@ public final class LobbyScreen extends Screen {
         startButton.active = in && s.welcomed;
         startButton.setMessage(Component.literal(SeedSearch.running() ? "Stop Search" : "Start"));
         joinMatchButton.visible = in && matchOn && Minecraft.getInstance().level == null && !startButton.visible;
+        // Under the settings panel in a lobby; above Back otherwise.
+        keepButton.setWidth(in ? PANEL_W : 200);
+        keepButton.setX(in ? width - 8 - PANEL_W : width / 2 - 100);
+        keepButton.setY(in ? 132 : height - 52);
     }
 
     @Override

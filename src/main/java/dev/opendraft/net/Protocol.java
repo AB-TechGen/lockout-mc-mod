@@ -17,6 +17,7 @@ package dev.opendraft.net;
  * client -> host   PICK &lt;draftId&gt; &lt;poolIndex&gt;
  * client -> host   CLAIM &lt;boardId&gt; &lt;index&gt;
  * client -> host   ADV &lt;task|goal|challenge&gt; &lt;title...&gt;
+ * client -> host   PONG &lt;number&gt;               (the answer to PING, with the same number)
  * host -> client   WELCOME &lt;assignedName&gt;
  * host -> client   REJECT &lt;reason...&gt;
  * host -> client   PLAYERS &lt;name&gt;:&lt;colour&gt;...  (join order; the first is the leader. Colours are 0, 1, 2... and stay put)
@@ -36,10 +37,11 @@ package dev.opendraft.net;
  * host -> client   END &lt;winnerName | -&gt;          ("-" is a draw)
  * host -> client   ADV &lt;name&gt; &lt;frame&gt; &lt;title...&gt;
  * host -> client   INFO &lt;text...&gt;
+ * host -> client   PING &lt;number&gt;               (every 2 seconds; the reply's round trip is the player's lag)
  * </pre>
  */
 public final class Protocol {
-    public static final int VERSION = 6;
+    public static final int VERSION = 7;
     public static final int DEFAULT_PORT = 25570;
     public static final int MIN_BOARD = 3;
     public static final int MAX_BOARD = 25;

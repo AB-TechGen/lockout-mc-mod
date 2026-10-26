@@ -220,6 +220,7 @@ public final class Session {
         String[] p = line.split(" ", 2);
         String rest = p.length > 1 ? p[1] : "";
         switch (p[0]) {
+            case "PING" -> send("PONG " + rest); // the synchronizer times this to judge close claims fairly
             case "WELCOME" -> {
                 me = rest;
                 welcomed = true;

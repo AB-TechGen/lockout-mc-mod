@@ -262,12 +262,15 @@ public final class BoardHud {
         return s.winner.equals("-") ? "Draw" : s.winner.equals(s.me) ? "You win!" : s.winner + " wins!";
     }
 
+    /** The goal's Draftout picture when it has one, otherwise its item, 16x16 at x, y. */
     static void drawIcon(GuiGraphicsExtractor g, Goal goal, int x, int y) {
+        if (GoalIcons.draw(g, goal, x, y, 16)) return;
         g.fakeItem(ICON_ITEMS.computeIfAbsent(goal.key, k -> iconItem(goal)), x, y);
     }
 
     /** The goal's count in the icon's corner, like a stack size ("Obtain 64 Arrows" shows 64). */
     static void drawBadge(GuiGraphicsExtractor g, Font font, Goal goal, int x, int y) {
+        if (GoalIcons.has(goal)) return; // the picture already has its number drawn on it
         int n = goal.integer("count", 0);
         if (n <= 1 || !goal.name.contains(String.valueOf(n))) return;
         String t = String.valueOf(n);

@@ -17,3 +17,6 @@ The code in this repository is under the MIT license (see `LICENSE`). These part
 
 The goal list and rules in `src/main/resources/opendraft/goals.json` come from [Draftout](https://draftoutmc.com) and
 the [Draftout wiki](https://github.com/draftout/draftout-wiki).
+
+The goal pictures in `src/main/resources/assets/opendraft/textures/goal/` are Draftout's goal icons from
+draftoutmc.com, resized from 256x256 to 128x128 and named by goal id.
