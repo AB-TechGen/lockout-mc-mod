@@ -57,6 +57,26 @@ Everyone in a game needs the **same OpenDraft version**. A lobby turns away othe
 update. To build the jar yourself instead, see
 [Building from source](#building-from-source).
 
+### Updates
+
+From 0.16.0, OpenDraft keeps itself up to date:
+
+1. When the game starts, it checks for a newer release on GitHub.
+2. If there is one, the **OpenDraft** button opens an update screen instead of the lobby. Press **Update** to
+   download it.
+3. Once it's downloaded, press **Quit Game** and start the game again. The new version is swapped in when the game
+   closes.
+
+Until you update, the button keeps showing the update screen, since a lobby only takes players on the same
+version anyway. If the check can't be made (no internet, or GitHub can't be reached), the lobby opens as usual.
+
+- **Signed releases:** every update is signed, and OpenDraft won't install a jar that isn't, even one uploaded to
+  this repo's releases page.
+- **If the swap fails:** if a launcher stops it, the update screen tells you to close the game, delete the old jar
+  from your mods folder and move the new one in from `config/opendraft-update`. It has buttons that open both
+  folders.
+- **Older versions:** 0.15.2 and earlier don't have the updater, so install 0.16.0 by hand once.
+
 ## Playing
 
 1. On the title screen, press **OpenDraft** (under Multiplayer). This opens the lobby screen.
@@ -445,6 +465,35 @@ The jar is written to `build/libs/`; install it the same way as in [Installing](
 workflow in `.github/workflows/build.yml` runs this on every push and attaches the jar to the run (under Artifacts).
 If Gradle can't resolve the Loom or loader versions in `gradle.properties`, copy the current values for 26.3 from
 <https://fabricmc.net/develop/>.
+
+## Releasing a new version
+
+Only for whoever holds the release key.
+
+1. Raise `mod_version` in `gradle.properties`.
+2. Run:
+   ```
+   ./gradlew releaseFiles
+   ```
+   This builds the jar and signs it. Both files to upload end up in `build/release/<version>/`:
+   - `opendraft-<version>.jar`
+   - `opendraft-update.properties`
+3. On GitHub, create a release, upload **both** files, and publish it.
+   - **Not a pre-release:** don't mark it as a pre-release unless it shouldn't reach players yet. Pre-releases and
+     drafts are never offered as updates.
+   - **Missing update file:** a release without `opendraft-update.properties` isn't offered either. Players keep
+     the version they have.
+4. **Taking a bad release back:** delete it. "Latest" then points at the one before. Players who already updated
+   stay on the bad one until a newer release comes out.
+
+**The release key** is in `~/.opendraft/release-key.properties`, outside the repo.
+
+- **Back it up somewhere safe**, like a password manager or a USB stick.
+- **Never commit it or share it.** Anyone with it can sign an update.
+- **If it's lost,** no update can be signed again. A new key (`./gradlew generateReleaseKey`, with the new public
+  key put in `Release.java`) only works from the next version on, and everyone would have to install that one by
+  hand.
+- **On another computer,** copy the key file to the same place, or pass `-Popendraft.releaseKey=<path to it>`.
 
 ## How goals are detected
 

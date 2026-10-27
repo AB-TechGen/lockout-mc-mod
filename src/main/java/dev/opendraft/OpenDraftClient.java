@@ -76,6 +76,7 @@ public final class OpenDraftClient implements ClientModInitializer {
     public void onInitializeClient() {
         Goals.load();
         Settings.load();
+        Updater.start();
         ServerHooks.register();
         SharedRandom.register();
         HudElementRegistry.addFirst(Identifier.fromNamespaceAndPath("opendraft", "waiting"), BoardHud::waitingCover);

@@ -57,3 +57,71 @@ jar {
     // Credits for the panorama and the Draftout goals, which aren't under the MIT license.
     from('NOTICE.md')
 }
+
+// Releases are signed: the mod only installs an update whose opendraft-update.properties checks out against the public
+// key in Release.java. The private key stays outside the repo, by default in ~/.opendraft. Back it up: without it no
+// update can be signed, and every player would have to install the next version by hand.
+def releaseKeyFile = file(providers.gradleProperty('opendraft.releaseKey')
+        .orElse("${System.getProperty('user.home')}/.opendraft/release-key.properties").get())
+// The text that's signed. Release.signed() in the mod builds the same.
+def signedText = { String version, String jarName, String sha -> "opendraft-update\n$version\n$jarName\n$sha\n" }
+
+tasks.register('generateReleaseKey') {
+    group = 'opendraft'
+    description = 'Makes the release signing key (once, ever).'
+    doLast {
+        if (releaseKeyFile.exists()) {
+            throw new GradleException("There's already a release key at $releaseKeyFile, and it's never replaced.")
+        }
+        def pair = java.security.KeyPairGenerator.getInstance('Ed25519').generateKeyPair()
+        def enc = Base64.encoder
+        releaseKeyFile.parentFile.mkdirs()
+        releaseKeyFile.text = "# OpenDraft release signing key. Keep it private and backed up, and never commit it.\n" +
+                "private=${enc.encodeToString(pair.private.encoded)}\n" +
+                "public=${enc.encodeToString(pair.public.encoded)}\n"
+        println "Release key written to $releaseKeyFile"
+        println "Public key, for Release.PUBLIC_KEY: ${enc.encodeToString(pair.public.encoded)}"
+    }
+}
+
+tasks.register('releaseFiles') {
+    group = 'opendraft'
+    description = 'Builds the jar and its signed opendraft-update.properties, the two files to upload to a GitHub release.'
+    dependsOn tasks.named('build')
+    def jarFile = tasks.named('jar').flatMap { it.archiveFile }
+    def outDir = layout.buildDirectory.dir("release/${project.version}")
+    def version = project.version.toString()
+    def source = file('src/main/java/dev/opendraft/update/Release.java')
+    doLast {
+        if (!releaseKeyFile.exists()) {
+            throw new GradleException("No release key at $releaseKeyFile. Copy your backup there, or pass -Popendraft.releaseKey=<path to it>.")
+        }
+        def key = new Properties()
+        releaseKeyFile.withInputStream { key.load(it) }
+        def dec = Base64.decoder
+        def keys = java.security.KeyFactory.getInstance('Ed25519')
+        String pub = key.getProperty('public')
+        if (!source.text.contains("\"$pub\"")) {
+            throw new GradleException("This key's public half isn't the one in Release.java, so the mod would refuse the update.")
+        }
+        def jar = jarFile.get().asFile
+        String sha = java.security.MessageDigest.getInstance('SHA-256').digest(jar.bytes).encodeHex().toString()
+        byte[] text = signedText(version, jar.name, sha).getBytes('UTF-8')
+        def signer = java.security.Signature.getInstance('Ed25519')
+        signer.initSign(keys.generatePrivate(new java.security.spec.PKCS8EncodedKeySpec(dec.decode(key.getProperty('private')))))
+        signer.update(text)
+        byte[] signature = signer.sign()
+        // Checked the way the mod will check it.
+        def checker = java.security.Signature.getInstance('Ed25519')
+        checker.initVerify(keys.generatePublic(new java.security.spec.X509EncodedKeySpec(dec.decode(pub))))
+        checker.update(text)
+        if (!checker.verify(signature)) throw new GradleException("The signature didn't check out.")
+
+        def dir = outDir.get().asFile
+        dir.mkdirs()
+        java.nio.file.Files.copy(jar.toPath(), new File(dir, jar.name).toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+        new File(dir, 'opendraft-update.properties').text =
+                "version=$version\njar=${jar.name}\nsha256=$sha\nsignature=${Base64.encoder.encodeToString(signature)}\n"
+        println "Upload both files in $dir to the GitHub release (not marked as a pre-release)."
+    }
+}

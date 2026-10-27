@@ -170,11 +170,10 @@ public final class WorldMaker {
      * stays centred and clear of the copyright line.
      */
     private static void addTitleButton(Screen screen) {
-        Minecraft mc = Minecraft.getInstance();
         List<AbstractWidget> widgets = Screens.getWidgets(screen);
         AbstractWidget singleplayer = labelled(widgets, "menu.singleplayer");
         AbstractWidget multiplayer = labelled(widgets, "menu.multiplayer");
-        Button.OnPress open = b -> mc.gui.setScreen(new LobbyScreen());
+        Button.OnPress open = b -> Updater.openLobby(screen);
         realmsShift = 0;
         if (multiplayer == null) {
             widgets.add(Button.builder(Component.literal("OpenDraft"), open).bounds(4, 4, 98, 20).build());

@@ -1,5 +1,8 @@
 package dev.opendraft.net;
 
+import dev.opendraft.update.Release;
+
+import java.io.IOException;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 
@@ -48,6 +51,19 @@ public final class SyncServerMain {
             }
         });
         Runtime.getRuntime().addShutdownHook(new Thread(host::close));
+        // No menu to update from here: just say so. Players on the new version can't join until this one is updated.
+        Thread check = new Thread(() -> {
+            try {
+                Release r = Release.latest();
+                if (r.newerThan(modVersion())) {
+                    System.out.println("OpenDraft " + r.version() + " is out. Players on it can't join this " + modVersion()
+                            + " lobby; get it from " + Release.PAGE);
+                }
+            } catch (IOException | RuntimeException ignored) {
+            }
+        }, "OpenDraft update check");
+        check.setDaemon(true);
+        check.start();
         Thread.currentThread().join();
     }
 

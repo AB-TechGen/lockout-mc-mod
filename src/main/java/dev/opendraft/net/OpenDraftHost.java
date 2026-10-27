@@ -763,7 +763,7 @@ public final class OpenDraftHost {
     }
 
     /** Compares versions like 0.7.0 and 0.8.0 number by number; parts that aren't numbers count as 0. */
-    static int compareVersions(String a, String b) {
+    public static int compareVersions(String a, String b) {
         String[] x = a.split("\\."), y = b.split("\\.");
         for (int i = 0; i < Math.max(x.length, y.length); i++) {
             int c = Integer.compare(number(x, i), number(y, i));
