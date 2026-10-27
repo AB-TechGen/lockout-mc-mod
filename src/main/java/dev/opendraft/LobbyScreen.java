@@ -140,7 +140,7 @@ public final class LobbyScreen extends Screen {
         editButton.visible = in && s.isLeader();
         boolean matchOn = in && s.matchOn();
         startButton.visible = in && s.isLeader() && !matchOn;
-        startButton.active = in && s.welcomed;
+        startButton.active = in && s.welcomed && !s.reconnecting;
         startButton.setMessage(Component.literal(SeedSearch.running() ? "Stop Search" : "Start"));
         joinMatchButton.visible = in && matchOn && Minecraft.getInstance().level == null && !startButton.visible;
         // Under the settings panel in a lobby; above Back otherwise.
@@ -195,7 +195,7 @@ public final class LobbyScreen extends Screen {
     private static void joinMatch() {
         Session s = Session.current();
         Long seed = s == null ? null : s.matchSeed;
-        if (seed != null) WorldMaker.createMatchWorld(s.matchId, seed);
+        if (seed != null) WorldMaker.createMatchWorld(seed, s.matchKey);
     }
 
     private void copyInvite() {
@@ -243,7 +243,7 @@ public final class LobbyScreen extends Screen {
         List<String> players = s.players;
         int rows = Math.max(players.size(), 1);
         OpenDraftHost.Reach reach = s.host != null ? s.host.reach() : null;
-        // Only when the relay couldn't be reached: a second line saying friends elsewhere can't join.
+        // Only when the relay couldn't be reached (or is being reconnected to): a second line saying friends elsewhere can't join.
         boolean nearbyOnly = reach != null && reach.code() != null && !reach.anywhere();
         int top = nearbyOnly ? 42 : 32;
         g.fill(x0, y0, x0 + PANEL_W, y0 + top + 2 + rows * 14, PANEL);
@@ -252,20 +252,27 @@ public final class LobbyScreen extends Screen {
         if (s.host != null) {
             where = reach == null ? "Getting your invite code..." : reach.code() == null ? "No invite code (no network found)"
                     : "Code: " + (showCode ? reach.code() : reach.code().replaceAll("[^-]", "X"));
-            if (nearbyOnly) g.text(font, Component.literal("Only people on your network can join"), x0 + 5, y0 + 28, 0xFFFFB74D, true);
+            if (nearbyOnly) {
+                String why = reach.reconnecting() ? "Reconnecting to the relay..." : "Only people on your network can join";
+                g.text(font, Component.literal(why), x0 + 5, y0 + 28, 0xFFFFB74D, true);
+            }
+        } else if (s.reconnecting) {
+            where = "Reconnecting...";
         } else if (!s.welcomed) {
             where = "Connecting...";
         } else {
             where = "Connected to " + (Relay.normalize(s.address) != null || Invite.decode(s.address) != null ? "the lobby" : s.address);
         }
-        g.text(font, Component.literal(where), x0 + 5, y0 + 18, s.host != null && reach != null ? 0xFFFFFFFF : 0xFFAAAAAA, true);
+        g.text(font, Component.literal(where), x0 + 5, y0 + 18, s.reconnecting ? 0xFFFFB74D
+                : s.host != null && reach != null ? 0xFFFFFFFF : 0xFFAAAAAA, true);
         int py = y0 + top;
         String leader = s.leader();
         for (String name : players) {
             int color = OpenDraftClient.colorOf(name);
             g.fill(x0 + 5, py + 1, x0 + 12, py + 8, color);
-            Component label = Component.literal(name + (name.equals(s.me) ? " (you)" : ""));
-            g.text(font, label, x0 + 16, py, 0xFFFFFFFF, true);
+            boolean away = s.away.contains(name);
+            Component label = Component.literal(name + (name.equals(s.me) ? " (you)" : "") + (away ? " (away)" : ""));
+            g.text(font, label, x0 + 16, py, away ? 0xFF888888 : 0xFFFFFFFF, true);
             if (name.equals(leader)) g.text(font, Component.literal("★ leader"), x0 + PANEL_W - 5 - font.width("★ leader"), py, GOLD, true);
             py += 14;
         }

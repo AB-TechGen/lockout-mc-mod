@@ -51,8 +51,18 @@ public final class OpenDraftHost {
     /** Each player's smoothed round trip in ms, from PING and PONG. Written on the players' own threads. */
     private final Map<String, Double> roundTrip = new ConcurrentHashMap<>();
 
+    /** More dropped players than this and the one gone longest loses their place, so dead places can't pile up. */
+    private static final int MAX_AWAY = 8;
+
     // Everything below is guarded by this.
     private final Map<String, LineChannel> players = new LinkedHashMap<>();
+    /** Each player's secret from HELLO. Only the same name with the same secret gets a dropped player's place back. */
+    private final Map<String, String> tokens = new HashMap<>();
+    /**
+     * Players whose connection dropped, and when. They keep their place (name, colour, claims, draft turn) for
+     * Protocol.HOLD_SECONDS, staying in {@link #players} with their closed channel, which ignores sends.
+     */
+    private final Map<String, Long> away = new LinkedHashMap<>();
     /** Each player's colour, kept while they own anything on the board so it never changes mid-game. */
     private final Map<String, Integer> colors = new HashMap<>();
     /** Where each player is, as they last said (overworld, nether, end or lobby), for everyone's tab list. */
@@ -62,9 +72,13 @@ public final class OpenDraftHost {
     // The lobby: the leader's settings (shown to everyone) and the match being loaded.
     private String settings = "";
     private int matchId;
+    /** Random for each match, so a player rejoining it reopens that match's world and not an older one on the same seed. */
+    private String matchKey = "";
     private boolean loading; // between MATCH and GO, while everyone creates their world
     /** GO has gone out and the leader hasn't dealt yet. A match gets one board: no new ones mid-seed. */
     private boolean boardDue;
+    /** Who GO last went to as the leader, so a new leader gets it if the old one drops before dealing. */
+    private String goSentTo;
     /** When the draw now on offer was first offered; it's declined after Protocol.DRAW_OFFER_SECONDS. */
     private long drawOfferedAt;
     private long loadDeadline;
@@ -140,8 +154,12 @@ public final class OpenDraftHost {
     /**
      * Who can join and with what code, once {@link #shareOnline} has worked it out.
      * @param anywhere true when players on other networks should be able to connect
+     * @param reconnecting the relay connection dropped and the game is getting the same code back
      */
-    public record Reach(String code, boolean anywhere, String note) {
+    public record Reach(String code, boolean anywhere, String note, boolean reconnecting) {
+        public Reach(String code, boolean anywhere, String note) {
+            this(code, anywhere, note, false);
+        }
     }
 
     /** Null until {@link #shareOnline} finishes. */
@@ -157,10 +175,26 @@ public final class OpenDraftHost {
         Thread t = new Thread(() -> {
             if (Relay.available()) {
                 try {
-                    Relay.Bridge b = Relay.host(port, log, () -> {
-                        Reach was = reach;
-                        if (!closed && was != null) reach = new Reach(was.code(), false, "Lost the connection to the relay, so"
-                                + " players can't join with this code anymore. Leave the lobby and create it again.");
+                    Relay.Bridge b = Relay.host(port, log, new Relay.Watcher() {
+                        @Override
+                        public void reconnecting() {
+                            Reach was = reach;
+                            if (!closed && was != null) reach = new Reach(was.code(), false, "Lost the connection to the relay."
+                                    + " Getting the same code back; players reconnect by themselves once it's back.", true);
+                        }
+
+                        @Override
+                        public void back() {
+                            Reach was = reach;
+                            if (!closed && was != null) reach = new Reach(was.code(), true, "Friends anywhere can join with this code.");
+                        }
+
+                        @Override
+                        public void lost() {
+                            Reach was = reach;
+                            if (!closed && was != null) reach = new Reach(was.code(), false, "Lost the connection to the relay, so"
+                                    + " players can't join with this code anymore. Leave the lobby and create it again.");
+                        }
                     });
                     synchronized (this) {
                         if (closed) {
@@ -216,6 +250,10 @@ public final class OpenDraftHost {
     }
 
     public void close() {
+        synchronized (this) {
+            // Players' games would otherwise take this for a dropped connection and try to reconnect.
+            if (!closed) broadcast("CLOSED");
+        }
         try {
             if (server != null) server.close();
         } catch (IOException ignored) {
@@ -275,7 +313,7 @@ public final class OpenDraftHost {
         try {
             String hello = ch.readLine();
             String[] p = hello == null ? new String[0] : hello.split(" ");
-            if (p.length != 5 || !p[0].equals("HELLO")) {
+            if (p.length < 5 || !p[0].equals("HELLO")) {
                 ch.send("REJECT Not an OpenDraft client.");
                 return;
             }
@@ -293,6 +331,10 @@ public final class OpenDraftHost {
                         + ". Everyone needs the same one.");
                 return;
             }
+            if (p.length != 6 || !Protocol.validToken(p[5])) {
+                ch.send("REJECT Not an OpenDraft client.");
+                return;
+            }
             Long theirSeed;
             try {
                 theirSeed = p[3].equals("-") ? null : Long.valueOf(p[3]); // "-" joins from the title screen
@@ -301,7 +343,7 @@ public final class OpenDraftHost {
                 return;
             }
             socket.setSoTimeout(0);
-            name = join(ch, Protocol.sanitizeName(p[4]), theirSeed);
+            name = join(ch, Protocol.sanitizeName(p[4]), theirSeed, p[5]);
             if (name == null) return;
             for (String line; (line = ch.readLine()) != null; ) {
                 // Taken before waiting for the lock, so time spent behind another player's line isn't counted as lag.
@@ -321,11 +363,11 @@ public final class OpenDraftHost {
             // Disconnected.
         } finally {
             ch.close();
-            if (name != null) leave(name, ch);
+            if (name != null) dropped(name, ch);
         }
     }
 
-    private synchronized String join(LineChannel ch, String wanted, Long theirSeed) {
+    private synchronized String join(LineChannel ch, String wanted, Long theirSeed, String token) {
         if (theirSeed == null) {
             // From the lobby: the seed comes with the next match.
         } else if (seed == null) {
@@ -337,26 +379,45 @@ public final class OpenDraftHost {
             return null;
         }
         String name = wanted;
-        for (int i = 2; players.containsKey(name); i++) {
-            String suffix = String.valueOf(i);
-            name = wanted.substring(0, Math.min(wanted.length(), 16 - suffix.length())) + suffix;
+        if (players.containsKey(wanted) && token.equals(tokens.get(wanted))) {
+            // The same player again (same name and secret): their place back, after a drop or in place of a connection
+            // that died without closing. Re-putting keeps their spot in the join order.
+            LineChannel old = players.put(name, ch);
+            if (old != ch) old.close(); // its thread then finds it replaced and does nothing
+            away.remove(name);
+            log.accept(name + " reconnected from " + ch.remote());
+            ch.send("WELCOME " + name);
+            broadcastExcept(ch, "INFO " + name + " is back.");
+        } else {
+            // Taken names (including the places of dropped players) get a number.
+            for (int i = 2; players.containsKey(name); i++) {
+                String suffix = String.valueOf(i);
+                name = wanted.substring(0, Math.min(wanted.length(), 16 - suffix.length())) + suffix;
+            }
+            players.put(name, ch);
+            tokens.put(name, token);
+            if (!colors.containsKey(name)) {
+                int c = 0;
+                while (colors.containsValue(c)) c++;
+                colors.put(name, c);
+            }
+            log.accept(name + " joined from " + ch.remote());
+            ch.send("WELCOME " + name);
+            broadcastExcept(ch, "INFO " + name + " joined.");
         }
-        players.put(name, ch);
-        if (!colors.containsKey(name)) {
-            int c = 0;
-            while (colors.containsValue(c)) c++;
-            colors.put(name, c);
-        }
-        log.accept(name + " joined from " + ch.remote());
-        ch.send("WELCOME " + name);
         ch.send("PING " + System.nanoTime()); // so their lag is known before their first claim
+        broadcast(awayLine()); // before PLAYERS: games work out the leader from both
         broadcast(playersLine());
-        broadcastExcept(ch, "INFO " + name + " joined.");
         // Catch the newcomer up on whatever is happening.
         if (!settings.isEmpty()) ch.send("SETTINGS " + settings);
         where.forEach((who, place) -> ch.send("WHERE " + who + " " + place));
-        boolean matchOn = loading || draft != null || (keys != null && !ended);
-        if (matchId > 0 && matchOn) ch.send("MATCH " + matchId + " " + seed);
+        boolean matchOn = loading || boardDue || draft != null || (keys != null && !ended);
+        if (matchId > 0 && matchOn) ch.send("MATCH " + matchId + " " + seed + " " + matchKey);
+        if (boardDue) {
+            // Everyone's world loaded but the board isn't dealt: they need GO too, and if they're the leader, it's theirs to deal.
+            ch.send("GO " + matchId);
+            if (name.equals(leader())) goSentTo = name;
+        }
         if (draft != null) {
             ch.send("DRAFTPOOL " + draftId + " " + String.join(" ", draft.pool));
             for (int i = 0; i < draft.pickedBy.length; i++) {
@@ -377,22 +438,98 @@ public final class OpenDraftHost {
         return name;
     }
 
-    private synchronized void leave(String name, LineChannel ch) {
+    /**
+     * A player's connection closed without LEAVE: a network drop or their game closing. Their place is kept for
+     * Protocol.HOLD_SECONDS so they can reconnect; meanwhile they don't hold up loading, a draw or the leader's job.
+     */
+    private synchronized void dropped(String name, LineChannel ch) {
+        if (closed || players.get(name) != ch) return; // replaced by a reconnect, or gone already
+        away.put(name, System.currentTimeMillis());
+        log.accept(name + " lost their connection");
+        broadcast(awayLine());
+        broadcast(playersLine());
+        broadcast("INFO " + name + " lost their connection. Their place is kept for " + Protocol.HOLD_SECONDS / 60 + " minutes.");
+        if (drawVotes.remove(name)) broadcast(drawLine());
+        checkDraw();
+        checkLoaded();
+        goToLeader();
+        while (away.size() > MAX_AWAY) {
+            String oldest = away.keySet().iterator().next();
+            leave(oldest, players.get(oldest), "didn't come back, so they've left");
+        }
+    }
+
+    /** Gone for good: they left on purpose, or didn't reconnect in time. */
+    private synchronized void leave(String name, LineChannel ch, String why) {
         if (players.get(name) != ch) return;
+        boolean wasPlaying = !forfeited.contains(name);
         players.remove(name);
+        away.remove(name);
+        tokens.remove(name);
         roundTrip.remove(name);
         where.remove(name);
-        log.accept(name + " left");
+        log.accept(name + " " + why);
         forgetColors();
+        broadcast(awayLine());
         broadcast(playersLine());
-        broadcast("INFO " + name + " left.");
+        broadcast("INFO " + name + " " + why + ".");
         if (draft != null && name.equals(draft.current())) draft.nextTurn();
         ready.remove(name);
-        if (loading && !players.isEmpty() && ready.containsAll(players.keySet())) go();
-        if (drawVotes.remove(name)) {
-            broadcast(drawLine());
-            checkDraw();
+        checkLoaded();
+        if (drawVotes.remove(name)) broadcast(drawLine());
+        checkDraw();
+        goToLeader();
+        if (wasPlaying) checkLastStanding();
+    }
+
+    /**
+     * During a board, once everyone else has left for good (or forfeited), the one player still in the game wins,
+     * whatever the score. Players who are only away (dropped, and may reconnect) are still in it.
+     */
+    private void checkLastStanding() {
+        if (keys == null || ended) return;
+        List<String> still = new ArrayList<>();
+        for (String p : players.keySet()) if (!forfeited.contains(p)) still.add(p);
+        if (still.size() != 1) return;
+        String winner = still.get(0);
+        log.accept("everyone else left, " + winner + " wins");
+        broadcast("INFO Everyone else has left, so " + winner + " wins.");
+        end(winner);
+    }
+
+    /** Places kept for dropped players run out. */
+    private void expireAway(long now) {
+        for (Map.Entry<String, Long> e : new ArrayList<>(away.entrySet())) {
+            if (now - e.getValue() >= Protocol.HOLD_SECONDS * 1000L) {
+                leave(e.getKey(), players.get(e.getKey()), "didn't reconnect in time, so they've left");
+            }
         }
+    }
+
+    /** Players connected now, in join order: everyone but those whose place is being kept. */
+    private List<String> present() {
+        List<String> out = new ArrayList<>();
+        for (String p : players.keySet()) if (!away.containsKey(p)) out.add(p);
+        return out;
+    }
+
+    /** While a match loads: everyone connected has said their world is ready. */
+    private void checkLoaded() {
+        List<String> here = present();
+        if (loading && !here.isEmpty() && ready.containsAll(here)) go();
+    }
+
+    /** AWAY &lt;name&gt;...: whose connection dropped, in the order they dropped. */
+    private String awayLine() {
+        return away.isEmpty() ? "AWAY" : "AWAY " + String.join(" ", away.keySet());
+    }
+
+    /** GO tells the leader to deal. If the leader changed before they dealt (they dropped), the new one gets it. */
+    private void goToLeader() {
+        String l = leader();
+        if (!boardDue || l == null || l.equals(goSentTo) || away.containsKey(l)) return;
+        goSentTo = l;
+        players.get(l).send("GO " + matchId);
     }
 
     private synchronized void onLine(String name, String line, long arrived) {
@@ -444,6 +581,8 @@ public final class OpenDraftHost {
                 if (p.length != 2 || !mayStart(name)) return;
                 seed = Long.parseLong(p[1]);
                 matchId++;
+                matchKey = Long.toHexString(random.nextLong());
+                goSentTo = null;
                 draft = null;
                 keys = null;
                 pending.clear();
@@ -457,12 +596,19 @@ public final class OpenDraftHost {
                 loading = true;
                 loadDeadline = System.currentTimeMillis() + 180_000;
                 log.accept(name + " started match " + matchId + " on seed " + seed);
-                broadcast("MATCH " + matchId + " " + seed);
+                broadcast("MATCH " + matchId + " " + seed + " " + matchKey);
             }
             case "READY" -> {
                 if (p.length != 2 || !loading || Integer.parseInt(p[1]) != matchId) return;
                 ready.add(name);
-                if (ready.containsAll(players.keySet())) go();
+                checkLoaded();
+            }
+            case "LEAVE" -> {
+                // Leaving on purpose (Leave Lobby), so the place isn't kept. Closing the channel ends this player's
+                // thread, which then finds them gone already.
+                LineChannel ch = players.get(name);
+                leave(name, ch, "left");
+                ch.close();
             }
             case "FORFEIT" -> {
                 if (keys == null || ended || !forfeited.add(name)) return;
@@ -471,7 +617,8 @@ public final class OpenDraftHost {
                 if (drawVotes.remove(name)) broadcast(drawLine());
                 List<String> left = contenders();
                 if (left.size() <= 1) end(left.isEmpty() ? "-" : left.get(0));
-                else checkDraw();
+                else checkLastStanding(); // the others may have left already, claims and all
+                if (!ended) checkDraw();
             }
             case "DRAW" -> {
                 if (keys == null || ended || forfeited.contains(name)) return;
@@ -520,7 +667,14 @@ public final class OpenDraftHost {
 
     private synchronized void pingAll() {
         long now = System.nanoTime();
-        for (LineChannel c : players.values()) c.send("PING " + now);
+        long silentSince = System.currentTimeMillis() - Protocol.SILENT_SECONDS * 1000L;
+        for (Map.Entry<String, LineChannel> e : players.entrySet()) {
+            if (away.containsKey(e.getKey())) continue;
+            LineChannel c = e.getValue();
+            // No PONG for this long: the connection died without closing. Closing it here makes it count as dropped.
+            if (c.lastRead() < silentSince) c.close();
+            else c.send("PING " + now);
+        }
     }
 
     /** PONG &lt;the number from PING&gt;: one round trip, smoothed so a single slow packet doesn't swing it. */
@@ -548,7 +702,7 @@ public final class OpenDraftHost {
         }
         // A claim someone else made before this one can still be on its way, for as long as their lag is longer.
         long window = 0;
-        for (String other : players.keySet()) {
+        for (String other : present()) {
             if (!other.equals(name) && !forfeited.contains(other)) window = Math.max(window, oneWay(other) - mine);
         }
         if (window <= 0 || clock == null) {
@@ -663,14 +817,19 @@ public final class OpenDraftHost {
         colors.keySet().retainAll(keep);
     }
 
-    /** The first player in the lobby (join order) runs it: settings, starting and restarting. */
+    /**
+     * The first player in the lobby (join order) runs it: settings, starting and restarting. While they're away
+     * (dropped), the next one does, until they're back.
+     */
     private String leader() {
+        for (String p : players.keySet()) if (!away.containsKey(p)) return p;
         return players.isEmpty() ? null : players.keySet().iterator().next();
     }
 
     private void go() {
         loading = false;
         boardDue = true;
+        goSentTo = leader();
         log.accept("match " + matchId + ": everyone is in");
         broadcast("GO " + matchId);
     }
@@ -683,10 +842,10 @@ public final class OpenDraftHost {
         return new ArrayList<>(all);
     }
 
-    /** A draw happens when every connected player still in the game has voted for it. */
+    /** A draw happens when every connected player still in the game has voted for it. Away players don't hold it up. */
     private void checkDraw() {
         if (drawVotes.isEmpty() || keys == null || ended) return;
-        for (String p : players.keySet()) {
+        for (String p : present()) {
             if (!forfeited.contains(p) && !drawVotes.contains(p)) return;
         }
         broadcast("INFO Everyone agreed to a draw.");
@@ -745,6 +904,7 @@ public final class OpenDraftHost {
     private synchronized void tick() {
         try {
             long now = System.currentTimeMillis();
+            expireAway(now);
             if (loading && now >= loadDeadline && !players.isEmpty()) {
                 broadcast("INFO Not everyone finished loading; starting anyway.");
                 go();
@@ -792,7 +952,7 @@ public final class OpenDraftHost {
             if (o == null) unclaimed++;
             else if (!forfeited.contains(o)) score.merge(o, 1, Integer::sum);
         }
-        // Players who are connected but have no claims still count as rivals; those who forfeited don't.
+        // Players in the lobby with no claims (even ones whose connection dropped) still count as rivals; those who forfeited don't.
         for (String p : players.keySet()) if (!forfeited.contains(p)) score.putIfAbsent(p, 0);
         List<Integer> sorted = new ArrayList<>(score.values());
         sorted.sort((a, b) -> b - a);

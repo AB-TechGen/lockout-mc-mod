@@ -46,6 +46,10 @@ public final class Relay {
 
     private static final String ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"; // no I, L, O or U
     private static final int CODE_LENGTH = 8;
+    /** The header that proves a reconnecting host is the one the relay gave the code to. */
+    private static final String KEY_HEADER = "X-OpenDraft-Key";
+    /** The WebSocket close code the relay uses when a lobby closes for good, as opposed to its host reconnecting. */
+    private static final int LOBBY_CLOSED = 4000;
     private static final ScheduledExecutorService PINGS = Executors.newSingleThreadScheduledExecutor(r -> {
         Thread t = new Thread(r, "OpenDraft relay pings");
         t.setDaemon(true);
@@ -91,14 +95,14 @@ public final class Relay {
     static Lines join(String code) throws IOException {
         List<String> relays = urls();
         if (relays.isEmpty()) throw new IOException("this copy of OpenDraft has no relay set up, so it can't use lobby codes");
-        if (relays.size() == 1) return WebSocketLines.connect(relays.get(0) + "/join/" + code);
+        if (relays.size() == 1) return WebSocketLines.connect(relays.get(0) + "/join/" + code, Map.of());
         CompletableFuture<Lines> first = new CompletableFuture<>();
         AtomicInteger left = new AtomicInteger(relays.size());
         AtomicReference<IOException> problem = new AtomicReference<>();
         for (String relay : relays) {
             Thread t = new Thread(() -> {
                 try {
-                    WebSocketLines lines = WebSocketLines.connect(relay + "/join/" + code);
+                    WebSocketLines lines = WebSocketLines.connect(relay + "/join/" + code, Map.of());
                     if (!first.complete(lines)) lines.close();
                 } catch (IOException e) {
                     // "No lobby" from the other relays is expected; any other problem is worth reporting.
@@ -119,25 +123,41 @@ public final class Relay {
         }
     }
 
+    /** What the host's game hears about its connection to the relay. Called on the relay's thread. */
+    public interface Watcher {
+        /** The connection dropped, and the game is getting the same code back. */
+        void reconnecting();
+
+        /** It's back, with the same code. */
+        void back();
+
+        /** It's gone for good: nobody can join with the code anymore. */
+        void lost();
+    }
+
     /**
-     * Opens a lobby on the relay for the synchronizer listening on {@code localPort}.
-     * @param onLost runs if the connection to the relay drops before {@link Bridge#close}
+     * Opens a lobby on the relay for the synchronizer listening on {@code localPort}. A relay that knows about
+     * reconnecting (asked for with ?v=2) also hands out a key, which gets the same code back after a drop; an older
+     * relay ignores the question and only gives the code.
      */
-    public static Bridge host(int localPort, Consumer<String> log, Runnable onLost) throws IOException {
+    public static Bridge host(int localPort, Consumer<String> log, Watcher watcher) throws IOException {
         List<String> relays = urls();
         if (relays.isEmpty()) throw new IOException("no relay is set up");
         IOException problem = null;
         for (String address : relays) {
             try {
-                WebSocketLines relay = WebSocketLines.connect(address + "/host");
+                WebSocketLines relay = WebSocketLines.connect(address + "/host?v=2", Map.of());
                 String first = relay.readLine(8_000);
-                String code = first != null && first.startsWith("ROOM ") ? normalize(first.substring(5)) : null;
+                // ROOM <code> [<key>]
+                String[] room = first != null && first.startsWith("ROOM ") ? first.substring(5).trim().split(" ") : new String[0];
+                String code = room.length > 0 ? normalize(room[0]) : null;
                 if (code == null) {
                     relay.close();
                     throw new IOException("the relay didn't hand out a lobby code");
                 }
-                Bridge bridge = new Bridge(relay, localPort, code, log);
-                Thread t = new Thread(() -> bridge.run(onLost), "OpenDraft relay");
+                String key = room.length > 1 && !room[1].isBlank() ? room[1] : null;
+                Bridge bridge = new Bridge(relay, address, localPort, code, key, log, watcher);
+                Thread t = new Thread(bridge::run, "OpenDraft relay");
                 t.setDaemon(true);
                 t.start();
                 return bridge;
@@ -162,18 +182,26 @@ public final class Relay {
      * connection to the synchronizer, so the synchronizer can't tell them from anyone else.
      */
     public static final class Bridge {
-        private final WebSocketLines relay;
+        /** The connection to the relay; replaced when it drops and the code is got back. */
+        private volatile WebSocketLines relay;
+        private final String address;
         private final int localPort;
         private final String code;
+        /** Gets the code back after a drop; null from a relay that doesn't do that. */
+        private final String key;
         private final Consumer<String> log;
+        private final Watcher watcher;
         private final Map<String, LineChannel> players = new ConcurrentHashMap<>();
         private volatile boolean stopped;
 
-        private Bridge(WebSocketLines relay, int localPort, String code, Consumer<String> log) {
+        private Bridge(WebSocketLines relay, String address, int localPort, String code, String key, Consumer<String> log, Watcher watcher) {
             this.relay = relay;
+            this.address = address;
             this.localPort = localPort;
             this.code = code;
+            this.key = key;
             this.log = log;
+            this.watcher = watcher;
         }
 
         /** The lobby code, formatted for showing. */
@@ -182,30 +210,83 @@ public final class Relay {
         }
 
         public void close() {
-            stopped = true;
-            relay.close();
+            WebSocketLines r;
+            synchronized (this) {
+                stopped = true;
+                r = relay;
+            }
+            r.send("BYE"); // the relay forgets the code now instead of keeping it for a reconnect; older relays ignore it
+            r.close();
             for (LineChannel c : players.values()) c.close();
             players.clear();
         }
 
-        private void run(Runnable onLost) {
-            try {
-                for (String line; (line = relay.readLine()) != null; ) handle(line);
-            } catch (IOException ignored) {
-            }
-            for (LineChannel c : players.values()) c.close();
-            players.clear();
-            if (!stopped) {
-                log.accept("lost the connection to the relay");
-                onLost.run();
+        private void run() {
+            while (true) {
+                WebSocketLines r = relay;
+                try {
+                    for (String line; (line = r.readLine()) != null; ) handle(r, line);
+                } catch (IOException ignored) {
+                }
+                // Everyone who came through the relay is cut off with it. The synchronizer keeps their places, and
+                // their games reconnect by themselves once the code is back.
+                for (LineChannel c : players.values()) c.close();
+                players.clear();
+                if (stopped) return;
+                if (key == null || !reconnect()) {
+                    log.accept("lost the connection to the relay");
+                    watcher.lost();
+                    return;
+                }
             }
         }
 
-        private void handle(String message) {
+        /** Gets the same code back with the key, for as long as the relay keeps it after a drop. */
+        private boolean reconnect() {
+            log.accept("lost the connection to the relay, getting the code back");
+            watcher.reconnecting();
+            long giveUp = System.currentTimeMillis() + Protocol.HOLD_SECONDS * 1000L;
+            long wait = 1000;
+            while (!stopped && System.currentTimeMillis() < giveUp) {
+                try {
+                    Thread.sleep(wait);
+                } catch (InterruptedException e) {
+                    return false;
+                }
+                wait = Math.min(wait * 2, 15_000);
+                try {
+                    WebSocketLines r = WebSocketLines.connect(address + "/host/" + code, Map.of(KEY_HEADER, key));
+                    String first = r.readLine(8_000);
+                    if (first == null || !first.startsWith("ROOM ")) {
+                        r.close();
+                        continue;
+                    }
+                    synchronized (this) {
+                        if (stopped) {
+                            r.close();
+                            return false;
+                        }
+                        relay = r;
+                    }
+                    log.accept("back on the relay with code " + format(code));
+                    watcher.back();
+                    return true;
+                } catch (Refused e) {
+                    log.accept("the relay won't give the code back: " + e.getMessage());
+                    return false;
+                } catch (IOException e) {
+                    log.accept("still can't reach the relay: " + e.getMessage());
+                }
+            }
+            return false;
+        }
+
+        /** A message from the relay connection {@code r}. Each player's lines go back over the connection they came on. */
+        private void handle(WebSocketLines r, String message) {
             String[] p = message.split(" ", 3);
             String id = p.length > 1 ? p[1] : "";
             switch (p[0]) {
-                case "OPEN" -> open(id);
+                case "OPEN" -> open(r, id);
                 case "DATA" -> {
                     LineChannel c = players.get(id);
                     if (c != null) c.send(p.length > 2 ? p[2] : "");
@@ -219,48 +300,64 @@ public final class Relay {
             }
         }
 
-        private void open(String id) {
+        private void open(WebSocketLines r, String id) {
             LineChannel c;
             try {
                 Socket s = new Socket();
                 s.connect(new InetSocketAddress(InetAddress.getLoopbackAddress(), localPort), 3_000);
                 c = new LineChannel(s);
             } catch (IOException e) {
-                relay.send("CLOSE " + id);
+                r.send("CLOSE " + id);
                 return;
             }
             players.put(id, c);
             Thread t = new Thread(() -> {
                 try {
-                    for (String line; (line = c.readLine()) != null; ) relay.send("DATA " + id + " " + line);
+                    for (String line; (line = c.readLine()) != null; ) r.send("DATA " + id + " " + line);
                 } catch (IOException ignored) {
                 }
                 c.close();
-                if (players.remove(id) != null) relay.send("CLOSE " + id);
+                if (players.remove(id) != null) r.send("CLOSE " + id);
             }, "OpenDraft relay player");
             t.setDaemon(true);
             t.start();
         }
     }
 
+    /** The relay turned the connection down (no such lobby, full, or a wrong key), so trying again won't help. */
+    static final class Refused extends IOException {
+        Refused(String message) {
+            super(message);
+        }
+    }
+
     /** Lines over a WebSocket: each message is one line. */
     static final class WebSocketLines implements Lines, WebSocket.Listener {
         private static final Object END = new Object();
+        /**
+         * Hearing nothing for this long, not even the relay's answer to our pings, means the connection died
+         * without closing (a network that drops it silently); it's closed then, so it counts as dropped.
+         */
+        private static final long SILENT_MS = 25_000;
 
         private final LinkedBlockingQueue<Object> incoming = new LinkedBlockingQueue<>();
         private final StringBuilder partial = new StringBuilder();
         private volatile WebSocket ws;
         private volatile boolean closed;
+        private volatile long lastHeard = System.currentTimeMillis();
         private CompletableFuture<?> sending = CompletableFuture.completedFuture(null);
         private ScheduledFuture<?> ping;
 
-        static WebSocketLines connect(String uri) throws IOException {
+        static WebSocketLines connect(String uri, Map<String, String> headers) throws IOException {
             WebSocketLines lines = new WebSocketLines();
             try {
-                lines.ws = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(8)).build()
-                        .newWebSocketBuilder().buildAsync(URI.create(uri), lines).get(12, TimeUnit.SECONDS);
+                WebSocket.Builder b = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(8)).build().newWebSocketBuilder();
+                headers.forEach(b::header);
+                lines.ws = b.buildAsync(URI.create(uri), lines).get(12, TimeUnit.SECONDS);
             } catch (ExecutionException e) {
-                throw new IOException(describe(e.getCause()));
+                String why = describe(e.getCause());
+                throw e.getCause() instanceof WebSocketHandshakeException h && h.getResponse().statusCode() / 100 == 4
+                        && h.getResponse().statusCode() != 409 ? new Refused(why) : new IOException(why);
             } catch (TimeoutException e) {
                 throw new IOException("the relay didn't answer");
             } catch (InterruptedException e) {
@@ -269,8 +366,9 @@ public final class Relay {
             } catch (IllegalArgumentException e) {
                 throw new IOException("the relay address isn't valid");
             }
-            // Keeps the connection from looking idle while nobody claims anything.
-            lines.ping = PINGS.scheduleAtFixedRate(lines::ping, 30, 30, TimeUnit.SECONDS);
+            // Keeps the connection from looking idle while nobody claims anything, and shows when it's died.
+            lines.lastHeard = System.currentTimeMillis();
+            lines.ping = PINGS.scheduleAtFixedRate(lines::ping, 10, 10, TimeUnit.SECONDS);
             return lines;
         }
 
@@ -278,7 +376,8 @@ public final class Relay {
             if (t instanceof WebSocketHandshakeException h) {
                 return switch (h.getResponse().statusCode()) {
                     case 404 -> "no lobby has that code (it may have closed)";
-                    case 403 -> "that lobby is full";
+                    case 403 -> "that lobby is full, or the code belongs to someone else";
+                    case 409 -> "the relay still has the old connection";
                     default -> "the relay said no (HTTP " + h.getResponse().statusCode() + ")";
                 };
             }
@@ -292,7 +391,22 @@ public final class Relay {
         }
 
         @Override
+        public CompletionStage<?> onPong(WebSocket webSocket, ByteBuffer message) {
+            lastHeard = System.currentTimeMillis();
+            webSocket.request(1);
+            return null;
+        }
+
+        @Override
+        public CompletionStage<?> onPing(WebSocket webSocket, ByteBuffer message) {
+            lastHeard = System.currentTimeMillis(); // the reply is sent for us
+            webSocket.request(1);
+            return null;
+        }
+
+        @Override
         public CompletionStage<?> onText(WebSocket webSocket, CharSequence data, boolean last) {
+            lastHeard = System.currentTimeMillis();
             partial.append(data);
             if (partial.length() > LineChannel.MAX_LINE + 64) { // room for "DATA <id> "
                 close();
@@ -308,6 +422,9 @@ public final class Relay {
 
         @Override
         public CompletionStage<?> onClose(WebSocket webSocket, int statusCode, String reason) {
+            // The relay closing the lobby for good reads as the synchronizer's own CLOSED, so the game doesn't try to
+            // reconnect. Any other close (such as the host reconnecting) is just a dropped connection.
+            if (statusCode == LOBBY_CLOSED) incoming.add("CLOSED");
             ended();
             return null;
         }
@@ -349,9 +466,10 @@ public final class Relay {
         @Override
         public synchronized void send(String line) {
             if (closed) return;
-            // The WebSocket takes one message at a time, so each send waits for the one before.
+            // The WebSocket takes one message at a time, so each send waits for the one before. Lines queued before
+            // close() still go out (a goodbye, say); close() sends the close after them.
             sending = sending.handle((r, e) -> null)
-                    .thenCompose(x -> closed ? CompletableFuture.completedFuture(null) : ws.sendText(line, true))
+                    .thenCompose(x -> ws.isOutputClosed() ? CompletableFuture.completedFuture(null) : ws.sendText(line, true))
                     .whenComplete((r, e) -> {
                         if (e != null) close();
                     });
@@ -359,6 +477,10 @@ public final class Relay {
 
         private synchronized void ping() {
             if (closed) return;
+            if (System.currentTimeMillis() - lastHeard > SILENT_MS) {
+                close();
+                return;
+            }
             sending = sending.handle((r, e) -> null)
                     .thenCompose(x -> closed ? CompletableFuture.completedFuture(null) : ws.sendPing(ByteBuffer.allocate(0)));
         }
@@ -370,12 +492,19 @@ public final class Relay {
 
         @Override
         public void close() {
-            if (closed) return;
-            ended();
+            CompletableFuture<?> queued;
+            synchronized (this) {
+                if (closed) return;
+                ended();
+                queued = sending;
+            }
             WebSocket w = ws;
             if (w == null) return;
             try {
-                w.sendClose(WebSocket.NORMAL_CLOSURE, "").orTimeout(3, TimeUnit.SECONDS).whenComplete((r, e) -> w.abort());
+                queued.handle((r, e) -> null)
+                        .thenCompose(x -> w.sendClose(WebSocket.NORMAL_CLOSURE, ""))
+                        .orTimeout(3, TimeUnit.SECONDS)
+                        .whenComplete((r, e) -> w.abort());
             } catch (RuntimeException e) {
                 w.abort();
             }

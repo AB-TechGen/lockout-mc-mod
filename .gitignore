@@ -10,3 +10,5 @@ run/
 /relay/.wrangler/
 /relay/node_modules/
 todo.md
+important_errors.md
+claude_images/

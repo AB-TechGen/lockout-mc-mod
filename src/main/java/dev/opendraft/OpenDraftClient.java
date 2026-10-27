@@ -7,6 +7,7 @@ import dev.opendraft.goal.Goals;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.message.v1.ClientSendMessageEvents;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
@@ -52,8 +53,9 @@ public final class OpenDraftClient implements ClientModInitializer {
     private static final int MAX_CHAT = 250;
     /** Unbound, for a key mapping. 26.3 numbers keys by SDL scancode, so the game's own constants are used, not GLFW's. */
     private static final int NO_KEY = InputConstants.UNKNOWN.getValue();
-    // What this game last told the synchronizer about where its player is, and in which session.
+    // What this game last told the synchronizer about where its player is, in which session and connection.
     private static Session whereFor;
+    private static int whereWelcome;
     private static String whereSent;
 
     /** Chunks around the player, in each direction, that must have arrived before this game says it's ready. */
@@ -122,18 +124,34 @@ public final class OpenDraftClient implements ClientModInitializer {
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
             if (Session.current() != null) WorldMaker.returnToLobby = true;
         });
+        // Quitting the game closes a lobby it runs, and tells everyone, so their games don't spend minutes trying to
+        // reconnect to it. Players who only joined keep their place for a while, in case they come back.
+        ClientLifecycleEvents.CLIENT_STOPPING.register(client -> {
+            Session s = Session.current();
+            if (s != null && s.host != null) s.host.close();
+        });
         // Everything a player does has a screen or a key; the commands left are for checking worlds and seeds.
-        ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> dispatcher.register(
-                literal("opendraft")
-                        .executes(ctx -> help(ctx.getSource()))
-                        .then(literal("goals").executes(ctx -> goals(ctx.getSource())))
-                        .then(literal("seed")
-                                .executes(ctx -> seedReport(ctx.getSource(), 1000))
-                                .then(argument("blocks", IntegerArgumentType.integer(50, 5000))
-                                        .executes(ctx -> seedReport(ctx.getSource(), IntegerArgumentType.getInteger(ctx, "blocks")))))
-                        .then(literal("ids")
-                                .then(argument("word", StringArgumentType.word())
-                                        .executes(ctx -> ids(ctx.getSource(), StringArgumentType.getString(ctx, "word")))))));
+        ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
+            var root = literal("opendraft")
+                    .executes(ctx -> help(ctx.getSource()))
+                    .then(literal("goals").executes(ctx -> goals(ctx.getSource())))
+                    .then(literal("ids")
+                            .then(argument("word", StringArgumentType.word())
+                                    .executes(ctx -> ids(ctx.getSource(), StringArgumentType.getString(ctx, "word")))));
+            // Where every structure is would spoil exploring, so it's only for checking the seed search.
+            if (devCommands()) {
+                root.then(literal("seed")
+                        .executes(ctx -> seedReport(ctx.getSource(), 1000))
+                        .then(argument("blocks", IntegerArgumentType.integer(50, 5000))
+                                .executes(ctx -> seedReport(ctx.getSource(), IntegerArgumentType.getInteger(ctx, "blocks")))));
+            }
+            dispatcher.register(root);
+        });
+    }
+
+    /** In a dev run (runClient), or with -Dopendraft.dev=true added to the game's JVM arguments. */
+    private static boolean devCommands() {
+        return FabricLoader.getInstance().isDevelopmentEnvironment() || Boolean.getBoolean("opendraft.dev");
     }
 
     // ---- commands -------------------------------------------------------------------------
@@ -144,8 +162,10 @@ public final class OpenDraftClient implements ClientModInitializer {
                 "Everything is in the lobby (the OpenDraft button on the title screen) and on the board (" + boardKeyName() + ").",
                 "For checking a world:",
                 "/opendraft goals - which goals this world can't deal, and why",
-                "/opendraft seed [blocks] - where the seed search thinks spawn, each structure and the Nether ones are",
                 "/opendraft ids <word> - list block, item and entity ids containing a word")));
+        if (devCommands()) {
+            src.sendFeedback(Component.literal("/opendraft seed [blocks] - where the seed search thinks spawn, each structure and the Nether ones are"));
+        }
         return 1;
     }
 
@@ -232,8 +252,9 @@ public final class OpenDraftClient implements ClientModInitializer {
         if (s == null || !s.welcomed) return;
         String where = mc.level == null ? "lobby" : mc.level.dimension() == Level.NETHER ? "nether"
                 : mc.level.dimension() == Level.END ? "end" : "overworld";
-        if (s == whereFor && where.equals(whereSent)) return;
+        if (s == whereFor && s.welcomes == whereWelcome && where.equals(whereSent)) return;
         whereFor = s;
+        whereWelcome = s.welcomes; // told again after a reconnect, since the synchronizer may have missed it
         whereSent = where;
         s.send("WHERE " + where);
     }

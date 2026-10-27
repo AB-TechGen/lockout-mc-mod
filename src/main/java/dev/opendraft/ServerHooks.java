@@ -1,5 +1,7 @@
 package dev.opendraft;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import dev.opendraft.goal.Checks;
 import dev.opendraft.goal.Goal;
 import dev.opendraft.goal.Tracker;
@@ -18,7 +20,12 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.level.storage.LevelResource;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -35,6 +42,10 @@ import java.util.UUID;
 public final class ServerHooks {
     private static final int CHECK_EVERY = 10;
     private static final int ADVANCEMENTS_EVERY = 20;
+    /** The tracker is saved this often (and when the world closes), in case the game doesn't close cleanly. */
+    private static final int SAVE_EVERY = 600;
+    /** In the world's folder: the board's tracker, so leaving and rejoining the match carries on from where it was. */
+    private static final String TRACKER_FILE = "opendraft_tracker.json";
     private static volatile Tracker tracker;
     private static volatile ServerPlayer trackedPlayer;
     /** Set on the server thread, read on the client thread to tell when the player is up in the air. */
@@ -47,6 +58,8 @@ public final class ServerHooks {
     // Advancements already done (or already told), so only new ones are sent.
     private static Set<String> advancementsSeen;
     private static Object advancementsFor;
+    /** The match key this world was last marked with, so the file is only written when it changes. */
+    private static String markedKey;
 
     private ServerHooks() {
     }
@@ -57,7 +70,9 @@ public final class ServerHooks {
         ServerLifecycleEvents.SERVER_STOPPING.register(server -> {
             if (server != Minecraft.getInstance().getSingleplayerServer()) return;
             endLookout(server);
+            saveTracker(server);
             advancementsSeen = null;
+            markedKey = null;
         });
         ServerLivingEntityEvents.AFTER_DEATH.register((entity, source) -> {
             Tracker t = tracker;
@@ -150,6 +165,12 @@ public final class ServerHooks {
         }
         tick++;
         if (tick % ADVANCEMENTS_EVERY == 0 && s.rightWorld(worldSeed)) relayAdvancements(server, s, p);
+        String key = s.matchKey;
+        Long matchSeed = s.matchSeed;
+        if (key != null && matchSeed != null && matchSeed == worldSeed && !key.equals(markedKey)) {
+            markedKey = key;
+            WorldCleaner.markMatchWorld(server.getWorldPath(LevelResource.ROOT), key);
+        }
 
         List<Goal> goals = s.goals;
         if (hold) {
@@ -165,15 +186,20 @@ public final class ServerHooks {
         }
         Tracker t = tracker;
         if (t == null || t.boardId != s.boardId || !t.player.equals(p.getUUID())) {
-            // Baselines are taken when the clock starts, so nothing from before (or the lookout) counts.
-            t = new Tracker(s.boardId, p.getUUID());
-            for (Goal g : goals) {
-                if (g != null) t.baselines.put(g.key, Checks.baseline(g, p));
+            // Carries on from the saved tracker if this world was closed during the board (left and rejoined).
+            // Otherwise baselines are taken when the clock starts, so nothing from before (or the lookout) counts.
+            t = loadTracker(server, s, p.getUUID());
+            if (t == null) {
+                t = new Tracker(s.boardId, p.getUUID());
+                for (Goal g : goals) {
+                    if (g != null) t.baselines.put(g.key, Checks.baseline(g, p));
+                }
             }
             tracker = t;
         }
         trackedPlayer = p; // the object changes after respawn
         t.tick(p);
+        if (tick % SAVE_EVERY == 0) saveTracker(server);
         if (s.ended || tick % CHECK_EVERY != 0) return;
         String[] owners = s.owners;
         String[] prog = new String[goals.size()];
@@ -201,6 +227,45 @@ public final class ServerHooks {
         }
         progress = prog;
         progressBoard = s.boardId;
+    }
+
+    /** Writes the current tracker to the world's folder, with the match and board it's for. */
+    private static void saveTracker(MinecraftServer server) {
+        Tracker t = tracker;
+        Session s = Session.current();
+        String key = s == null ? null : s.matchKey;
+        if (t == null || key == null || t.boardId != s.boardId) return;
+        JsonObject o = new JsonObject();
+        o.addProperty("match", key);
+        o.addProperty("board", t.boardId);
+        o.addProperty("player", t.player.toString());
+        o.add("tracker", t.save());
+        Path file = server.getWorldPath(LevelResource.ROOT).resolve(TRACKER_FILE);
+        Path temp = file.resolveSibling(TRACKER_FILE + ".tmp");
+        try {
+            Files.writeString(temp, o.toString());
+            Files.move(temp, file, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+        } catch (IOException e) {
+            OpenDraftClient.LOG.warn("Saving goal progress failed", e);
+        }
+    }
+
+    /** The saved tracker, if it's for this match's current board and this player; otherwise null. */
+    private static Tracker loadTracker(MinecraftServer server, Session s, UUID player) {
+        Path file = server.getWorldPath(LevelResource.ROOT).resolve(TRACKER_FILE);
+        if (s.matchKey == null || !Files.isRegularFile(file)) return null;
+        try {
+            JsonObject o = JsonParser.parseString(Files.readString(file)).getAsJsonObject();
+            if (!s.matchKey.equals(o.get("match").getAsString()) || o.get("board").getAsInt() != s.boardId
+                    || !player.toString().equals(o.get("player").getAsString())) {
+                return null;
+            }
+            OpenDraftClient.LOG.info("Carrying on with saved goal progress for board {}", s.boardId);
+            return Tracker.load(o.getAsJsonObject("tracker"), s.boardId, player);
+        } catch (IOException | RuntimeException e) {
+            OpenDraftClient.LOG.warn("Reading saved goal progress failed", e);
+            return null;
+        }
     }
 
     /** Goals whose progress is shown above the hotbar as it goes up: unique foods, unique breeds and mob kills. */

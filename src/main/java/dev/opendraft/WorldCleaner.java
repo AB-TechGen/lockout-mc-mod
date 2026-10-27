@@ -21,7 +21,7 @@ import java.util.stream.Stream;
  * Every lobby match is played in a fresh world, so they pile up in the saves folder. This deletes the
  * oldest once there are more than {@link Settings#keepWorlds}. It only ever touches folders that
  * WorldMaker named ("OpenDraft 2026-10-26 14.30"), always keeps the newest {@code keepWorlds} of them,
- * and skips any world that is open.
+ * and skips any world that is open. It also finds a match's world again, by the key written into it, for rejoining.
  */
 final class WorldCleaner {
     /**
@@ -29,9 +29,43 @@ final class WorldCleaner {
      * the folder, and adds " (1)" when two worlds share a name.
      */
     static final Pattern MATCH_WORLD = Pattern.compile("OpenDraft \\d{4}-\\d{2}-\\d{2} \\d{2}[._]\\d{2}( \\(\\d+\\))?");
+    /** In a match world's folder: the key of the match played in it, so rejoining the match reopens it. */
+    static final String MATCH_KEY_FILE = "opendraft_match.txt";
     private static final AtomicBoolean running = new AtomicBoolean();
 
     private WorldCleaner() {
+    }
+
+    private static Path saves() {
+        return FabricLoader.getInstance().getGameDir().resolve("saves");
+    }
+
+    /** Marks a world as the one this game plays the match with {@code key} in. */
+    static void markMatchWorld(Path world, String key) {
+        try {
+            Files.writeString(world.resolve(MATCH_KEY_FILE), key);
+        } catch (IOException e) {
+            OpenDraftClient.LOG.warn("Couldn't mark {} as this match's world", world.getFileName(), e);
+        }
+    }
+
+    /** The folder name of the world marked with this match key (the newest, if somehow several), or null. */
+    static String findMatchWorld(String key) {
+        if (key == null || key.isEmpty() || !Files.isDirectory(saves())) return null;
+        Path best = null;
+        try (Stream<Path> list = Files.list(saves())) {
+            for (Path p : (Iterable<Path>) list::iterator) {
+                Path marker = p.resolve(MATCH_KEY_FILE);
+                if (!MATCH_WORLD.matcher(p.getFileName().toString()).matches() || !Files.exists(p.resolve("level.dat"))
+                        || !Files.isRegularFile(marker) || !key.equals(Files.readString(marker).trim())) {
+                    continue;
+                }
+                if (best == null || Files.getLastModifiedTime(p).compareTo(Files.getLastModifiedTime(best)) > 0) best = p;
+            }
+        } catch (IOException | RuntimeException e) {
+            OpenDraftClient.LOG.warn("Looking for this match's world failed", e);
+        }
+        return best == null ? null : best.getFileName().toString();
     }
 
     /** Deletes old match worlds in the background. Does nothing when the setting is 0 (keep them all). */
@@ -40,7 +74,7 @@ final class WorldCleaner {
         if (keep <= 0 || !running.compareAndSet(false, true)) return;
         Thread t = new Thread(() -> {
             try {
-                deleteOld(FabricLoader.getInstance().getGameDir().resolve("saves"), keep);
+                deleteOld(saves(), keep);
             } catch (IOException | RuntimeException e) {
                 OpenDraftClient.LOG.warn("Cleaning up old OpenDraft worlds failed", e);
             } finally {

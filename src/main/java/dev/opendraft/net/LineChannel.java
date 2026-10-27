@@ -20,6 +20,8 @@ public final class LineChannel implements Lines, Closeable {
     private final InputStream in;
     private final OutputStream out;
     private volatile boolean closed;
+    /** When the last line arrived (or the channel opened), to notice a connection that died without closing. */
+    private volatile long lastRead = System.currentTimeMillis();
 
     public LineChannel(Socket socket) throws IOException {
         this.socket = socket;
@@ -38,6 +40,7 @@ public final class LineChannel implements Lines, Closeable {
                 return buf.size() == 0 ? null : buf.toString(StandardCharsets.UTF_8);
             }
             if (b == '\n') {
+                lastRead = System.currentTimeMillis();
                 String line = buf.toString(StandardCharsets.UTF_8);
                 return line.endsWith("\r") ? line.substring(0, line.length() - 1) : line;
             }
@@ -62,6 +65,10 @@ public final class LineChannel implements Lines, Closeable {
     @Override
     public boolean isClosed() {
         return closed;
+    }
+
+    public long lastRead() {
+        return lastRead;
     }
 
     public String remote() {

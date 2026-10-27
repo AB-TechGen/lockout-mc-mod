@@ -5,7 +5,9 @@ package dev.opendraft.net;
  * Fields are separated by single spaces; names and goal keys never contain spaces.
  *
  * <pre>
- * client -> host   HELLO &lt;protocol&gt; &lt;modVersion&gt; &lt;seed | -&gt; &lt;name&gt;   ("-" from the title-screen lobby)
+ * client -> host   HELLO &lt;protocol&gt; &lt;modVersion&gt; &lt;seed | -&gt; &lt;name&gt; &lt;token&gt;   ("-" from the title-screen lobby;
+ *                  the token is the player's secret: the same name and token get a dropped player's place back)
+ * client -> host   LEAVE                       (leaving on purpose, so the place isn't kept for a reconnect)
  * client -> host   SETTINGS &lt;key=value&gt;...    (leader only; relayed as-is so the lobby can show them)
  * client -> host   MATCH &lt;seed&gt;                (leader: everyone makes a new world with this seed)
  * client -> host   READY &lt;matchId&gt;             (my world for that match has loaded)
@@ -21,9 +23,12 @@ package dev.opendraft.net;
  * client -> host   PONG &lt;number&gt;               (the answer to PING, with the same number)
  * host -> client   WELCOME &lt;assignedName&gt;
  * host -> client   REJECT &lt;reason...&gt;
- * host -> client   PLAYERS &lt;name&gt;:&lt;colour&gt;...  (join order; the first is the leader. Colours are 0, 1, 2... and stay put)
+ * host -> client   PLAYERS &lt;name&gt;:&lt;colour&gt;...  (join order; the first who isn't away is the leader. Colours are 0, 1, 2...
+ *                  and stay put)
+ * host -> client   AWAY &lt;name&gt;...              (players whose connection dropped; their place is kept for HOLD_SECONDS)
+ * host -> client   CLOSED                      (the lobby is closing; don't try to reconnect)
  * host -> client   SETTINGS &lt;key=value&gt;...
- * host -> client   MATCH &lt;matchId&gt; &lt;seed&gt;
+ * host -> client   MATCH &lt;matchId&gt; &lt;seed&gt; &lt;key&gt;  (the key tells this match's world apart when rejoining it)
  * host -> client   GO &lt;matchId&gt;                (everyone's world is ready; the leader deals the board)
  * host -> client   FORFEITED &lt;name&gt;
  * host -> client   DRAWVOTE &lt;name&gt;...          (who has voted for a draw; empty when it lapses)
@@ -44,9 +49,16 @@ package dev.opendraft.net;
  * </pre>
  */
 public final class Protocol {
-    public static final int VERSION = 9;
+    public static final int VERSION = 10;
     /** A draw offer that not everyone has accepted after this long is declined. */
     public static final int DRAW_OFFER_SECONDS = 30;
+    /** How long a dropped player's place is kept, and how long their game (and the relay) keep trying to get back. */
+    public static final int HOLD_SECONDS = 300;
+    /**
+     * A connection that hears nothing for this long is treated as dropped. The synchronizer pings every 2 seconds,
+     * so this only happens when the connection died without closing, which is common through the relay.
+     */
+    public static final int SILENT_SECONDS = 20;
     public static final int DEFAULT_PORT = 25570;
     public static final int MIN_BOARD = 3;
     public static final int MAX_BOARD = 25;
@@ -59,5 +71,16 @@ public final class Protocol {
         String s = raw == null ? "" : raw.replaceAll("[^A-Za-z0-9_]", "");
         if (s.isEmpty()) s = "Player";
         return s.length() > 16 ? s.substring(0, 16) : s;
+    }
+
+    /** A player's secret for HELLO: 32 random hex digits. */
+    public static String newToken() {
+        byte[] b = new byte[16];
+        new java.security.SecureRandom().nextBytes(b);
+        return java.util.HexFormat.of().formatHex(b);
+    }
+
+    public static boolean validToken(String token) {
+        return token != null && token.matches("[0-9a-f]{32}");
     }
 }

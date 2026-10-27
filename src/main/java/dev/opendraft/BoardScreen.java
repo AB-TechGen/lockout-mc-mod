@@ -120,7 +120,7 @@ public final class BoardScreen extends Screen {
         if (s != null) {
             List<String> votes = s.drawVotes;
             int voters = 0;
-            for (String p : s.players) if (!s.forfeited.contains(p)) voters++;
+            for (String p : s.players) if (!s.forfeited.contains(p) && !s.away.contains(p)) voters++;
             String label = votes.contains(s.me) ? "Cancel Draw (" + votes.size() + "/" + voters + ")"
                     : votes.isEmpty() ? "Offer Draw" : "Accept Draw (" + votes.size() + "/" + voters + ")";
             drawButton.setMessage(Component.literal(label));
@@ -170,7 +170,13 @@ public final class BoardScreen extends Screen {
         int cell = Math.max(8, Math.min(wanted, fits));
         int gridW = columns * cell + (columns - 1) * GAP;
         int gridH = rows * cell + (rows - 1) * GAP;
-        int pw = Math.max(gridW + 2 * PAD, 200);
+        // As wide as the grid, or as the header's text if that's wider, so the panel shrinks with the board.
+        int textW = 0;
+        if (s != null && goals != null) {
+            textW = Math.max(font.width(draft ? "Board draft" : "OpenDraft"),
+                    font.width(draft ? draftStatus(s) : Component.literal(BoardHud.clock(s))));
+        }
+        int pw = Math.max(gridW, textW) + 2 * PAD;
 
         List<Component> footer = new ArrayList<>();
         if (s != null && goals != null) {
@@ -187,6 +193,7 @@ public final class BoardScreen extends Screen {
                 }
             }
         }
+        for (Component line : footer) pw = Math.max(pw, font.width(line) + 2 * PAD);
         int headerH = 26;
         int ph = PAD + headerH + gridH + (footer.isEmpty() ? 0 : 6 + footer.size() * 11) + PAD;
         int py = Math.max(4, (height - (ph + 4 + 20 + 4 + 20)) / 2);

@@ -174,7 +174,8 @@ public final class BoardHud {
                     g.fakeItem(icon, 0, 0);
                     pose.popMatrix();
                 }
-                g.text(font, Component.literal(label(s, p)), x0 + PAD + 12, y, s.players.contains(p) ? OpenDraftClient.colorOf(p) : 0xFF888888, true);
+                boolean here = s.players.contains(p) && !s.away.contains(p);
+                g.text(font, Component.literal(label(s, p)), x0 + PAD + 12, y, here ? OpenDraftClient.colorOf(p) : 0xFF888888, true);
                 if (scores) {
                     String score = String.valueOf(s.score(p));
                     g.text(font, Component.literal(score), x0 + w - PAD - font.width(score), y, 0xFFFFFFFF, true);
@@ -189,7 +190,7 @@ public final class BoardHud {
             "nether", new ItemStack(Items.NETHERRACK), "end", new ItemStack(Items.END_STONE));
 
     private static String label(Session s, String name) {
-        return name + (name.equals(s.me) ? " (you)" : "") + (s.players.contains(name) ? "" : " (left)");
+        return name + (name.equals(s.me) ? " (you)" : "") + (!s.players.contains(name) ? " (left)" : s.away.contains(name) ? " (away)" : "");
     }
 
     /** The lookout's last seconds, spent on the ground, as a big number in the middle of the screen, then "GO!". */

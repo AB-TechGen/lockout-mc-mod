@@ -1,5 +1,8 @@
 package dev.opendraft.goal;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.advancements.AdvancementProgress;
 import net.minecraft.core.BlockPos;
@@ -51,7 +54,8 @@ import java.util.UUID;
 /**
  * Records what the local player does during one board, so goals can be checked later.
  * Everything here runs on the integrated server thread. A new board gets a fresh tracker,
- * so nothing done before the start counts.
+ * so nothing done before the start counts. It's saved with the world, so leaving mid-board and
+ * coming back carries on from where it was.
  *
  * <p>Facts are strings such as {@code kill:minecraft:bat} or {@code death_type:minecraft:drown};
  * goals.json refers to the same strings.
@@ -113,6 +117,73 @@ public final class Tracker {
 
     void max(String counter, int value) {
         counters.merge(counter, value, Math::max);
+    }
+
+    // ---- saving with the world ------------------------------------------------------------
+
+    /**
+     * The baselines and everything recorded, so the board carries on where it was when the world is closed and
+     * reopened mid-board (leaving and rejoining the match). What's only watched from tick to tick isn't kept.
+     */
+    public JsonObject save() {
+        JsonObject o = new JsonObject();
+        JsonArray f = new JsonArray();
+        flags.forEach(f::add);
+        o.add("flags", f);
+        JsonObject s = new JsonObject();
+        sets.forEach((k, v) -> s.add(k, strings(v)));
+        o.add("sets", s);
+        JsonObject c = new JsonObject();
+        counters.forEach(c::addProperty);
+        o.add("counters", c);
+        JsonObject b = new JsonObject();
+        baselines.forEach((k, v) -> {
+            // The kinds Checks.baseline gives: a stat total, whether an advancement was done, a stat per key, advancements done.
+            if (v instanceof Long l) b.addProperty(k, l);
+            else if (v instanceof Boolean bool) b.addProperty(k, bool);
+            else if (v instanceof Map<?, ?> m) {
+                JsonObject values = new JsonObject();
+                m.forEach((key, n) -> values.addProperty(String.valueOf(key), (Number) n));
+                b.add(k, values);
+            } else if (v instanceof Set<?> set) b.add(k, strings(set));
+        });
+        o.add("baselines", b);
+        return o;
+    }
+
+    /** A tracker from {@link #save}. */
+    public static Tracker load(JsonObject o, int boardId, UUID player) {
+        Tracker t = new Tracker(boardId, player);
+        o.getAsJsonArray("flags").forEach(e -> t.flags.add(e.getAsString()));
+        o.getAsJsonObject("sets").entrySet().forEach(e -> {
+            Set<String> values = new HashSet<>();
+            e.getValue().getAsJsonArray().forEach(v -> values.add(v.getAsString()));
+            t.sets.put(e.getKey(), values);
+        });
+        o.getAsJsonObject("counters").entrySet().forEach(e -> t.counters.put(e.getKey(), e.getValue().getAsInt()));
+        o.getAsJsonObject("baselines").entrySet().forEach(e -> {
+            JsonElement v = e.getValue();
+            if (v.isJsonPrimitive() && v.getAsJsonPrimitive().isBoolean()) {
+                t.baselines.put(e.getKey(), v.getAsBoolean());
+            } else if (v.isJsonPrimitive()) {
+                t.baselines.put(e.getKey(), v.getAsLong());
+            } else if (v.isJsonObject()) {
+                Map<String, Integer> values = new HashMap<>();
+                v.getAsJsonObject().entrySet().forEach(n -> values.put(n.getKey(), n.getValue().getAsInt()));
+                t.baselines.put(e.getKey(), values);
+            } else if (v.isJsonArray()) {
+                Set<String> values = new HashSet<>();
+                v.getAsJsonArray().forEach(n -> values.add(n.getAsString()));
+                t.baselines.put(e.getKey(), values);
+            }
+        });
+        return t;
+    }
+
+    private static JsonArray strings(Set<?> values) {
+        JsonArray a = new JsonArray();
+        for (Object v : values) a.add(String.valueOf(v));
+        return a;
     }
 
     // ---- helpers ----------------------------------------------------------------------

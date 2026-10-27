@@ -61,6 +61,12 @@ public final class Settings {
     public static int port = 25570;
     /** Other relays than the built-in ones (comma-separated), for running your own. Empty uses the built-in ones. */
     public static String relay = "";
+    /**
+     * What gets this game's place back in the lobby it was last in, if the game closed or crashed: the address
+     * joined, the name asked for, the name given, the secret sent with it and when it was last connected.
+     */
+    public static String rejoinAddress = "", rejoinAsked = "", rejoinName = "", rejoinToken = "";
+    public static long rejoinTime;
 
     private Settings() {
     }
@@ -82,6 +88,15 @@ public final class Settings {
         apply(p::getProperty);
         relay = text(p.getProperty("relay"));
         Relay.url = relay.isEmpty() ? Relay.DEFAULT_URL : relay;
+        rejoinAddress = text(p.getProperty("rejoinAddress"));
+        rejoinAsked = text(p.getProperty("rejoinAsked"));
+        rejoinName = text(p.getProperty("rejoinName"));
+        rejoinToken = text(p.getProperty("rejoinToken"));
+        try {
+            rejoinTime = Long.parseLong(text(p.getProperty("rejoinTime")));
+        } catch (NumberFormatException e) {
+            rejoinTime = 0;
+        }
     }
 
     private static void apply(java.util.function.Function<String, String> get) {
@@ -117,6 +132,13 @@ public final class Settings {
         p.setProperty("boardScale", String.valueOf(boardScale));
         p.setProperty("playerChat", String.valueOf(playerChat));
         if (!relay.isEmpty()) p.setProperty("relay", relay);
+        if (rejoinTime > 0) {
+            p.setProperty("rejoinAddress", rejoinAddress);
+            p.setProperty("rejoinAsked", rejoinAsked);
+            p.setProperty("rejoinName", rejoinName);
+            p.setProperty("rejoinToken", rejoinToken);
+            p.setProperty("rejoinTime", String.valueOf(rejoinTime));
+        }
         Path f = file();
         try {
             Files.createDirectories(f.getParent());

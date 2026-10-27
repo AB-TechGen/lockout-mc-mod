@@ -30,6 +30,9 @@ import java.util.Locale;
 public final class WorldMaker {
     private static volatile Long pendingSeed;
     private static volatile String pendingName;
+    /** The folder of a match world to reopen (rejoining a match), once the title screen is up. */
+    private static volatile String pendingOpen;
+    private static boolean openExistingSoon;
     /** The Create World screen to press "Create" on, once it has settled. */
     private static Screen pressOn;
     private static int pressIn;
@@ -57,24 +60,51 @@ public final class WorldMaker {
                 || WorldCleaner.MATCH_WORLD.matcher(level.getServer().getWorldData().getLevelName()).matches();
     }
 
-    /** Leaves the current world, if any, and creates a fresh one with the match's seed. */
-    static void createMatchWorld(int matchId, long seed) {
+    /**
+     * Leaves the current world, if any, and goes into the match's: the one this game already played it in, if
+     * there is one (rejoining after leaving or a restart), so inventory and goal progress are as they were;
+     * otherwise a fresh world with the match's seed.
+     * @param key the match's key from the synchronizer, which marks its world; null finds nothing
+     */
+    static void createMatchWorld(long seed, String key) {
         Minecraft mc = Minecraft.getInstance();
         mc.execute(() -> {
             MinecraftServer server = mc.getSingleplayerServer();
             if (server != null && server.overworld().getSeed() == seed) return; // already in a world with this seed
-            pendingSeed = seed;
-            pendingName = "OpenDraft " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH.mm", Locale.ROOT));
+            String existing = WorldCleaner.findMatchWorld(key);
+            if (existing != null) {
+                pendingOpen = existing;
+                pendingSeed = null;
+            } else {
+                pendingSeed = seed;
+                pendingName = "OpenDraft " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH.mm", Locale.ROOT));
+            }
             if (mc.level != null) {
-                // Leaving lands on the title screen, whose hook opens Create World.
+                // Leaving lands on the title screen, whose hook opens Create World (or the old world).
                 if (!leaveWorld()) {
                     OpenDraftClient.chat(Component.literal("A new OpenDraft match is starting. Save and quit to the title screen to join it.")
                             .withStyle(ChatFormatting.GOLD));
                 }
                 return;
             }
-            openCreateScreen();
+            if (existing != null) openExisting();
+            else openCreateScreen();
         });
+    }
+
+    /** Opens the match world waiting in {@link #pendingOpen}; back to the lobby if that fails. */
+    private static void openExisting() {
+        Minecraft mc = Minecraft.getInstance();
+        String id = pendingOpen;
+        pendingOpen = null;
+        if (id == null) return;
+        OpenDraftClient.LOG.info("Rejoining the match in its world {}", id);
+        try {
+            mc.createWorldOpenFlows().openWorld(id, () -> mc.gui.setScreen(new LobbyScreen()));
+        } catch (RuntimeException e) {
+            OpenDraftClient.LOG.warn("Reopening match world {} failed", id, e);
+            mc.gui.setScreen(new LobbyScreen());
+        }
     }
 
     /** "Back to lobby" after a match. */
@@ -90,7 +120,9 @@ public final class WorldMaker {
         if (screen instanceof TitleScreen) {
             addTitleButton(screen);
             WorldCleaner.run(); // after a match: its world is closed now, so the oldest ones past the limit can go
-            if (pendingSeed != null) {
+            if (pendingOpen != null) {
+                openExistingSoon = true;
+            } else if (pendingSeed != null) {
                 openCreateSoon = true;
             } else if (returnToLobby && Session.current() != null) {
                 openLobbySoon = true;
@@ -103,7 +135,10 @@ public final class WorldMaker {
 
     static void tick() {
         Minecraft mc = Minecraft.getInstance();
-        if (openCreateSoon) {
+        if (openExistingSoon) {
+            openExistingSoon = false;
+            openExisting();
+        } else if (openCreateSoon) {
             openCreateSoon = false;
             openCreateScreen();
         } else if (openLobbySoon) {

@@ -6,13 +6,24 @@ import java.net.Socket;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 /** This game's connection to the synchronizer. Incoming lines go to {@code onLine} on a background thread. */
 public final class OpenDraftConnection {
+    private static final ScheduledExecutorService WATCHDOG = Executors.newSingleThreadScheduledExecutor(r -> {
+        Thread t = new Thread(r, "OpenDraft connection watchdog");
+        t.setDaemon(true);
+        return t;
+    });
+
     private final Lines channel;
     private final String address;
+    private volatile long lastLine = System.currentTimeMillis();
 
     private OpenDraftConnection(Lines channel, String address) {
         this.channel = channel;
@@ -36,11 +47,12 @@ public final class OpenDraftConnection {
     }
 
     /**
+     * Connects and says HELLO. Nothing is read until {@link #start}.
      * @param raw a lobby code (through the relay), an invite code or an address
      * @param seed this world's seed, or "-" when joining from the title-screen lobby
+     * @param token this player's secret for the lobby, which gets their place back after a dropped connection
      */
-    public static OpenDraftConnection connect(String raw, String modVersion, String seed, String name,
-                                            Consumer<String> onLine, Runnable onClosed) throws IOException {
+    public static OpenDraftConnection connect(String raw, String modVersion, String seed, String name, String token) throws IOException {
         String room = Relay.normalize(raw);
         Lines ch;
         String where;
@@ -53,20 +65,35 @@ public final class OpenDraftConnection {
             ch = new LineChannel(socket);
             where = socket.getInetAddress().getHostAddress() + ":" + socket.getPort();
         }
-        OpenDraftConnection conn = new OpenDraftConnection(ch, where);
-        ch.send("HELLO " + Protocol.VERSION + " " + modVersion + " " + seed + " " + Protocol.sanitizeName(name));
+        ch.send("HELLO " + Protocol.VERSION + " " + modVersion + " " + seed + " " + Protocol.sanitizeName(name) + " " + token);
+        return new OpenDraftConnection(ch, where);
+    }
+
+    /**
+     * Reads lines on a background thread until the connection closes, then runs {@code onClosed}. The synchronizer
+     * pings every 2 seconds, so a connection that goes quiet for Protocol.SILENT_SECONDS has died without closing
+     * (common through the relay); it's closed then, so it counts as dropped.
+     */
+    public void start(Consumer<String> onLine, Runnable onClosed) {
+        lastLine = System.currentTimeMillis();
+        ScheduledFuture<?> watchdog = WATCHDOG.scheduleAtFixedRate(() -> {
+            if (System.currentTimeMillis() - lastLine > Protocol.SILENT_SECONDS * 1000L) channel.close();
+        }, 5, 5, TimeUnit.SECONDS);
         Thread reader = new Thread(() -> {
             try {
-                for (String line; (line = ch.readLine()) != null; ) onLine.accept(line);
+                for (String line; (line = channel.readLine()) != null; ) {
+                    lastLine = System.currentTimeMillis();
+                    onLine.accept(line);
+                }
             } catch (IOException ignored) {
             } finally {
-                ch.close();
+                watchdog.cancel(false);
+                channel.close();
                 onClosed.run();
             }
         }, "OpenDraft connection");
         reader.setDaemon(true);
         reader.start();
-        return conn;
     }
 
     /**

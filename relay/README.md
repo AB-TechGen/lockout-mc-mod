@@ -2,7 +2,9 @@
 
 A small program that lets players join a lobby with a short code from anywhere, without opening any ports. It
 runs on Cloudflare's free plan. The synchronizer still runs in the host's game; the relay only passes the game's
-lines (names, claims, chat) between the host and the players and stores nothing.
+lines (names, claims, chat) between the host and the players. The only thing it stores is a scrambled (hashed) copy
+of each lobby's host key, so a host whose connection drops can get the same code back; it's deleted when the lobby
+closes, or 5 minutes after the host drops.
 
 The mod already uses OpenDraft's relay, so players don't need anything here. These steps are for running your own.
 
@@ -29,8 +31,9 @@ both addresses in `DEFAULT_URL`, separated by commas. New lobbies open on the fi
 asks every relay for the code. Copies on one Cloudflare account share the same free daily limit, so a spare helps if
 one copy breaks, not with more players.
 
-Run `npx wrangler deploy` again after changing anything in this folder. Players in a lobby at that moment are
-disconnected and have to join again.
+Run `npx wrangler deploy` again after changing anything in this folder. Lobbies open at that moment lose their
+connections; hosts on OpenDraft 0.15.0 or later get their code back and their players reconnect by themselves,
+while lobbies on older versions close and have to be made again.
 
 ## Free plan limits
 
@@ -41,5 +44,7 @@ join until it resets at midnight UTC.
 
 ## How it works
 
-Creating a lobby opens a WebSocket to `/host`, and the relay answers with a code. Each player who joins opens one to
-`/join/<code>`. Every lobby is a Durable Object named by its code; `src/index.js` has the details.
+Creating a lobby opens a WebSocket to `/host`, and the relay answers with a code (and, for `/host?v=2`, a secret
+key). Each player who joins opens one to `/join/<code>`. If the host's connection drops, the relay keeps the code
+for 5 minutes and sends the players off to reconnect; the host gets it back from `/host/<code>` with the key, and
+nobody without the key can. Every lobby is a Durable Object named by its code; `src/index.js` has the details.
