@@ -40,6 +40,15 @@ public final class WorldMaker {
     private static boolean openLobbySoon;
     /** Show the lobby the next time the title screen appears (after leaving a match world). */
     static volatile boolean returnToLobby;
+    /**
+     * How far the OpenDraft button moved the Realms button down on the title screen. Realms draws its notification
+     * icons where its button would be without it, so they're moved down this much too (RealmsNotificationsMixin).
+     */
+    private static int realmsShift;
+
+    public static int realmsShift() {
+        return realmsShift;
+    }
 
     private WorldMaker() {
     }
@@ -166,6 +175,7 @@ public final class WorldMaker {
         AbstractWidget singleplayer = labelled(widgets, "menu.singleplayer");
         AbstractWidget multiplayer = labelled(widgets, "menu.multiplayer");
         Button.OnPress open = b -> mc.gui.setScreen(new LobbyScreen());
+        realmsShift = 0;
         if (multiplayer == null) {
             widgets.add(Button.builder(Component.literal("OpenDraft"), open).bounds(4, 4, 98, 20).build());
             return;
@@ -173,6 +183,7 @@ public final class WorldMaker {
         int step = singleplayer != null && multiplayer.getY() > singleplayer.getY()
                 ? multiplayer.getY() - singleplayer.getY() : multiplayer.getHeight() + 4;
         int up = step / 2, down = step - up;
+        realmsShift = down; // Realms is the row under Multiplayer, so it moves down with the rest
         int left = multiplayer.getX() - 30, right = multiplayer.getX() + multiplayer.getWidth() + 30;
         int row = multiplayer.getY();
         for (AbstractWidget w : widgets) {

@@ -271,9 +271,17 @@ public final class LobbyScreen extends Screen {
             int color = OpenDraftClient.colorOf(name);
             g.fill(x0 + 5, py + 1, x0 + 12, py + 8, color);
             boolean away = s.away.contains(name);
-            Component label = Component.literal(name + (name.equals(s.me) ? " (you)" : "") + (away ? " (away)" : ""));
-            g.text(font, label, x0 + 16, py, away ? 0xFF888888 : 0xFFFFFFFF, true);
-            if (name.equals(leader)) g.text(font, Component.literal("★ leader"), x0 + PANEL_W - 5 - font.width("★ leader"), py, GOLD, true);
+            String text = name + (name.equals(s.me) ? " (you)" : "") + (away ? " (away)" : "");
+            // The leader tag sits at the right. A long name gets just the star, and if it still doesn't fit, it's cut short.
+            int room = PANEL_W - 5 - 16;
+            String tag = null;
+            if (name.equals(leader)) {
+                tag = font.width(text) + 4 + font.width("★ leader") <= room ? "★ leader" : "★";
+                room -= font.width(tag) + 4;
+            }
+            if (font.width(text) > room) text = font.plainSubstrByWidth(text, room - font.width("...")) + "...";
+            g.text(font, Component.literal(text), x0 + 16, py, away ? 0xFF888888 : 0xFFFFFFFF, true);
+            if (tag != null) g.text(font, Component.literal(tag), x0 + PANEL_W - 5 - font.width(tag), py, GOLD, true);
             py += 14;
         }
 
