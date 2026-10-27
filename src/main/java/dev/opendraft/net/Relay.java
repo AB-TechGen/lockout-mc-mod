@@ -40,7 +40,7 @@ public final class Relay {
      * The relays built into this copy of OpenDraft, separated by commas.
      * Lobbies open on the first one that answers; joining asks all of them for the code.
      */
-    public static final String DEFAULT_URL = "https://opendraft-relay.mcopendraft.workers.dev";
+    public static final String DEFAULT_URL = "https://opendraft-relay.opendraftmcserver.workers.dev";
     /** The relays in use: the built-in ones unless the settings name others. */
     public static volatile String url = DEFAULT_URL;
 

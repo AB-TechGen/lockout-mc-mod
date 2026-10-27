@@ -129,7 +129,9 @@ export class Lobby extends DurableObject {
       return;
     }
     if (this.ctx.getTags(ws).includes("host")) {
-      if (ws.readyState !== WebSocket.OPEN) return; // a replaced connection, being closed
+      // A replaced connection, being closed. Not just "not open": a host closing on purpose sends its last lines
+      // (CLOSED to the players, then BYE) right before the close, and those can arrive after it's started.
+      if (this.replaced(ws)) return;
       const [kind, id, line] = split(message);
       if (kind === "BYE") {
         // Closing on purpose: forget the key now rather than holding the code.
@@ -162,8 +164,7 @@ export class Lobby extends DurableObject {
 
   async gone(ws) {
     if (this.ctx.getTags(ws).includes("host")) {
-      const replaced = this.ctx.getWebSockets("host").some((h) => h !== ws && h.readyState === WebSocket.OPEN);
-      if (!replaced) {
+      if (!this.replaced(ws)) {
         if (await this.ctx.storage.get("key")) {
           // A host that can get the code back: keep it for a while, and send the players off to reconnect.
           await this.ctx.storage.put("abandoned", Date.now());
@@ -207,6 +208,11 @@ export class Lobby extends DurableObject {
 
   host() {
     return this.ctx.getWebSockets("host").find((ws) => ws.readyState === WebSocket.OPEN);
+  }
+
+  // Whether a newer host connection has taken over from this one.
+  replaced(ws) {
+    return this.ctx.getWebSockets("host").some((h) => h !== ws && h.readyState === WebSocket.OPEN);
   }
 }
 
