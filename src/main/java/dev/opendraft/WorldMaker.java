@@ -40,6 +40,14 @@ public final class WorldMaker {
     private static boolean openLobbySoon;
     /** Show the lobby the next time the title screen appears (after leaving a match world). */
     static volatile boolean returnToLobby;
+    /** How long after a match ends everyone still in its world is taken back to the lobby. */
+    private static final long BACK_TO_LOBBY_MILLIS = 5_000;
+    /** When this game goes back to the lobby by itself, or 0 when it won't. */
+    private static long backToLobbyAt;
+    /** The match whose end was seen last, so going back is only planned once per match. */
+    private static String endSeen;
+    /** The countdown last shown above the hotbar, so it's shown once a second. */
+    private static int countdownShown;
     /**
      * How far the OpenDraft button moved the Realms button down on the title screen. Realms draws its notification
      * icons where its button would be without it, so they're moved down this much too (RealmsNotificationsMixin).
@@ -162,6 +170,47 @@ public final class WorldMaker {
                 else OpenDraftClient.LOG.warn("Couldn't press Create New World; the player has to.");
             }
         }
+        backToLobbyAfterEnd(mc);
+    }
+
+    /**
+     * When a lobby match ends, makes the player a spectator, and {@link #BACK_TO_LOBBY_MILLIS} later takes this game
+     * back to the lobby, counting down above the hotbar. Only if it was in the match's world when the end came:
+     * reopening an old match world later to look around isn't cut short.
+     */
+    private static void backToLobbyAfterEnd(Minecraft mc) {
+        Session s = Session.current();
+        MinecraftServer server = mc.getSingleplayerServer();
+        Long seed = s == null ? null : s.matchSeed;
+        if (s == null || !s.ended || seed == null || s.matchKey == null || mc.level == null
+                || server == null || server.overworld().getSeed() != seed) {
+            backToLobbyAt = 0; // left already, or a new match is starting
+            return;
+        }
+        long now = System.currentTimeMillis();
+        if (!s.matchKey.equals(endSeen)) {
+            endSeen = s.matchKey;
+            if (now - s.endMillis < 2000) {
+                backToLobbyAt = s.endMillis + BACK_TO_LOBBY_MILLIS;
+                countdownShown = 0;
+                ServerHooks.spectateAfterEnd(server);
+            }
+        }
+        if (backToLobbyAt == 0) return;
+        int left = secondsToLobby();
+        if (left <= 0) {
+            backToLobbyAt = 0;
+            leaveToLobby();
+        } else if (left != countdownShown) {
+            countdownShown = left;
+            OpenDraftClient.overlay(Component.literal("Back to the lobby in " + left + "...").withStyle(ChatFormatting.GRAY));
+        }
+    }
+
+    /** Seconds until this game goes back to the lobby by itself, or 0 when it won't. */
+    private static int secondsToLobby() {
+        long at = backToLobbyAt;
+        return at == 0 ? 0 : (int) Math.max(0, (at - System.currentTimeMillis() + 999) / 1000);
     }
 
     /**

@@ -12,6 +12,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.world.Container;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.damagesource.DamageSource;
@@ -441,6 +442,14 @@ public final class Tracker {
             default -> {
             }
         }
+    }
+
+    /**
+     * A block the player broke, with what they held. With a pickaxe it counts even when the pickaxe is too weak for
+     * the block to drop (obsidian with iron), which vanilla's "mined" statistic leaves out.
+     */
+    public void onBreakBlock(ItemStack held, BlockState state) {
+        if (held.is(ItemTags.PICKAXES)) inc("pickaxe_mined:" + id(state), 1);
     }
 
     public void onAttack(ServerPlayer p, Entity target) {

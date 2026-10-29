@@ -17,14 +17,6 @@
    "count": 20
   },
   {
-   "id": "get_30_advancements",
-   "name": "Get 30 Advancements",
-   "type": "advancement_count",
-   "icon": "minecraft:experience_bottle",
-   "group": "advancement_count",
-   "count": 30
-  },
-  {
    "id": "get_hired_help_advancement",
    "name": "Construct an Iron Golem",
    "type": "advancement",
@@ -400,12 +392,9 @@
   {
    "id": "mine_obsidian",
    "name": "Mine Obsidian",
-   "type": "stat",
+   "type": "counter",
    "icon": "minecraft:obsidian",
-   "stat": "mined",
-   "keys": [
-    "minecraft:obsidian"
-   ],
+   "counter": "pickaxe_mined:minecraft:obsidian",
    "min": 1
   },
   {
@@ -646,15 +635,6 @@
    "icon": "minecraft:beetroot_soup",
    "any": [
     "ate:minecraft:beetroot_soup"
-   ]
-  },
-  {
-   "id": "eat_chorus_fruit",
-   "name": "Eat Chorus Fruit",
-   "type": "flag",
-   "icon": "minecraft:chorus_fruit",
-   "any": [
-    "ate:minecraft:chorus_fruit"
    ]
   },
   {
@@ -920,22 +900,6 @@
    ]
   },
   {
-   "id": "die_to_trident",
-   "name": "Die to Trident",
-   "type": "flag",
-   "icon": "minecraft:trident",
-   "any": [
-    "death_type:minecraft:trident"
-   ],
-   "biomes": [
-    [
-     "#minecraft:is_ocean",
-     "#minecraft:is_river",
-     "minecraft:dripstone_caves"
-    ]
-   ]
-  },
-  {
    "id": "die_to_warden",
    "name": "Die to Warden",
    "type": "flag",
@@ -980,15 +944,6 @@
    "icon": "minecraft:water_bucket",
    "any": [
     "death_type:minecraft:drown"
-   ]
-  },
-  {
-   "id": "die_to_void",
-   "name": "Die by falling in Void",
-   "type": "flag",
-   "icon": "minecraft:end_portal_frame",
-   "any": [
-    "death_type:minecraft:out_of_world"
    ]
   },
   {
@@ -1117,21 +1072,6 @@
    "type": "dimension",
    "icon": "minecraft:end_stone",
    "dimension": "end"
-  },
-  {
-   "id": "visit_all_nether_biomes",
-   "name": "Visit All Nether Biomes",
-   "type": "set",
-   "icon": "minecraft:crimson_nylium",
-   "set": "biomes",
-   "only": [
-    "minecraft:nether_wastes",
-    "minecraft:crimson_forest",
-    "minecraft:warped_forest",
-    "minecraft:soul_sand_valley",
-    "minecraft:basalt_deltas"
-   ],
-   "count": 5
   },
   {
    "id": "pearl_through_nether_portal",
@@ -1357,25 +1297,6 @@
    "biomes": [
     [
      "#minecraft:has_structure/ocean_monument"
-    ]
-   ]
-  },
-  {
-   "id": "kill_parched",
-   "name": "Kill Parched",
-   "type": "flag",
-   "icon": "minecraft:parched_spawn_egg",
-   "any": [
-    "kill:minecraft:parched"
-   ],
-   "requires": {
-    "entities": [
-     "minecraft:parched"
-    ]
-   },
-   "biomes": [
-    [
-     "minecraft:desert"
     ]
    ]
   },
@@ -2529,16 +2450,6 @@
    ]
   },
   {
-   "id": "obtain_end_rod",
-   "name": "Obtain End Rod",
-   "type": "item",
-   "icon": "minecraft:end_rod",
-   "items": [
-    "minecraft:end_rod"
-   ],
-   "count": 1
-  },
-  {
    "id": "obtain_flowering_azalea",
    "name": "Obtain Flowering Azalea",
    "type": "item",
@@ -2735,26 +2646,6 @@
    "icon": "minecraft:amethyst_block",
    "items": [
     "minecraft:amethyst_block"
-   ],
-   "count": 1
-  },
-  {
-   "id": "obtain_ancient_debris",
-   "name": "Obtain Ancient Debris",
-   "type": "item",
-   "icon": "minecraft:ancient_debris",
-   "items": [
-    "minecraft:ancient_debris"
-   ],
-   "count": 1
-  },
-  {
-   "id": "obtain_dragon_egg",
-   "name": "Obtain Dragon Egg",
-   "type": "item",
-   "icon": "minecraft:dragon_egg",
-   "items": [
-    "minecraft:dragon_egg"
    ],
    "count": 1
   },
@@ -3450,15 +3341,6 @@
    "min": 2000
   },
   {
-   "id": "spy_enderman",
-   "name": "Spy on Enderman",
-   "type": "flag",
-   "icon": "minecraft:spyglass",
-   "any": [
-    "spied:minecraft:enderman"
-   ]
-  },
-  {
    "id": "spy_iron_golem",
    "name": "Spy on Iron Golem",
    "type": "flag",
@@ -3486,15 +3368,6 @@
    "count": 10
   },
   {
-   "id": "spy_15_unique_mobs",
-   "name": "Spy on 15 Unique Mobs",
-   "type": "set",
-   "icon": "minecraft:spyglass",
-   "group": "spy_unique",
-   "set": "spied",
-   "count": 15
-  },
-  {
    "id": "spy_20_unique_mobs",
    "name": "Spy on 20 Unique Mobs",
    "type": "set",
@@ -3502,15 +3375,6 @@
    "group": "spy_unique",
    "set": "spied",
    "count": 20
-  },
-  {
-   "id": "spy_25_unique_mobs",
-   "name": "Spy on 25 Unique Mobs",
-   "type": "set",
-   "icon": "minecraft:spyglass",
-   "group": "spy_unique",
-   "set": "spied",
-   "count": 25
   },
   {
    "id": "get_absorption_status_effect",
@@ -3639,7 +3503,8 @@
     "minecraft:copper_hoe",
     "minecraft:copper_pickaxe",
     "minecraft:copper_sword",
-    "minecraft:copper_shovel"
+    "minecraft:copper_shovel",
+    "minecraft:copper_spear"
    ]
   },
   {
@@ -3652,7 +3517,8 @@
     "minecraft:diamond_hoe",
     "minecraft:diamond_pickaxe",
     "minecraft:diamond_sword",
-    "minecraft:diamond_shovel"
+    "minecraft:diamond_shovel",
+    "minecraft:diamond_spear"
    ]
   },
   {
@@ -3665,7 +3531,8 @@
     "minecraft:golden_hoe",
     "minecraft:golden_pickaxe",
     "minecraft:golden_sword",
-    "minecraft:golden_shovel"
+    "minecraft:golden_shovel",
+    "minecraft:golden_spear"
    ]
   },
   {
@@ -3678,7 +3545,8 @@
     "minecraft:iron_hoe",
     "minecraft:iron_pickaxe",
     "minecraft:iron_sword",
-    "minecraft:iron_shovel"
+    "minecraft:iron_shovel",
+    "minecraft:iron_spear"
    ]
   },
   {
@@ -3691,7 +3559,8 @@
     "minecraft:stone_hoe",
     "minecraft:stone_pickaxe",
     "minecraft:stone_sword",
-    "minecraft:stone_shovel"
+    "minecraft:stone_shovel",
+    "minecraft:stone_spear"
    ]
   },
   {
@@ -3704,7 +3573,8 @@
     "minecraft:wooden_hoe",
     "minecraft:wooden_pickaxe",
     "minecraft:wooden_sword",
-    "minecraft:wooden_shovel"
+    "minecraft:wooden_shovel",
+    "minecraft:wooden_spear"
    ]
   },
   {

@@ -10,6 +10,7 @@ import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.player.AttackEntityCallback;
+import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.fabricmc.fabric.api.event.player.UseEntityCallback;
 import net.minecraft.ChatFormatting;
@@ -20,6 +21,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.storage.LevelResource;
 
 import java.io.IOException;
@@ -60,6 +62,9 @@ public final class ServerHooks {
     private static Object advancementsFor;
     /** The match key this world was last marked with, so the file is only written when it changes. */
     private static String markedKey;
+    /** The player made a spectator when the match ended, and the game mode they had, given back before the world saves. */
+    private static volatile UUID endSpectator;
+    private static GameType modeBeforeEnd;
 
     private ServerHooks() {
     }
@@ -70,6 +75,7 @@ public final class ServerHooks {
         ServerLifecycleEvents.SERVER_STOPPING.register(server -> {
             if (server != Minecraft.getInstance().getSingleplayerServer()) return;
             endLookout(server);
+            endSpectating(server);
             saveTracker(server);
             advancementsSeen = null;
             markedKey = null;
@@ -94,6 +100,11 @@ public final class ServerHooks {
             Tracker t = trackerFor(player);
             if (t != null) t.onUseBlock((ServerPlayer) player, player.getItemInHand(hand), hit.getBlockPos());
             return InteractionResult.PASS;
+        });
+        // After the block is gone but before the tool takes damage, so a pickaxe that breaks on it still counts.
+        PlayerBlockBreakEvents.AFTER.register((level, player, pos, state, blockEntity) -> {
+            Tracker t = trackerFor(player);
+            if (t != null) t.onBreakBlock(player.getMainHandItem(), state);
         });
         AttackEntityCallback.EVENT.register((player, level, hand, entity, hit) -> {
             Tracker t = trackerFor(player);
@@ -153,6 +164,7 @@ public final class ServerHooks {
         if (server != Minecraft.getInstance().getSingleplayerServer()) return;
         Session s = Session.current();
         long worldSeed = server.overworld().getSeed();
+        if (endSpectator != null && (s == null || !s.ended)) endSpectating(server); // a new match in this world
         if (MatchLock.on(s, worldSeed)) MatchLock.enforce(server);
         boolean hold = s != null && s.holding(worldSeed);
         if (lookout != null && !hold) endLookout(server);
@@ -272,6 +284,30 @@ public final class ServerHooks {
     private static boolean announced(Goal g) {
         return g.type.equals("set") && List.of("consumed", "bred", "hostile_kills").contains(g.str("set", ""))
                 || g.type.equals("counter_sum") || g.type.equals("stat") && g.list("keys").contains("minecraft:mob_kills");
+    }
+
+    /**
+     * The match is over: the player watches as a spectator until they leave for the lobby. Called from the client
+     * thread, which ticks on while the integrated server is paused, so it's done as a task the server runs anyway.
+     */
+    static void spectateAfterEnd(MinecraftServer server) {
+        server.execute(() -> {
+            if (endSpectator != null) return;
+            endLookout(server); // ended during the lookout: back to their own game mode first
+            ServerPlayer p = localPlayer(server);
+            if (p == null || p.isSpectator()) return;
+            modeBeforeEnd = p.isCreative() ? GameType.CREATIVE : GameType.SURVIVAL;
+            endSpectator = p.getUUID();
+            p.setGameMode(GameType.SPECTATOR);
+        });
+    }
+
+    /** Gives the player made a spectator at the end their game mode back, so the world isn't saved with them in spectator. */
+    private static void endSpectating(MinecraftServer server) {
+        UUID id = endSpectator;
+        endSpectator = null;
+        ServerPlayer p = id == null ? null : server.getPlayerList().getPlayer(id);
+        if (p != null) p.setGameMode(modeBeforeEnd);
     }
 
     private static void endLookout(MinecraftServer server) {

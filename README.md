@@ -1,6 +1,7 @@
 # OpenDraft
 
-OpenDraft is a Fabric mod for Minecraft 26.3 that plays lockout bingo with all 316 [Draftout](https://draftoutmc.com) goals.
+OpenDraft is a Fabric mod for Minecraft 26.3 that plays lockout bingo with [Draftout](https://draftoutmc.com) goals.
+Not affiliated with Draftout.
 
 Every player plays **their own singleplayer world** on the same seed, saved on their own device. Nobody joins
 anyone's world, so there is no shared-server lag. A small **synchronizer** only tracks the board: when your game
@@ -15,7 +16,9 @@ under the MIT license.
 
 ## Features
 
-- **All 316 Draftout goals**, on a random or drafted board of 3 to 25 goals.
+- **Draftout goals**, on a random or drafted board of 3 to 25 goals.  
+- **Everyone starts on the same block**: the world's spawn point, instead of vanilla's random spot around it. See
+  [Lookout](#lookout).
 - **1v1 or a free-for-all** with 3, 4 or more players.
 - **Seed filtering**: pick what a random seed must have near spawn, and how near. The options are Village,
   Shipwreck, Outpost, Witch Hut, Desert Temple, Jungle Temple, Igloo, Mansion, Ruined Portal, Trail Ruins,
@@ -91,8 +94,10 @@ version anyway. If the check can't be made (no internet, or GitHub can't be reac
    with "Loading terrain..." until the land around you has loaded (30 seconds at most), then with "Waiting for
    other players..." until the slowest computer has caught up, so nobody gets extra time to look around. Then the
    board is dealt (or drafted) and the lookout begins.
-6. After the game, press **Back to Lobby** on the full-screen board to leave the world and return to the lobby for
-   the next match.
+6. When the game ends you're put in spectator mode, and 5 seconds later (counted down above the hotbar) your game
+   saves the world and goes back to the lobby for the next match. **Back to Lobby** on the full-screen board goes
+   straight away. Your old game mode is saved with the world, so reopening it later from **Old worlds** doesn't
+   leave you in spectator.
 
 The first claim to reach the synchronizer wins the goal. The game ends once the leader can't be caught, when every
 goal is claimed, when the time limit runs out, or when everyone else has forfeited or left the game (see
@@ -235,6 +240,9 @@ same on every player's computer. Random outcomes are also standardized; see
   trades of 2 to 4 pearls: if you're behind after each 36, that barter gives pearls. More can come; which ones
   depends on the seed.
 
+- **Spawn point.** Everyone starts on the world's spawn point instead of a random spot up to 10 blocks from it
+  (see [Lookout](#lookout)), and dying without a bed respawns you there too: the `respawn_radius` game rule is 0.
+
 - **Nether fog** starts and ends much further away, so you can see across the Nether.
 
 - **First Nether exit.** If leaving the Nether for the first time makes a new Overworld portal and you were standing
@@ -303,6 +311,11 @@ gets opened to other players or commands get turned on some other way, OpenDraft
 still switch between Easy, Normal and Hard, but picking Peaceful puts the world back on Easy silently. It may still appear as Peaceful in the GUI/Settings menu
 
 ### Lookout
+
+Everyone starts on the world's spawn point itself. Vanilla puts each player at a random spot up to 10 blocks
+from it, which could be the bottom of a ravine for one player and open grass for another.  
+The mod gives
+everyone the same spawn point, so in a match world everyone starts on the same block as to be fair.
 
 When a board starts, everyone is put in spectator mode 20 blocks above the highest ground nearby, so nobody is
 stuck inside a mountain. You're held there for the lookout (30 seconds by default) and can look around but not
