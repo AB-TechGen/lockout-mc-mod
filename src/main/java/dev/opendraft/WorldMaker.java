@@ -281,7 +281,7 @@ public final class WorldMaker {
         call(ui, "setName", pendingName);
         call(ui, "setSeed", Long.toString(pendingSeed));
         call(ui, "setAllowCommands", false);
-        call(ui, "setDifficulty", Difficulty.NORMAL); // everyone plays the same difficulty, and never Peaceful
+        call(ui, "setDifficulty", Difficulty.EASY); // everyone starts on the same difficulty, and never Peaceful
         pressOn = screen;
         pressIn = 3; // give the screen a moment to settle
     }

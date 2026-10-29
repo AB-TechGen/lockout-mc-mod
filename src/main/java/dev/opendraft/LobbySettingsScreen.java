@@ -4,6 +4,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.AbstractSliderButton;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
@@ -80,7 +81,7 @@ public final class LobbySettingsScreen extends Screen {
             boards = new Button[]{random, drafted};
             refreshBoardButtons();
             y += ROW + 4;
-            stepper(y, () -> "Size: " + Settings.boardSize(size), () -> size, v -> size = clamp(v, 3, 25), 1);
+            addRenderableWidget(new SizeSlider(cx - 102, y));
             y += ROW;
             stepper(y, () -> "Time limit: " + (minutes == 0 ? "none" : minutes + " min"), () -> minutes, v -> minutes = clamp(v, 0, 600), 5);
             y += ROW;
@@ -145,6 +146,26 @@ public final class LobbySettingsScreen extends Screen {
         super.tick();
         refreshBoardButtons();
         refreshToggles();
+    }
+
+    /** The board size, 3 to 25 goals, as a slider across the width a stepper takes up. */
+    private static final class SizeSlider extends AbstractSliderButton {
+        private static final int MIN = 3, MAX = 25;
+
+        SizeSlider(int x, int y) {
+            super(x, y, 204, 20, Component.empty(), (clamp(size, MIN, MAX) - MIN) / (double) (MAX - MIN));
+            updateMessage();
+        }
+
+        @Override
+        protected void applyValue() {
+            size = MIN + (int) Math.round(value * (MAX - MIN));
+        }
+
+        @Override
+        protected void updateMessage() {
+            setMessage(Component.literal("Size: " + Settings.boardSize(size)));
+        }
     }
 
     /** A value with - and + either side. Shift-click steps by 1 where the normal step is bigger. */

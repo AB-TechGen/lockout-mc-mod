@@ -4,6 +4,7 @@
   "package": "dev.opendraft.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
+    "AgeLockMixin",
     "CaptainMixin",
     "ChunkMapSpawningMixin",
     "ContainerMenuMixin",

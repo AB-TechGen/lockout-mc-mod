@@ -2062,13 +2062,11 @@
   {
    "id": "use_golden_dandelion",
    "name": "Feed Golden Dandelion to any Baby Mob",
-   "type": "stat",
+   "type": "flag",
    "icon": "minecraft:golden_dandelion",
-   "stat": "used",
-   "keys": [
-    "minecraft:golden_dandelion"
-   ],
-   "min": 1
+   "any": [
+    "golden_dandelion_fed"
+   ]
   },
   {
    "id": "breed_4_unique_animals",

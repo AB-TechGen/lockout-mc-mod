@@ -487,6 +487,11 @@ public final class Tracker {
         }
     }
 
+    /** From the age lock mixin: the player fed a golden dandelion to a baby mob, locking or unlocking its age. */
+    public void onFedGoldenDandelion() {
+        flag("golden_dandelion_fed");
+    }
+
     /** From the item mixin: the player finished eating or drinking. */
     public void onConsumed(ServerPlayer p, ItemStack stack) {
         String item = id(stack);

@@ -300,7 +300,7 @@ Open the full-screen board during a match:
 
 ### Fair play
 
-Match worlds are created with commands off, on Normal difficulty. 
+Match worlds are created with commands off, on Easy difficulty. 
 - During a match, **Open to LAN**, **Allow Commands**,
 the game mode buttons and **Edit Game Rules** are greyed out, in the pause menu and in World Options.
 
