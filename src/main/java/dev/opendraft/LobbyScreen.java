@@ -80,7 +80,7 @@ public final class LobbyScreen extends Screen {
                         mc.gui.setScreen(LobbySettingsScreen.open(this)))
                 .bounds(width - 8 - PANEL_W + 4, 104, PANEL_W - 8, 20).build());
         startButton = addRenderableWidget(Button.builder(Component.literal("Start"), b -> {
-                    if (SeedSearch.running()) SeedSearch.cancel();
+                    if (SeedSearch.running()) OpenDraftClient.stopLobbySearch();
                     else OpenDraftClient.startLobbyMatch();
                 })
                 .bounds(width - 108, height - 28, 100, 20).build());
@@ -316,6 +316,7 @@ public final class LobbyScreen extends Screen {
     private static String matchState(Session s) {
         String search = SeedSearch.status();
         if (search == null && s.isLeader()) search = SeedSearch.lastProblem;
+        if (search == null && s.searchingBy != null && !s.isLeader()) search = "Searching for a seed...";
         if (search != null && !s.matchOn()) return search;
         if (!s.matchOn()) {
             if (s.ended && s.winner != null) {

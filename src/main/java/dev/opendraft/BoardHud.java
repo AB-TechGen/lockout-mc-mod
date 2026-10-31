@@ -113,9 +113,10 @@ public final class BoardHud {
     }
 
     private static void draftPanel(GuiGraphicsExtractor g, Font font, Session s, int sw, int y0) {
-        long left = Math.max(0, s.turnDeadline - System.currentTimeMillis());
+        long left = s.turnLeft();
         Component a = Component.literal("Board draft").withStyle(ChatFormatting.GOLD);
-        Component b = s.turnPlayer == null ? Component.literal("Starting...")
+        Component b = s.draftPaused ? Component.literal("Paused: looking for a new seed...").withStyle(ChatFormatting.YELLOW)
+                : s.turnPlayer == null ? Component.literal("Starting...")
                 : s.myTurn() ? Component.literal("Your pick! " + formatCountdown(left)).withStyle(ChatFormatting.AQUA)
                 : Component.literal(shortName(s.turnPlayer) + " is picking " + formatCountdown(left));
         Component c = Component.literal("Press " + OpenDraftClient.boardKeyName() + " to open the board").withStyle(ChatFormatting.GRAY);

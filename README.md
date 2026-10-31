@@ -344,7 +344,8 @@ in join order and then back the other way (A B C, C B A, A B C...), so whoever e
 and nobody gets ahead.   
 
 With two players, that's 1 goal on the first turn and 2 on every turn after. The board opens
-on your turn; click a goal to pick it.  
+on your turn; click a goal to pick it. If you're in a menu, chat or your inventory, it opens as soon as you close
+that.  
 
 A goal
 can only be picked once, and when a turn runs out of time the remaining picks are made at random. 
@@ -352,11 +353,20 @@ can only be picked once, and when a turn runs out of time the remaining picks ar
 The board is
 shuffled once it's full.
 
+Don't like the spawn? During the draft, the leader can press **New Seed** on the board (twice, to confirm). The
+draft pauses straight away: nobody can pick, and the turn clock stops. A new seed is found with the lobby's seed
+filter, and then everyone moves to a fresh world on it, where a new draft is dealt. Picks from the old draft are
+thrown away. If no seed turns up, or the leader presses **Stop Search**, the draft carries on where it stopped.
+The button isn't there when the lobby uses a typed-in seed.
+
 ### Chat
 
 What you type in chat in a world goes to everyone in the lobby, like on a shared server: it shows as `<name>
 message`, with the name in that player's board colour and the message in white. The lobby screen's chat is the same
 conversation. Advancements anyone earns also appear in everyone's chat. Death messages stay in your own world.
+
+Chat is cleared when the clock starts, so the match begins with an empty chat. What you sent stays in your history
+(the up arrow brings it back).
 
 The **Player chat** button in the lobby (under Old worlds) turns this off for you: your chat stays in your own world,
 and other players' messages only show on the lobby screen. Each player sets their own; it's saved as `playerChat` in

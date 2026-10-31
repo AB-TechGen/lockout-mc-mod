@@ -21,7 +21,8 @@ import java.util.Optional;
 /**
  * The board as a small panel in the middle of the screen. Opened with the board key (or automatically on your draft turn). Hovering a goal
  * shows its name, who has it and how far along you are; during a draft, clicking a free goal on
- * your turn picks it. Forfeit and draw votes live here, and "Back to Lobby" once the game is over.
+ * your turn picks it, and the leader can throw the draft away for a new seed. Forfeit and draw votes live here, and
+ * "Back to Lobby" once the game is over.
  * The game keeps running behind it, since everyone's clock is the synchronizer's.
  */
 public final class BoardScreen extends Screen {
@@ -38,12 +39,14 @@ public final class BoardScreen extends Screen {
 
     /** The cell under the mouse in the last frame, or -1. */
     private int hovered = -1;
-    private Button forfeitButton, drawButton, lobbyButton, closeButton;
+    private Button forfeitButton, drawButton, newSeedButton, lobbyButton, closeButton;
     private SizeSlider sizeSlider;
     /** The board size when the screen opened, so it's only saved if the slider changed it. */
     private int scaleWhenOpened;
     /** Forfeit asks once more before it counts; this is when the first press happened. */
     private long forfeitArmedAt;
+    /** New Seed asks once more too, since it throws away everyone's picks. */
+    private long newSeedArmedAt;
 
     public BoardScreen() {
         super(Component.literal("OpenDraft"));
@@ -55,6 +58,8 @@ public final class BoardScreen extends Screen {
         forfeitButton = addRenderableWidget(Button.builder(Component.literal("Forfeit"), b -> forfeit())
                 .bounds(0, 0, BUTTON_W, 20).build());
         drawButton = addRenderableWidget(Button.builder(Component.literal("Offer Draw"), b -> draw())
+                .bounds(0, 0, BUTTON_W, 20).build());
+        newSeedButton = addRenderableWidget(Button.builder(Component.literal("New Seed"), b -> newSeed())
                 .bounds(0, 0, BUTTON_W, 20).build());
         lobbyButton = addRenderableWidget(Button.builder(Component.literal("Back to Lobby"), b -> WorldMaker.leaveToLobby())
                 .bounds(0, 0, BUTTON_W, 20).build());
@@ -117,6 +122,14 @@ public final class BoardScreen extends Screen {
         if (System.currentTimeMillis() - forfeitArmedAt > 4000) forfeitArmedAt = 0;
         forfeitButton.setMessage(Component.literal(forfeitArmedAt > 0 ? "Really forfeit?" : "Forfeit")
                 .withStyle(forfeitArmedAt > 0 ? ChatFormatting.RED : ChatFormatting.RESET));
+        newSeedButton.visible = OpenDraftClient.canReroll(s);
+        if (System.currentTimeMillis() - newSeedArmedAt > 4000) newSeedArmedAt = 0;
+        boolean searching = newSeedButton.visible && s.draftPaused;
+        // A search that isn't this draft's (none should be) leaves nothing to press.
+        newSeedButton.active = searching || !SeedSearch.running();
+        newSeedButton.setMessage(searching ? Component.literal("Stop Search")
+                : Component.literal(newSeedArmedAt > 0 ? "Really reroll?" : "New Seed")
+                .withStyle(newSeedArmedAt > 0 ? ChatFormatting.RED : ChatFormatting.RESET));
         if (s != null) {
             List<String> votes = s.drawVotes;
             int voters = 0;
@@ -133,6 +146,7 @@ public final class BoardScreen extends Screen {
         List<Button> row = new ArrayList<>();
         if (forfeitButton.visible) row.add(forfeitButton);
         if (drawButton.visible) row.add(drawButton);
+        if (newSeedButton.visible) row.add(newSeedButton);
         if (lobbyButton.visible) row.add(lobbyButton);
         row.add(closeButton);
         int x = (width - (row.size() * BUTTON_W + (row.size() - 1) * 4)) / 2;
@@ -212,6 +226,21 @@ public final class BoardScreen extends Screen {
         s.send("FORFEIT");
     }
 
+    private void newSeed() {
+        Session s = Session.current();
+        if (s == null) return;
+        if (s.draftPaused) {
+            OpenDraftClient.cancelReroll();
+            return;
+        }
+        if (newSeedArmedAt == 0) {
+            newSeedArmedAt = System.currentTimeMillis();
+            return;
+        }
+        newSeedArmedAt = 0;
+        OpenDraftClient.rerollSeed();
+    }
+
     private static void draw() {
         Session s = Session.current();
         if (s == null) return;
@@ -240,7 +269,7 @@ public final class BoardScreen extends Screen {
     public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
         if (super.mouseClicked(event, doubleClick)) return true;
         Session s = Session.current();
-        if (s == null || !s.myTurn() || hovered < 0) return false;
+        if (s == null || !s.myTurn() || s.draftPaused || hovered < 0) return false;
         String[] picks = s.draftPicks;
         if (hovered < picks.length && picks[hovered] == null) {
             s.send("PICK " + s.draftId + " " + hovered);
@@ -328,7 +357,7 @@ public final class BoardScreen extends Screen {
                 String who = owner.equals(s.me) ? "you" : owner;
                 tip.add(Component.literal((draft ? "Picked by " : "Claimed by ") + who)
                         .withColor(OpenDraftClient.colorOf(owner) & 0xFFFFFF));
-            } else if (draft && s.myTurn()) {
+            } else if (draft && s.myTurn() && !s.draftPaused) {
                 tip.add(Component.literal("Click to pick").withStyle(ChatFormatting.AQUA));
             } else if (!draft) {
                 String progress = ServerHooks.progress(s.boardId, hovered);
@@ -339,7 +368,8 @@ public final class BoardScreen extends Screen {
     }
 
     private static Component draftStatus(Session s) {
-        long left = Math.max(0, s.turnDeadline - System.currentTimeMillis());
+        if (s.draftPaused) return Component.literal("Paused: looking for a new seed...").withStyle(ChatFormatting.YELLOW);
+        long left = s.turnLeft();
         if (s.turnPlayer == null) return Component.literal("Starting...");
         String picks = s.turnPicks + (s.turnPicks == 1 ? " goal" : " goals");
         if (s.myTurn()) {

@@ -73,6 +73,8 @@ public final class Session {
     public volatile Map<String, Integer> colors = Map.of();
     /** Where each player is ("overworld", "nether", "end" or "lobby"), for the tab list. */
     public volatile Map<String, String> where = Map.of();
+    /** The leader whose game is looking for a seed for the next match, or null. */
+    public volatile String searchingBy;
     /** The leader's settings as the synchronizer last relayed them. */
     public volatile Map<String, String> lobbySettings = Map.of();
     public final List<String> chatLines = new CopyOnWriteArrayList<>();
@@ -98,6 +100,8 @@ public final class Session {
     public volatile boolean overtime;
     /** The board began with a lookout, so the HUD shows the countdown and "GO!". */
     public volatile boolean hadLookout;
+    /** Chat was cleared for this board's start, or its start has passed; see OpenDraftClient.wipeChatAtStart. */
+    public volatile boolean chatWiped;
     public volatile long endMillis;
     public volatile boolean ended;
     public volatile String winner;
@@ -114,6 +118,11 @@ public final class Session {
     public volatile String turnPlayer;
     public volatile int turnPicks;
     public volatile long turnDeadline;
+    /** The leader is looking for a new seed: nobody picks, and the turn's time stays at pausedLeft. */
+    public volatile boolean draftPaused;
+    public volatile long pausedLeft;
+    /** The board should open as soon as no other screen is (the draft started, or it's our turn). */
+    public volatile boolean boardWanted;
 
     private Session(OpenDraftHost host, String address, String asked, String helloSeed) {
         this.host = host;
@@ -333,6 +342,11 @@ public final class Session {
         return drafting() && me != null && me.equals(turnPlayer);
     }
 
+    /** What's left of the current draft turn, which doesn't run down while the draft is paused. */
+    public long turnLeft() {
+        return draftPaused ? pausedLeft : Math.max(0, turnDeadline - System.currentTimeMillis());
+    }
+
     public boolean iForfeited() {
         return me != null && forfeited.contains(me);
     }
@@ -442,9 +456,11 @@ public final class Session {
                 matchId = id;
                 matchSeed = seed;
                 matchKey = parts.length > 2 ? parts[2] : null;
+                searchingBy = null;
                 goals = null;
                 owners = new String[0];
                 draftPool = null;
+                draftPaused = false;
                 ended = false;
                 winner = null;
                 forfeited = Set.of();
@@ -471,26 +487,32 @@ public final class Session {
                 List<Goal> pool = resolve(Arrays.asList(parts).subList(1, parts.length));
                 draftPicks = new String[pool.size()];
                 turnPlayer = null;
+                draftPaused = false;
                 draftId = id;
                 draftPool = pool;
                 goals = null;
                 owners = new String[0];
                 ended = false;
                 winner = null;
-                openBoardScreen();
+                boardWanted = true;
             }
             case "TURN" -> {
                 String[] parts = rest.split(" ");
                 turnPicks = Integer.parseInt(parts[1]);
-                turnDeadline = System.currentTimeMillis() + Long.parseLong(parts[2]);
+                long left = Long.parseLong(parts[2]);
+                turnDeadline = System.currentTimeMillis() + left;
+                pausedLeft = left;
                 boolean newTurn = !parts[0].equals(turnPlayer);
                 turnPlayer = parts[0];
                 if (newTurn && parts[0].equals(me)) {
-                    OpenDraftClient.chat(Component.literal("Your turn: pick " + turnPicks + (turnPicks == 1 ? " goal" : " goals")
-                            + " (" + Long.parseLong(parts[2]) / 1000 + "s). Press " + OpenDraftClient.boardKeyName()
-                            + " if the board isn't open.").withStyle(ChatFormatting.AQUA));
-                    openBoardScreen();
+                    OpenDraftClient.overlay(Component.literal("Your turn: pick " + turnPicks + (turnPicks == 1 ? " goal" : " goals"))
+                            .withStyle(ChatFormatting.AQUA));
+                    boardWanted = true;
                 }
+            }
+            case "SEARCHING" -> searchingBy = rest.equals("-") ? null : rest;
+            case "DRAFTPAUSED", "DRAFTRESUMED" -> {
+                if (Integer.parseInt(rest.trim()) == draftId) draftPaused = p[0].equals("DRAFTPAUSED");
             }
             case "PICKED" -> {
                 String[] parts = rest.split(" ");
@@ -499,12 +521,7 @@ public final class Session {
                 List<Goal> pool = draftPool;
                 if (pool == null || idx < 0 || idx >= picks.length || parts[1].equals(picks[idx])) return; // known already
                 picks[idx] = parts[1];
-                draftPicks = picks;
-                Goal g = pool.get(idx);
-                OpenDraftClient.chat(Component.literal(parts[1].equals(me) ? "You" : parts[1])
-                        .withColor(OpenDraftClient.colorOf(parts[1]) & 0xFFFFFF)
-                        .append(Component.literal(" picked ").withStyle(ChatFormatting.GRAY))
-                        .append(Component.literal(g == null ? "?" : g.name).withStyle(ChatFormatting.WHITE)));
+                draftPicks = picks; // shown on the board, not in chat
             }
             case "BOARD" -> {
                 String[] parts = rest.split(" ");
@@ -520,6 +537,7 @@ public final class Session {
                 drawVotes = List.of();
                 startMillis = NOT_STARTED;
                 hadLookout = false;
+                chatWiped = false;
                 draftPool = null;
                 boardId = Integer.parseInt(parts[0]);
                 goals = list;
@@ -536,19 +554,17 @@ public final class Session {
                 startMillis = System.currentTimeMillis() - elapsed;
                 waitingForStart = false; // the lookout (if any) holds players from here
                 if (again) return;
-                List<Goal> g = goals;
-                int n = g == null ? 0 : g.size();
-                String time = Settings.timing(limitSec / 60, overtimeSec / 60).toLowerCase(java.util.Locale.ROOT);
-                String key = OpenDraftClient.boardKeyName();
+                // The goal count and time limit are on the board and the clock, so these only say what to do.
                 if (elapsed < 0) {
-                    OpenDraftClient.chat(Component.literal("OpenDraft: " + n + " goals, " + time + ". Look around for "
-                            + (-elapsed + 999) / 1000 + "s first; hold right-click to zoom, sneak to see from the ground and jump "
-                            + "to go back up. You're put on the ground for the last " + GROUND_MILLIS / 1000 + "s. Press " + key
-                            + " for the board.")
+                    OpenDraftClient.chat(Component.literal("Look around for " + (-elapsed + 999) / 1000 + "s: hold right-click"
+                            + " to zoom, sneak to see from the ground, jump to go back up. You're put on the ground for the last "
+                            + GROUND_MILLIS / 1000 + "s.")
                             .withStyle(ChatFormatting.GOLD));
                 } else if (elapsed < 1000) {
-                    OpenDraftClient.chat(Component.literal("The match has started! " + n + " goals, " + time + ". Press " + key + " for the board.")
-                            .withStyle(ChatFormatting.GOLD));
+                    // No lookout, so the clock starts now: clear the pre-match chat first.
+                    chatWiped = true;
+                    OpenDraftClient.clearChat();
+                    OpenDraftClient.chat(Component.literal("The match has started!").withStyle(ChatFormatting.GOLD));
                 }
             }
             case "OVERTIME" -> {
@@ -658,12 +674,5 @@ public final class Session {
                     + ". Make sure everyone has the same mod version.").withStyle(ChatFormatting.RED));
         }
         return list;
-    }
-
-    private static void openBoardScreen() {
-        Minecraft mc = Minecraft.getInstance();
-        mc.execute(() -> {
-            if (mc.player != null && mc.gui.screen() == null) mc.gui.setScreen(new BoardScreen());
-        });
     }
 }

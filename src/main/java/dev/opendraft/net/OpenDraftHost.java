@@ -72,6 +72,8 @@ public final class OpenDraftHost {
     // The lobby: the leader's settings (shown to everyone) and the match being loaded.
     private String settings = "";
     private int matchId;
+    /** The leader whose game is looking for a seed for the next match, or null. */
+    private String searching;
     /** Random for each match, so a player rejoining it reopens that match's world and not an older one on the same seed. */
     private String matchKey = "";
     private boolean loading; // between MATCH and GO, while everyone creates their world
@@ -410,6 +412,7 @@ public final class OpenDraftHost {
         broadcast(playersLine());
         // Catch the newcomer up on whatever is happening.
         if (!settings.isEmpty()) ch.send("SETTINGS " + settings);
+        if (searching != null) ch.send(searchingLine());
         where.forEach((who, place) -> ch.send("WHERE " + who + " " + place));
         boolean matchOn = loading || boardDue || draft != null || (keys != null && !ended);
         if (matchId > 0 && matchOn) ch.send("MATCH " + matchId + " " + seed + " " + matchKey);
@@ -424,6 +427,7 @@ public final class OpenDraftHost {
                 if (draft.pickedBy[i] != null) ch.send("PICKED " + i + " " + draft.pickedBy[i]);
             }
             ch.send(draft.turnLine());
+            ch.send(draft.pauseLine());
         } else if (keys != null) {
             ch.send("BOARD " + boardId + " " + String.join(" ", keys));
             ch.send(startLine());
@@ -453,6 +457,8 @@ public final class OpenDraftHost {
         checkDraw();
         checkLoaded();
         goToLeader();
+        resumeIfPausedBy(name);
+        stopSearchingIfBy(name);
         while (away.size() > MAX_AWAY) {
             String oldest = away.keySet().iterator().next();
             leave(oldest, players.get(oldest), "didn't come back, so they've left");
@@ -473,6 +479,8 @@ public final class OpenDraftHost {
         broadcast(awayLine());
         broadcast(playersLine());
         broadcast("INFO " + name + " " + why + ".");
+        resumeIfPausedBy(name);
+        stopSearchingIfBy(name);
         if (draft != null && name.equals(draft.current())) draft.nextTurn();
         ready.remove(name);
         checkLoaded();
@@ -519,6 +527,23 @@ public final class OpenDraftHost {
         if (loading && !here.isEmpty() && ready.containsAll(here)) go();
     }
 
+    /** The player looking for a new seed dropped or left, so nobody will send the new match: the draft goes on. */
+    private void resumeIfPausedBy(String name) {
+        if (draft != null && name.equals(draft.pausedBy)) draft.resume();
+    }
+
+    /** The leader looking for a seed dropped or left, so that search won't start a match. */
+    private void stopSearchingIfBy(String name) {
+        if (!name.equals(searching)) return;
+        searching = null;
+        broadcast(searchingLine());
+    }
+
+    /** SEARCHING &lt;name | -&gt;: who is looking for a seed, so everyone's lobby can say so. */
+    private String searchingLine() {
+        return "SEARCHING " + (searching == null ? "-" : searching);
+    }
+
     /** AWAY &lt;name&gt;...: whose connection dropped, in the order they dropped. */
     private String awayLine() {
         return away.isEmpty() ? "AWAY" : "AWAY " + String.join(" ", away.keySet());
@@ -562,7 +587,6 @@ public final class OpenDraftHost {
                 draft = new Draft(pool, size, Integer.parseInt(p[5]), Integer.parseInt(p[1]), Integer.parseInt(p[2]),
                         Integer.parseInt(p[3]), new ArrayList<>(players.keySet()));
                 log.accept(name + " started a draft for " + size + " goals from " + pool.size());
-                broadcast("INFO " + name + " started a draft. Pick goals when it's your turn.");
                 broadcast("DRAFTPOOL " + draftId + " " + String.join(" ", pool));
                 draft.startTurn();
             }
@@ -570,16 +594,34 @@ public final class OpenDraftHost {
                 if (draft == null || p.length != 3 || Integer.parseInt(p[1]) != draftId) return;
                 draft.pick(name, Integer.parseInt(p[2]));
             }
+            case "PAUSEDRAFT" -> {
+                // PAUSEDRAFT <draftId>: the leader is looking for a new seed. No picks and no turn clock until
+                // RESUMEDRAFT, or MATCH sends everyone to the new seed.
+                if (draft == null || p.length != 2 || Integer.parseInt(p[1]) != draftId || !name.equals(leader())) return;
+                draft.pause(name);
+            }
+            case "RESUMEDRAFT" -> {
+                // RESUMEDRAFT <draftId>: the search for a new seed failed or was stopped.
+                if (draft == null || p.length != 2 || Integer.parseInt(p[1]) != draftId || !name.equals(draft.pausedBy)) return;
+                draft.resume();
+            }
             case "SETTINGS" -> {
                 // The leader's lobby settings, shown to everyone. Opaque to the synchronizer.
                 if (!name.equals(leader()) || line.length() > 1000) return;
                 settings = line.length() > "SETTINGS ".length() ? line.substring("SETTINGS ".length()) : "";
                 broadcast("SETTINGS " + settings);
             }
+            case "SEARCHING" -> {
+                // SEARCHING <1|0>: the leader's game started or stopped looking for a seed.
+                if (p.length != 2 || !name.equals(leader())) return;
+                searching = p[1].equals("1") ? name : null;
+                broadcast(searchingLine());
+            }
             case "MATCH" -> {
                 // MATCH <seed>: everyone makes a new world with this seed; GO once they're all in.
                 if (p.length != 2 || !mayStart(name)) return;
                 seed = Long.parseLong(p[1]);
+                searching = null; // games stop showing the search when MATCH arrives
                 matchId++;
                 matchKey = Long.toHexString(random.nextLong());
                 goSentTo = null;
@@ -1012,6 +1054,9 @@ public final class OpenDraftHost {
         String turnPlayer;
         int picksLeft;
         long deadline = Long.MAX_VALUE;
+        /** The leader looking for a new seed, or null. While paused, nobody picks and the turn's time stays at pausedLeft. */
+        String pausedBy;
+        long pausedLeft;
 
         Draft(List<String> pool, int size, int turnSec, int limit, int overtimeLength, int lookout, List<String> turnOrder) {
             this.pool = new ArrayList<>(pool);
@@ -1050,15 +1095,50 @@ public final class OpenDraftHost {
             while (k > 0 && run < 2 && snake(k + run, n) == who) run++; // a lone player still picks 1, then 2s
             turnPlayer = turnOrder.get(who);
             picksLeft = Math.min(run, size - k);
-            deadline = System.currentTimeMillis() + turnSec * 1000L;
+            if (pausedBy != null) {
+                pausedLeft = turnSec * 1000L; // the new turn's clock starts once the draft goes on
+            } else {
+                deadline = System.currentTimeMillis() + turnSec * 1000L;
+            }
             broadcast(turnLine());
         }
 
+        long millisLeft() {
+            return pausedBy != null ? pausedLeft : Math.max(0, deadline - System.currentTimeMillis());
+        }
+
         String turnLine() {
-            return "TURN " + current() + " " + picksLeft + " " + Math.max(0, deadline - System.currentTimeMillis());
+            return "TURN " + current() + " " + picksLeft + " " + millisLeft();
+        }
+
+        /** DRAFTPAUSED &lt;draftId&gt; or DRAFTRESUMED &lt;draftId&gt;. */
+        String pauseLine() {
+            return (pausedBy != null ? "DRAFTPAUSED " : "DRAFTRESUMED ") + draftId;
+        }
+
+        void pause(String who) {
+            if (pausedBy != null) return;
+            pausedLeft = millisLeft();
+            pausedBy = who;
+            deadline = Long.MAX_VALUE;
+            log.accept(who + " paused the draft to look for a new seed");
+            broadcast("INFO " + who + " is looking for a new seed. The draft is paused, and its picks will be thrown away.");
+            broadcast(pauseLine());
+            broadcast(turnLine());
+        }
+
+        void resume() {
+            if (pausedBy == null) return;
+            pausedBy = null;
+            deadline = System.currentTimeMillis() + pausedLeft;
+            log.accept("the draft goes on");
+            broadcast("INFO No new seed, so the draft goes on.");
+            broadcast(pauseLine());
+            broadcast(turnLine());
         }
 
         void pick(String who, int index) {
+            if (pausedBy != null) return;
             if (!who.equals(current()) || index < 0 || index >= pool.size() || pickedBy[index] != null) return;
             pickedBy[index] = who;
             order.add(index);
@@ -1078,7 +1158,7 @@ public final class OpenDraftHost {
             for (int i = 0; i < pickedBy.length; i++) if (pickedBy[i] == null) free.add(i);
             Collections.shuffle(free, random);
             int n = picksLeft;
-            broadcast("INFO " + who + " ran out of time; picking at random.");
+            broadcast("INFO " + who + " timed out, picked at random.");
             for (int i = 0; i < n && i < free.size() && draft == this; i++) pick(who, free.get(i));
         }
 
@@ -1088,7 +1168,6 @@ public final class OpenDraftHost {
             // Shuffle so a cell's position doesn't reveal who picked it.
             Collections.shuffle(chosen, random);
             draft = null;
-            broadcast("INFO Draft complete.");
             startMatch(chosen, limit, overtimeLength, lookout);
         }
     }

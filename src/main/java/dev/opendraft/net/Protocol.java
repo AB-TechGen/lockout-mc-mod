@@ -9,6 +9,7 @@ package dev.opendraft.net;
  *                  the token is the player's secret: the same name and token get a dropped player's place back)
  * client -> host   LEAVE                       (leaving on purpose, so the place isn't kept for a reconnect)
  * client -> host   SETTINGS &lt;key=value&gt;...    (leader only; relayed as-is so the lobby can show them)
+ * client -> host   SEARCHING &lt;1 | 0&gt;           (leader: my game started or stopped looking for a seed)
  * client -> host   MATCH &lt;seed&gt;                (leader: everyone makes a new world with this seed)
  * client -> host   READY &lt;matchId&gt;             (my world for that match has loaded)
  * client -> host   FORFEIT
@@ -18,6 +19,8 @@ package dev.opendraft.net;
  * client -> host   NEWBOARD &lt;limitSec&gt; &lt;overtimeSec&gt; &lt;lookoutSec&gt; &lt;key&gt;...
  * client -> host   DRAFT &lt;limitSec&gt; &lt;overtimeSec&gt; &lt;lookoutSec&gt; &lt;size&gt; &lt;turnSec&gt; &lt;poolKey&gt;...
  * client -> host   PICK &lt;draftId&gt; &lt;poolIndex&gt;
+ * client -> host   PAUSEDRAFT &lt;draftId&gt;        (leader: looking for a new seed; no picks, turn clock stopped)
+ * client -> host   RESUMEDRAFT &lt;draftId&gt;       (no new seed after all; MATCH ends the paused draft instead)
  * client -> host   CLAIM &lt;boardId&gt; &lt;index&gt;
  * client -> host   ADV &lt;task|goal|challenge&gt; &lt;title...&gt;
  * client -> host   PONG &lt;number&gt;               (the answer to PING, with the same number)
@@ -28,6 +31,7 @@ package dev.opendraft.net;
  * host -> client   AWAY &lt;name&gt;...              (players whose connection dropped; their place is kept for HOLD_SECONDS)
  * host -> client   CLOSED                      (the lobby is closing; don't try to reconnect)
  * host -> client   SETTINGS &lt;key=value&gt;...
+ * host -> client   SEARCHING &lt;name | -&gt;        (who is looking for a seed; MATCH also ends it)
  * host -> client   MATCH &lt;matchId&gt; &lt;seed&gt; &lt;key&gt;  (the key tells this match's world apart when rejoining it)
  * host -> client   GO &lt;matchId&gt;                (everyone's world is ready; the leader deals the board)
  * host -> client   FORFEITED &lt;name&gt;
@@ -38,6 +42,7 @@ package dev.opendraft.net;
  * host -> client   DRAFTPOOL &lt;draftId&gt; &lt;key&gt;...
  * host -> client   TURN &lt;name&gt; &lt;picks&gt; &lt;millisLeft&gt;
  * host -> client   PICKED &lt;poolIndex&gt; &lt;name&gt;
+ * host -> client   DRAFTPAUSED &lt;draftId&gt; | DRAFTRESUMED &lt;draftId&gt;  (TURN's millisLeft stays put while paused)
  * host -> client   BOARD &lt;boardId&gt; &lt;key&gt;...    (a new board; clears all claims)
  * host -> client   START &lt;elapsedMillis&gt; &lt;limitSec&gt; &lt;overtimeSec&gt;  (negative elapsed = lookout left)
  * host -> client   OVERTIME
@@ -49,7 +54,7 @@ package dev.opendraft.net;
  * </pre>
  */
 public final class Protocol {
-    public static final int VERSION = 10;
+    public static final int VERSION = 11;
     /** A draw offer that not everyone has accepted after this long is declined. */
     public static final int DRAW_OFFER_SECONDS = 30;
     /** How long a dropped player's place is kept, and how long their game (and the relay) keep trying to get back. */

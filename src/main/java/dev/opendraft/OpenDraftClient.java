@@ -107,6 +107,8 @@ public final class OpenDraftClient implements ClientModInitializer {
             if (s != null && server != null && mc.gui.hud.isHidden() && s.waitingForOthers(server.overworld().getSeed())) {
                 mc.gui.hud.toggle();
             }
+            openWantedBoard(mc, s);
+            wipeChatAtStart(mc, s);
         });
         // The lobby button on the title screen, filling in Create World for lobby matches, and no LAN or cheats mid-match.
         ScreenEvents.AFTER_INIT.register((client, screen, w, h) -> {
@@ -270,6 +272,38 @@ public final class OpenDraftClient implements ClientModInitializer {
 
     private static final float NETHER_FOG_START = 96, NETHER_FOG_END = 512;
 
+    /**
+     * Opens the board when the draft starts or it's our turn, as soon as nothing else is on screen: a player in the
+     * pause menu, chat or their inventory gets it once they close that, instead of having it pulled out from under them.
+     */
+    private static void openWantedBoard(Minecraft mc, Session s) {
+        if (s == null || !s.boardWanted) return;
+        if (!s.drafting() || mc.gui.screen() instanceof BoardScreen) {
+            s.boardWanted = false; // the draft is over, or the board is open already
+        } else if (mc.player != null && mc.gui.screen() == null) {
+            s.boardWanted = false;
+            mc.gui.setScreen(new BoardScreen());
+        }
+    }
+
+    /**
+     * Clears chat once, when a lookout ends and the clock starts, so the game begins with an empty chat. Only when
+     * seen live: someone reconnecting into a running game keeps theirs. (Without a lookout, START does it.)
+     */
+    private static void wipeChatAtStart(Minecraft mc, Session s) {
+        if (s == null || s.chatWiped || s.goals == null || !s.hadLookout || s.startMillis == Session.NOT_STARTED) return;
+        long since = System.currentTimeMillis() - s.startMillis;
+        if (since < 0) return;
+        s.chatWiped = true;
+        if (since < 2000 && mc.player != null) mc.gui.hud.getChat().clearMessages(false);
+    }
+
+    /** Clears what chat shows. The messages you sent stay, so the up arrow still brings them back. */
+    public static void clearChat() {
+        Minecraft mc = Minecraft.getInstance();
+        mc.execute(() -> mc.gui.hud.getChat().clearMessages(false));
+    }
+
     /** The lobby's Start button: shares the settings and sends everyone into a new world. */
     static void startLobbyMatch() {
         Session s = Session.current();
@@ -283,17 +317,68 @@ public final class OpenDraftClient implements ClientModInitializer {
             return;
         }
         // Every random seed has a bastion and a fortress near 0, 0 in the Nether, so there's always a search.
+        // Only the leader sees the details (on the lobby screen); everyone else's lobby says "Searching for a seed...".
         int radius = Settings.radius;
-        sayInLobby(s, "Looking for a seed with " + SeedSearch.wanted(near, radius, true) + "...");
+        s.send("SEARCHING 1");
         SeedSearch.start(near, radius, true, found -> {
+            if (Session.current() != s) return;
             // Only start if nothing changed while searching.
-            if (Session.current() != s || !s.isLeader() || s.matchOn()) return;
-            sayInLobby(s, found.summary());
+            if (!s.isLeader() || s.matchOn()) {
+                s.send("SEARCHING 0");
+                return;
+            }
+            LOG.info(found.summary());
             s.send("MATCH " + found.seed());
         }, why -> {
             if (Session.current() != s) return;
+            s.send("SEARCHING 0");
             sayInLobby(s, "Couldn't find a seed with all of that.");
         });
+    }
+
+    /** Stop Search in the lobby. A cancelled search calls neither of its callbacks, so the others are told here. */
+    static void stopLobbySearch() {
+        SeedSearch.cancel();
+        Session s = Session.current();
+        if (s != null) s.send("SEARCHING 0");
+    }
+
+    /** Whether the board's New Seed button is there: the leader, during a draft, with no typed seed to reroll from. */
+    static boolean canReroll(Session s) {
+        return s != null && s.isLeader() && s.drafting() && Settings.seed.isEmpty();
+    }
+
+    /**
+     * The board's New Seed button: pauses the draft, finds a seed like Start does and sends everyone into a new
+     * world, where a new draft is dealt. If no seed is found, the draft goes on.
+     */
+    static void rerollSeed() {
+        Session s = Session.current();
+        if (!canReroll(s) || s.draftPaused || SeedSearch.running()) return;
+        int draft = s.draftId;
+        s.send("PAUSEDRAFT " + draft);
+        SeedSearch.start(Settings.filterTargets(), Settings.radius, true, found -> {
+            if (Session.current() != s) return;
+            // Still ours to restart: nobody else became leader and the draft wasn't replaced meanwhile.
+            if (s.isLeader() && s.drafting() && s.draftId == draft) {
+                LOG.info(found.summary());
+                s.send("MATCH " + found.seed());
+            } else {
+                s.send("RESUMEDRAFT " + draft);
+            }
+        }, why -> {
+            if (Session.current() != s) return;
+            sayInLobby(s, "Couldn't find a new seed with all of that.");
+            s.send("RESUMEDRAFT " + draft);
+        });
+    }
+
+    /** Stop Search on the board: the draft goes on. A cancelled search calls neither of its callbacks. */
+    static void cancelReroll() {
+        Session s = Session.current();
+        if (!SeedSearch.running()) return;
+        SeedSearch.cancel();
+        if (s != null && s.drafting()) s.send("RESUMEDRAFT " + s.draftId);
     }
 
     /** Prints where the seed search thinks things are in this world, to check it against /locate. */
