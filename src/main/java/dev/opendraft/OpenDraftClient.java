@@ -227,6 +227,7 @@ public final class OpenDraftClient implements ClientModInitializer {
         settledTicks = loaded ? settledTicks + 1 : 0;
         if (settledTicks < SETTLE_TICKS && inWorldTicks < READY_ANYWAY_TICKS) return;
         s.readySent = s.matchId;
+        s.readySentAt = System.currentTimeMillis();
         s.send("READY " + s.matchId);
     }
 

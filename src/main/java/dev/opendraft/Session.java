@@ -87,6 +87,10 @@ public final class Session {
     /** Between MATCH and the clock starting: players are held in the air while the others load. */
     public volatile boolean waitingForStart;
     public volatile int readySent;
+    /** When READY went out, so the leader can start without the others after {@link #START_WITHOUT_MILLIS}. */
+    public volatile long readySentAt;
+    /** Whose world everyone is still waiting for, from the synchronizer. */
+    public volatile List<String> stillLoading = List.of();
     /** GO arrived for this match: every world is loaded, so the view no longer has to be covered. */
     public volatile boolean everyoneLoaded;
 
@@ -334,6 +338,31 @@ public final class Session {
         return inLookout() && startMillis - System.currentTimeMillis() <= GROUND_MILLIS;
     }
 
+    /** The leader has waited this long for the others' worlds, so they may start without them. */
+    public static final long START_WITHOUT_MILLIS = 60_000;
+
+    /** Others' worlds are still loading and the leader has waited long enough to start without them. */
+    public boolean mayStartWithoutOthers() {
+        return isLeader() && waitingForStart && !everyoneLoaded && matchSeed != null && readySent == matchId
+                && System.currentTimeMillis() - readySentAt >= START_WITHOUT_MILLIS;
+    }
+
+    /** The leader's Start Without Them: the board is dealt now, and the others come in once their worlds are ready. */
+    public void startWithoutOthers() {
+        if (mayStartWithoutOthers()) send("STARTANYWAY " + matchId);
+    }
+
+    /** What the cover says while this game waits: who it's waiting for, or that its own terrain is loading. */
+    public String waitingText() {
+        if (readySent != matchId) return "Loading terrain...";
+        List<String> others = new ArrayList<>(stillLoading);
+        others.remove(me);
+        if (others.isEmpty()) return "Waiting for other players...";
+        String names = others.size() == 1 ? others.get(0)
+                : String.join(", ", others.subList(0, others.size() - 1)) + " and " + others.get(others.size() - 1);
+        return "Waiting for " + names + "...";
+    }
+
     public boolean drafting() {
         return draftPool != null;
     }
@@ -457,6 +486,7 @@ public final class Session {
                 matchSeed = seed;
                 matchKey = parts.length > 2 ? parts[2] : null;
                 searchingBy = null;
+                stillLoading = List.of();
                 goals = null;
                 owners = new String[0];
                 draftPool = null;
@@ -510,6 +540,7 @@ public final class Session {
                     boardWanted = true;
                 }
             }
+            case "LOADING" -> stillLoading = rest.isBlank() ? List.of() : List.of(rest.trim().split(" "));
             case "SEARCHING" -> searchingBy = rest.equals("-") ? null : rest;
             case "DRAFTPAUSED", "DRAFTRESUMED" -> {
                 if (Integer.parseInt(rest.trim()) == draftId) draftPaused = p[0].equals("DRAFTPAUSED");

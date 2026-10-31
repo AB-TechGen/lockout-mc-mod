@@ -39,7 +39,7 @@ public final class BoardScreen extends Screen {
 
     /** The cell under the mouse in the last frame, or -1. */
     private int hovered = -1;
-    private Button forfeitButton, drawButton, newSeedButton, lobbyButton, closeButton;
+    private Button forfeitButton, drawButton, newSeedButton, lobbyButton, closeButton, startWithoutButton;
     private SizeSlider sizeSlider;
     /** The board size when the screen opened, so it's only saved if the slider changed it. */
     private int scaleWhenOpened;
@@ -65,6 +65,11 @@ public final class BoardScreen extends Screen {
                 .bounds(0, 0, BUTTON_W, 20).build());
         closeButton = addRenderableWidget(Button.builder(Component.literal("Close Board"), b -> close())
                 .bounds(0, 0, BUTTON_W, 20).build());
+        startWithoutButton = addRenderableWidget(Button.builder(Component.literal("Start Without Them"), b -> {
+                    Session s = Session.current();
+                    if (s != null) s.startWithoutOthers();
+                    close();
+                }).bounds(0, 0, 120, 20).build());
         scaleWhenOpened = Settings.boardScale;
         sizeSlider = addRenderableWidget(new SizeSlider());
         tick();
@@ -123,6 +128,7 @@ public final class BoardScreen extends Screen {
         forfeitButton.setMessage(Component.literal(forfeitArmedAt > 0 ? "Really forfeit?" : "Forfeit")
                 .withStyle(forfeitArmedAt > 0 ? ChatFormatting.RED : ChatFormatting.RESET));
         newSeedButton.visible = OpenDraftClient.canReroll(s);
+        startWithoutButton.visible = s != null && s.goals == null && !s.drafting() && s.mayStartWithoutOthers();
         if (System.currentTimeMillis() - newSeedArmedAt > 4000) newSeedArmedAt = 0;
         boolean searching = newSeedButton.visible && s.draftPaused;
         // A search that isn't this draft's (none should be) leaves nothing to press.
@@ -156,6 +162,8 @@ public final class BoardScreen extends Screen {
             b.setY(y);
             x += BUTTON_W + 4;
         }
+        startWithoutButton.setX((width - startWithoutButton.getWidth()) / 2);
+        startWithoutButton.setY(height / 2 + 20);
         sizeSlider.setX((width - SLIDER_W) / 2);
         sizeSlider.setY(y + 24);
         sizeSlider.refresh();
@@ -293,8 +301,9 @@ public final class BoardScreen extends Screen {
         List<Goal> goals = draft ? s.draftPool : s.goals;
         if (goals == null) {
             centered(g, font, Component.literal("OpenDraft lobby").withStyle(ChatFormatting.GOLD), 14, 0xFFFFFFFF);
-            centered(g, font, Component.literal(s.waitingForStart ? "Waiting for everyone's world to load..."
-                    : "No board yet. Start a match from the lobby."), height / 2 - 10, 0xFFFFFFFF);
+            centered(g, font, Component.literal(s.waitingForStart && !s.everyoneLoaded ? s.waitingText()
+                    : s.waitingForStart ? "Waiting for the board..." : "No board yet. Start a match from the lobby."),
+                    height / 2 - 10, 0xFFFFFFFF);
             centered(g, font, Component.literal("Players: " + String.join(", ", s.players)), height / 2 + 4, 0xFFAAAAAA);
             return;
         }

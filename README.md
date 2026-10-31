@@ -91,9 +91,13 @@ version anyway. If the check can't be made (no internet, or GitHub can't be reac
 4. The lobby lists everyone who has joined, the settings and a chat. The first player in the lobby is the leader
    (marked with a star). Only the leader can press **Edit Settings** and **Start**.
 5. **Start** makes everyone's game create a new singleplayer world with the same seed. Each game covers the world
-   with "Loading terrain..." until the land around you has loaded (30 seconds at most), then with "Waiting for
-   other players..." until the slowest computer has caught up, so nobody gets extra time to look around. Then the
-   board is dealt (or drafted) and the lookout begins.
+   with "Loading terrain..." until the land around you has loaded (30 seconds at most), then with who it's waiting
+   for ("Waiting for Alex...") until the slowest computer has caught up, so nobody gets extra time to look around. Then the
+   board is dealt (or drafted) and the lookout begins.  
+   If someone's world takes more than a minute, the leader can open the board and press **Start Without Them**.
+   The match goes ahead, and the late players join in as soon as their world is ready. After 3 minutes it starts
+   without them anyway.  
+   A late player drops straight into the match once their world is ready, the same way a reconnecting player does. If it's a drafted match, their draft turns run out of time and are picked at random until they arrive.
 6. When the game ends you're put in spectator mode, and 5 seconds later (counted down above the hotbar) your game
    saves the world and goes back to the lobby for the next match. **Back to Lobby** on the full-screen board goes
    straight away. Your old game mode is saved with the world, so reopening it later from **Old worlds** doesn't

@@ -132,7 +132,8 @@ public final class BoardHud {
     /**
      * Covers the whole view from when this match world opens until everyone's has loaded, so nobody gets
      * to look around longer than the others. It says whether this game is still loading the terrain or
-     * is waiting for someone else's. Drawn before the rest of the HUD, so chat still shows.
+     * whose world it's waiting for, and after a minute tells the leader how to start without them. Drawn
+     * before the rest of the HUD, so chat still shows.
      */
     public static void waitingCover(GuiGraphicsExtractor g, DeltaTracker delta) {
         Minecraft mc = Minecraft.getInstance();
@@ -142,8 +143,13 @@ public final class BoardHud {
         int sw = mc.getWindow().getGuiScaledWidth();
         int sh = mc.getWindow().getGuiScaledHeight();
         g.fill(0, 0, sw, sh, 0xFF101014);
-        Component c = Component.literal(s.readySent == s.matchId ? "Waiting for other players..." : "Loading terrain...");
+        Component c = Component.literal(s.waitingText());
         g.text(mc.font, c, (sw - mc.font.width(c)) / 2, sh / 2 - mc.font.lineHeight / 2, 0xFFFFFFFF, true);
+        if (s.mayStartWithoutOthers()) {
+            Component hint = Component.literal("Press " + OpenDraftClient.boardKeyName() + " to start without them")
+                    .withStyle(ChatFormatting.GRAY);
+            g.text(mc.font, hint, (sw - mc.font.width(hint)) / 2, sh / 2 + mc.font.lineHeight + 2, 0xFFFFFFFF, true);
+        }
     }
 
     /** Vanilla's tab list, or in a lobby everyone in it, like a server's, with a small icon for where each one is. */

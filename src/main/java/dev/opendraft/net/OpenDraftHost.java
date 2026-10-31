@@ -416,6 +416,7 @@ public final class OpenDraftHost {
         where.forEach((who, place) -> ch.send("WHERE " + who + " " + place));
         boolean matchOn = loading || boardDue || draft != null || (keys != null && !ended);
         if (matchId > 0 && matchOn) ch.send("MATCH " + matchId + " " + seed + " " + matchKey);
+        if (loading) broadcast(loadingLine()); // they're someone to wait for again, if they hadn't loaded yet
         if (boardDue) {
             // Everyone's world loaded but the board isn't dealt: they need GO too, and if they're the leader, it's theirs to deal.
             ch.send("GO " + matchId);
@@ -521,10 +522,24 @@ public final class OpenDraftHost {
         return out;
     }
 
-    /** While a match loads: everyone connected has said their world is ready. */
+    /** While a match loads: once everyone connected has said their world is ready, GO; until then, who's left. */
     private void checkLoaded() {
-        List<String> here = present();
-        if (loading && !here.isEmpty() && ready.containsAll(here)) go();
+        if (!loading) return;
+        if (!present().isEmpty() && stillLoading().isEmpty()) go();
+        else broadcast(loadingLine());
+    }
+
+    /** Connected players whose world for this match hasn't said it's ready. */
+    private List<String> stillLoading() {
+        List<String> out = present();
+        out.removeAll(ready);
+        return out;
+    }
+
+    /** LOADING &lt;name&gt;...: whose world everyone is waiting for. */
+    private String loadingLine() {
+        List<String> left = stillLoading();
+        return left.isEmpty() ? "LOADING" : "LOADING " + String.join(" ", left);
     }
 
     /** The player looking for a new seed dropped or left, so nobody will send the new match: the draft goes on. */
@@ -639,11 +654,21 @@ public final class OpenDraftHost {
                 loadDeadline = System.currentTimeMillis() + 180_000;
                 log.accept(name + " started match " + matchId + " on seed " + seed);
                 broadcast("MATCH " + matchId + " " + seed + " " + matchKey);
+                broadcast(loadingLine());
             }
             case "READY" -> {
                 if (p.length != 2 || !loading || Integer.parseInt(p[1]) != matchId) return;
-                ready.add(name);
+                if (ready.add(name)) log.accept(name + "'s world is ready");
                 checkLoaded();
+            }
+            case "STARTANYWAY" -> {
+                // STARTANYWAY <matchId>: the leader stops waiting for worlds still loading. Those players come in
+                // once theirs is ready, like someone reconnecting.
+                if (p.length != 2 || !loading || Integer.parseInt(p[1]) != matchId || !name.equals(leader())) return;
+                List<String> late = stillLoading();
+                log.accept(name + " started without waiting for " + late);
+                if (!late.isEmpty()) broadcast("INFO " + name + " started without waiting for " + String.join(", ", late) + ".");
+                go();
             }
             case "LEAVE" -> {
                 // Leaving on purpose (Leave Lobby), so the place isn't kept. Closing the channel ends this player's

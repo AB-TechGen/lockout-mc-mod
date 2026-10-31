@@ -12,6 +12,7 @@ package dev.opendraft.net;
  * client -> host   SEARCHING &lt;1 | 0&gt;           (leader: my game started or stopped looking for a seed)
  * client -> host   MATCH &lt;seed&gt;                (leader: everyone makes a new world with this seed)
  * client -> host   READY &lt;matchId&gt;             (my world for that match has loaded)
+ * client -> host   STARTANYWAY &lt;matchId&gt;       (leader: stop waiting for worlds still loading)
  * client -> host   FORFEIT
  * client -> host   DRAW | NODRAW               (vote for a draw, or turn it down)
  * client -> host   WHERE &lt;overworld|nether|end|lobby&gt;   (where my player is, for the tab list)
@@ -33,6 +34,7 @@ package dev.opendraft.net;
  * host -> client   SETTINGS &lt;key=value&gt;...
  * host -> client   SEARCHING &lt;name | -&gt;        (who is looking for a seed; MATCH also ends it)
  * host -> client   MATCH &lt;matchId&gt; &lt;seed&gt; &lt;key&gt;  (the key tells this match's world apart when rejoining it)
+ * host -> client   LOADING &lt;name&gt;...           (whose world everyone is still waiting for; empty once all are in)
  * host -> client   GO &lt;matchId&gt;                (everyone's world is ready; the leader deals the board)
  * host -> client   FORFEITED &lt;name&gt;
  * host -> client   DRAWVOTE &lt;name&gt;...          (who has voted for a draw; empty when it lapses)
@@ -54,7 +56,7 @@ package dev.opendraft.net;
  * </pre>
  */
 public final class Protocol {
-    public static final int VERSION = 11;
+    public static final int VERSION = 12;
     /** A draw offer that not everyone has accepted after this long is declined. */
     public static final int DRAW_OFFER_SECONDS = 30;
     /** How long a dropped player's place is kept, and how long their game (and the relay) keep trying to get back. */
