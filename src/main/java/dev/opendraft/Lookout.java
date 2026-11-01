@@ -2,6 +2,7 @@ package dev.opendraft;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityDimensions;
@@ -32,6 +33,8 @@ final class Lookout {
     private static final int RADIUS = 24;
 
     final UUID player;
+    /** The integrated server of the world this lookout was started in. Its spot is that world's spawn, so it's no use in any other. */
+    final MinecraftServer server;
     private final double x, y, z, airY;
     private final GameType mode;
     private final float flyingSpeed;
@@ -40,6 +43,7 @@ final class Lookout {
 
     private Lookout(ServerPlayer p, Vec3 start) {
         this.player = p.getUUID();
+        this.server = p.level().getServer();
         this.x = start.x;
         this.y = start.y;
         this.z = start.z;

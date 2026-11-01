@@ -13,8 +13,10 @@ import net.fabricmc.fabric.api.event.player.AttackEntityCallback;
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.fabricmc.fabric.api.event.player.UseEntityCallback;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.server.IntegratedServer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -71,9 +73,19 @@ public final class ServerHooks {
 
     public static void register() {
         ServerTickEvents.END_SERVER_TICK.register(ServerHooks::onTick);
-        // Quitting mid-lookout must not save the player in spectator, up in the air.
+        // Quitting mid-lookout must not save the player in spectator, up in the air. Leaving is the last chance to put
+        // them back: this comes just before the game saves a player who leaves, which can be before SERVER_STOPPING.
+        ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
+            if (!(server instanceof IntegratedServer)) return;
+            UUID leaving = handler.getPlayer().getUUID();
+            Lookout l = lookout;
+            if (l != null && l.player.equals(leaving)) endLookout(server);
+            if (leaving.equals(endSpectator)) endSpectating(server);
+        });
+        // Not checked against getSingleplayerServer(): leaving a world clears that before the server stops, so the
+        // check never passed here, and a lookout left over from the last world put the player on its spawn point.
         ServerLifecycleEvents.SERVER_STOPPING.register(server -> {
-            if (server != Minecraft.getInstance().getSingleplayerServer()) return;
+            if (!(server instanceof IntegratedServer)) return;
             endLookout(server);
             endSpectating(server);
             saveTracker(server);
@@ -162,6 +174,10 @@ public final class ServerHooks {
 
     private static void onTick(MinecraftServer server) {
         if (server != Minecraft.getInstance().getSingleplayerServer()) return;
+        // A lookout from a world that has closed since is dropped, not finished: its spot is that world's spawn point,
+        // and finishing it here would put this world's player there, hundreds of blocks from this world's spawn.
+        Lookout stale = lookout;
+        if (stale != null && stale.server != server) lookout = null;
         Session s = Session.current();
         long worldSeed = server.overworld().getSeed();
         if (endSpectator != null && (s == null || !s.ended)) endSpectating(server); // a new match in this world
@@ -247,6 +263,9 @@ public final class ServerHooks {
         Session s = Session.current();
         String key = s == null ? null : s.matchKey;
         if (t == null || key == null || t.boardId != s.boardId) return;
+        // A new match may have started just before this world closes: its key isn't this world's to carry.
+        Long seed = s.matchSeed;
+        if (seed == null || seed != server.overworld().getSeed()) return;
         JsonObject o = new JsonObject();
         o.addProperty("match", key);
         o.addProperty("board", t.boardId);
